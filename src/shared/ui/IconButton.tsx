@@ -20,13 +20,13 @@ interface IconButtonProps {
 
 const sizeClasses: Record<IconButtonSize, string> = {
   project: 'h-[22px] w-[22px] rounded-md',
-  row: 'h-[27px] w-[27px] rounded-[7px]',
+  row: 'h-[27px] w-[27px] rounded-[7px]'
 }
 
 const toneClasses: Record<IconButtonTone, string> = {
   ghost: 'hover:bg-black/[0.07] hover:text-black/90',
   accent: 'hover:bg-accent-soft hover:text-accent',
-  danger: 'hover:bg-red-500/10 hover:text-red-600',
+  danger: 'hover:bg-red-500/10 hover:text-red-600'
 }
 
 export function IconButton({
@@ -35,7 +35,7 @@ export function IconButton({
   className = '',
   size = 'row',
   tone = 'ghost',
-  onClick,
+  onClick
 }: IconButtonProps) {
   return (
     <button

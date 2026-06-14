@@ -7,7 +7,16 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CommandDef, Project, Worktree } from '../model'
 import { COMMANDS } from '../model'
-import { Archive, ChevronRight, Copy, Editor, Finder, Gear, Play, Terminal } from '../../../shared/icons'
+import {
+  Archive,
+  ChevronRight,
+  Copy,
+  Editor,
+  Finder,
+  Gear,
+  Play,
+  Terminal
+} from '../../../shared/icons'
 import { MenuItem, MenuSeparator } from '../../../shared/ui/MenuItem'
 
 export interface ContextState {
@@ -25,7 +34,13 @@ interface ContextMenuProps {
   onEditCommands: (project: Project) => void
 }
 
-export function ContextMenu({ ctx, onClose, onRunCommand, onArchive, onEditCommands }: ContextMenuProps) {
+export function ContextMenu({
+  ctx,
+  onClose,
+  onRunCommand,
+  onArchive,
+  onEditCommands
+}: ContextMenuProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [subOpen, setSubOpen] = useState(false)
   const { worktree, project } = ctx
@@ -51,9 +66,25 @@ export function ContextMenu({ ctx, onClose, onRunCommand, onArchive, onEditComma
         {worktree.branch}
       </div>
 
-      <MenuItem icon={<Editor />} label="Open in Editor" kbd="↵" onHover={() => setSubOpen(false)} onClick={onClose} />
-      <MenuItem icon={<Terminal />} label="Open in Terminal" onHover={() => setSubOpen(false)} onClick={onClose} />
-      <MenuItem icon={<Finder />} label="Reveal in Finder" onHover={() => setSubOpen(false)} onClick={onClose} />
+      <MenuItem
+        icon={<Editor />}
+        label="Open in Editor"
+        kbd="↵"
+        onHover={() => setSubOpen(false)}
+        onClick={onClose}
+      />
+      <MenuItem
+        icon={<Terminal />}
+        label="Open in Terminal"
+        onHover={() => setSubOpen(false)}
+        onClick={onClose}
+      />
+      <MenuItem
+        icon={<Finder />}
+        label="Reveal in Finder"
+        onHover={() => setSubOpen(false)}
+        onClick={onClose}
+      />
 
       <MenuSeparator />
 

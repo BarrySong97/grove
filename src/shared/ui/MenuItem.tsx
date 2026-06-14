@@ -18,7 +18,9 @@ interface MenuItemProps {
 
 export function MenuItem({ icon, label, kbd, danger, disabled, onClick, onHover }: MenuItemProps) {
   const hoverClass = danger ? 'hover:bg-red-500' : 'hover:bg-accent'
-  const disabledClass = disabled ? 'pointer-events-none opacity-40' : `${hoverClass} hover:text-white`
+  const disabledClass = disabled
+    ? 'pointer-events-none opacity-40'
+    : `${hoverClass} hover:text-white`
 
   return (
     <div
@@ -30,7 +32,11 @@ export function MenuItem({ icon, label, kbd, danger, disabled, onClick, onHover 
         {icon}
       </span>
       <span className="flex flex-1 flex-col">{label}</span>
-      {kbd && <span className="text-[12px] text-black/[0.34] group-hover/menu-item:text-white">{kbd}</span>}
+      {kbd && (
+        <span className="text-[12px] text-black/[0.34] group-hover/menu-item:text-white">
+          {kbd}
+        </span>
+      )}
     </div>
   )
 }

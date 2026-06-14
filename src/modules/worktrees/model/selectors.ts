@@ -36,6 +36,6 @@ export function createDraftWorktree(project: Project, name: string, base: string
     status: 'setting-up',
     time: 'now',
     message: `created from ${base}`,
-    path: `${project.id}/.worktrees/${slug}`,
+    path: `${project.id}/.worktrees/${slug}`
   }
 }

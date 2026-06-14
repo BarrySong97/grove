@@ -9,7 +9,15 @@ import { CSS } from '@dnd-kit/utilities'
 import { animateLayoutChanges, sortableTransition } from '../../../shared/lib/sortable'
 import type { Density, Project, Worktree } from '../model'
 import { getBusyLabel, isWorktreeBusy } from '../model'
-import { ChevronDown, ChevronUp, Editor, More, Spinner, Terminal, ToTop } from '../../../shared/icons'
+import {
+  ChevronDown,
+  ChevronUp,
+  Editor,
+  More,
+  Spinner,
+  Terminal,
+  ToTop
+} from '../../../shared/icons'
 import { IconButton } from '../../../shared/ui/IconButton'
 
 interface WorktreeRowProps {
@@ -31,7 +39,7 @@ export function WorktreeRow({
   isFirst,
   isLast,
   onMove,
-  onContext,
+  onContext
 }: WorktreeRowProps) {
   const running = isWorktreeBusy(worktree)
   const padY = density === 'compact' ? 'py-1.5' : 'py-[9px]'
@@ -40,7 +48,7 @@ export function WorktreeRow({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: worktree.id,
     animateLayoutChanges,
-    transition: sortableTransition,
+    transition: sortableTransition
   })
 
   return (
@@ -55,7 +63,9 @@ export function WorktreeRow({
       {...listeners}
       className={
         `group relative mb-[3px] flex items-center ${gap} ${padY} rounded-[9px] px-2.5 transition-colors ` +
-        (isDragging ? 'z-10 bg-black/[0.05] opacity-80 active:cursor-grabbing ' : 'hover:bg-black/[0.038] active:bg-black/[0.07] ')
+        (isDragging
+          ? 'z-10 bg-black/[0.05] opacity-80 active:cursor-grabbing '
+          : 'hover:bg-black/[0.038] active:bg-black/[0.07] ')
       }
     >
       <span className="flex w-4 shrink-0 items-center justify-center">
@@ -71,54 +81,54 @@ export function WorktreeRow({
 
       {!running && (
         <div className="hidden shrink-0 items-center gap-0.5 group-hover:flex">
-            {!isFirst && (
-              <IconButton
-                title="Move to top"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onMove('top')
-                }}
-              >
-                <ToTop />
-              </IconButton>
-            )}
-            {!isFirst && (
-              <IconButton
-                title="Move up"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onMove('up')
-                }}
-              >
-                <ChevronUp />
-              </IconButton>
-            )}
-            {!isLast && (
-              <IconButton
-                title="Move down"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onMove('down')
-                }}
-              >
-                <ChevronDown />
-              </IconButton>
-            )}
-            <IconButton title="Open in editor" onClick={(event) => event.stopPropagation()}>
-              <Editor />
-            </IconButton>
-            <IconButton title="Open in terminal" onClick={(event) => event.stopPropagation()}>
-              <Terminal />
-            </IconButton>
+          {!isFirst && (
             <IconButton
-              title="More…"
+              title="Move to top"
               onClick={(event) => {
                 event.stopPropagation()
-                onContext(event, worktree, project)
+                onMove('top')
               }}
             >
-              <More />
+              <ToTop />
             </IconButton>
+          )}
+          {!isFirst && (
+            <IconButton
+              title="Move up"
+              onClick={(event) => {
+                event.stopPropagation()
+                onMove('up')
+              }}
+            >
+              <ChevronUp />
+            </IconButton>
+          )}
+          {!isLast && (
+            <IconButton
+              title="Move down"
+              onClick={(event) => {
+                event.stopPropagation()
+                onMove('down')
+              }}
+            >
+              <ChevronDown />
+            </IconButton>
+          )}
+          <IconButton title="Open in editor" onClick={(event) => event.stopPropagation()}>
+            <Editor />
+          </IconButton>
+          <IconButton title="Open in terminal" onClick={(event) => event.stopPropagation()}>
+            <Terminal />
+          </IconButton>
+          <IconButton
+            title="More…"
+            onClick={(event) => {
+              event.stopPropagation()
+              onContext(event, worktree, project)
+            }}
+          >
+            <More />
+          </IconButton>
         </div>
       )}
     </div>
@@ -128,7 +138,7 @@ export function WorktreeRow({
 function WorktreeSubtitle({
   worktree,
   running,
-  showCommit,
+  showCommit
 }: {
   worktree: Worktree
   running: boolean

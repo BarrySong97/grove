@@ -16,7 +16,15 @@ export const Play = (props: IconProps) => (
 
 export const Editor = (props: IconProps) => (
   <svg viewBox="0 0 16 16" width="15" height="15" fill="none" {...props}>
-    <rect x="1.6" y="2.6" width="12.8" height="10.8" rx="1.7" stroke="currentColor" strokeWidth="1.3" />
+    <rect
+      x="1.6"
+      y="2.6"
+      width="12.8"
+      height="10.8"
+      rx="1.7"
+      stroke="currentColor"
+      strokeWidth="1.3"
+    />
     <path d="M1.6 5.4h12.8" stroke="currentColor" strokeWidth="1.3" />
     <path
       d="M5 8.4 6.6 10 5 11.6M8.4 11.6h2.4"
@@ -30,7 +38,15 @@ export const Editor = (props: IconProps) => (
 
 export const Terminal = (props: IconProps) => (
   <svg viewBox="0 0 16 16" width="15" height="15" fill="none" {...props}>
-    <rect x="1.6" y="2.6" width="12.8" height="10.8" rx="1.7" stroke="currentColor" strokeWidth="1.3" />
+    <rect
+      x="1.6"
+      y="2.6"
+      width="12.8"
+      height="10.8"
+      rx="1.7"
+      stroke="currentColor"
+      strokeWidth="1.3"
+    />
     <path
       d="M4 6.3 6.2 8 4 9.7M8 10.2h3.4"
       stroke="currentColor"
@@ -64,7 +80,11 @@ export const Finder = (props: IconProps) => (
 export const Archive = (props: IconProps) => (
   <svg viewBox="0 0 16 16" width="14" height="14" fill="none" {...props}>
     <rect x="2" y="3" width="12" height="3.2" rx="0.9" stroke="currentColor" strokeWidth="1.3" />
-    <path d="M3.2 6.2v6c0 .6.5 1 1 1h7.6c.6 0 1-.4 1-1v-6" stroke="currentColor" strokeWidth="1.3" />
+    <path
+      d="M3.2 6.2v6c0 .6.5 1 1 1h7.6c.6 0 1-.4 1-1v-6"
+      stroke="currentColor"
+      strokeWidth="1.3"
+    />
     <path d="M6.4 9h3.2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
   </svg>
 )
@@ -83,7 +103,15 @@ export const Gear = (props: IconProps) => (
 
 export const Copy = (props: IconProps) => (
   <svg viewBox="0 0 16 16" width="14" height="14" fill="none" {...props}>
-    <rect x="5.2" y="5.2" width="8.2" height="8.2" rx="1.4" stroke="currentColor" strokeWidth="1.3" />
+    <rect
+      x="5.2"
+      y="5.2"
+      width="8.2"
+      height="8.2"
+      rx="1.4"
+      stroke="currentColor"
+      strokeWidth="1.3"
+    />
     <path
       d="M10.6 5.2V3.6c0-.6-.5-1-1-1H3.6c-.6 0-1 .4-1 1v6c0 .5.4 1 1 1h1.6"
       stroke="currentColor"

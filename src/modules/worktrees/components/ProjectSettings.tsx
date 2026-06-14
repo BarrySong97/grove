@@ -59,7 +59,9 @@ export function ProjectSettings({ project, onChange, onClose }: ProjectSettingsP
               />
             </label>
           </div>
-          <div className="pl-20 pt-[5px] text-[10.5px] leading-[1.35] text-black/[0.22]">{command.desc}.</div>
+          <div className="pl-20 pt-[5px] text-[10.5px] leading-[1.35] text-black/[0.22]">
+            {command.desc}.
+          </div>
         </div>
       ))}
 

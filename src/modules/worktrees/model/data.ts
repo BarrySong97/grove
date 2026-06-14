@@ -25,7 +25,7 @@ export const INITIAL_PROJECTS: Project[] = [
         status: 'ready',
         time: 'now',
         message: 'chore: bump deps to latest',
-        path: 'acme-web',
+        path: 'acme-web'
       },
       {
         id: 'aw1',
@@ -38,7 +38,7 @@ export const INITIAL_PROJECTS: Project[] = [
         status: 'ready',
         time: '12m',
         message: 'wip: new payment step layout',
-        path: 'acme-web/.worktrees/checkout-redesign',
+        path: 'acme-web/.worktrees/checkout-redesign'
       },
       {
         id: 'aw2',
@@ -51,7 +51,7 @@ export const INITIAL_PROJECTS: Project[] = [
         status: 'ready',
         time: '1h',
         message: 'fix: retry stripe webhook on 5xx',
-        path: 'acme-web/.worktrees/payment-webhook',
+        path: 'acme-web/.worktrees/payment-webhook'
       },
       {
         id: 'aw3',
@@ -64,7 +64,7 @@ export const INITIAL_PROJECTS: Project[] = [
         status: 'ready',
         time: '2h',
         message: 'feat: faceted search sidebar',
-        path: 'acme-web/.worktrees/search-filters',
+        path: 'acme-web/.worktrees/search-filters'
       },
       {
         id: 'aw4',
@@ -77,7 +77,7 @@ export const INITIAL_PROJECTS: Project[] = [
         status: 'ready',
         time: '4h',
         message: 'fix: cart total rounding error',
-        path: 'acme-web/.worktrees/cart-rounding',
+        path: 'acme-web/.worktrees/cart-rounding'
       },
       {
         id: 'aw5',
@@ -90,7 +90,7 @@ export const INITIAL_PROJECTS: Project[] = [
         status: 'ready',
         time: '6h',
         message: 'chore: migrate to vite 6',
-        path: 'acme-web/.worktrees/upgrade-vite',
+        path: 'acme-web/.worktrees/upgrade-vite'
       },
       {
         id: 'aw6',
@@ -103,7 +103,7 @@ export const INITIAL_PROJECTS: Project[] = [
         status: 'ready',
         time: '8h',
         message: 'feat: persist wishlist to account',
-        path: 'acme-web/.worktrees/wishlist',
+        path: 'acme-web/.worktrees/wishlist'
       },
       {
         id: 'aw7',
@@ -116,7 +116,7 @@ export const INITIAL_PROJECTS: Project[] = [
         status: 'ready',
         time: '1d',
         message: 'fix: bump button contrast to AA',
-        path: 'acme-web/.worktrees/a11y-contrast',
+        path: 'acme-web/.worktrees/a11y-contrast'
       },
       {
         id: 'aw8',
@@ -129,7 +129,7 @@ export const INITIAL_PROJECTS: Project[] = [
         status: 'ready',
         time: '2d',
         message: 'chore: quarantine flaky e2e specs',
-        path: 'acme-web/.worktrees/flaky-tests',
+        path: 'acme-web/.worktrees/flaky-tests'
       },
       {
         id: 'aw9',
@@ -142,9 +142,9 @@ export const INITIAL_PROJECTS: Project[] = [
         status: 'ready',
         time: '3d',
         message: 'feat: dismissible seasonal banner',
-        path: 'acme-web/.worktrees/promo-banner',
-      },
-    ],
+        path: 'acme-web/.worktrees/promo-banner'
+      }
+    ]
   },
   {
     id: 'design-system',
@@ -164,7 +164,7 @@ export const INITIAL_PROJECTS: Project[] = [
         status: 'ready',
         time: '3h',
         message: 'docs: usage notes for Button',
-        path: 'design-system',
+        path: 'design-system'
       },
       {
         id: 'ds1',
@@ -177,9 +177,9 @@ export const INITIAL_PROJECTS: Project[] = [
         status: 'ready',
         time: '1d',
         message: 'feat: dark-mode token ramp',
-        path: 'design-system/.worktrees/color-tokens',
-      },
-    ],
+        path: 'design-system/.worktrees/color-tokens'
+      }
+    ]
   },
   {
     id: 'mobile-app',
@@ -199,7 +199,7 @@ export const INITIAL_PROJECTS: Project[] = [
         status: 'ready',
         time: '2d',
         message: 'release: 2.3.1',
-        path: 'mobile-app',
+        path: 'mobile-app'
       },
       {
         id: 'ma1',
@@ -212,8 +212,8 @@ export const INITIAL_PROJECTS: Project[] = [
         status: 'ready',
         time: '5h',
         message: 'bump version to 2.4.0-rc1',
-        path: 'mobile-app/.worktrees/release-2.4',
-      },
-    ],
-  },
+        path: 'mobile-app/.worktrees/release-2.4'
+      }
+    ]
+  }
 ]

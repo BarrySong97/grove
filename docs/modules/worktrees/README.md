@@ -24,3 +24,4 @@
 - 接入真实 git/worktree 前,先更新 [Worktree 命令模拟边界](../../topics/worktree-command-simulation.md) 或新增 spec/plan。
 - 不要在组件里直接构造跨模块共享样式工具;先看 `src/shared/ui/` 和 `src/shared/lib/`。
 - `ProjectSettings` 修改的是内存 command,不要承诺持久化。
+- TypeScript/TSX 源码纳入根级 Oxlint/Oxfmt;纯格式化 diff 不改变 mock worktree 行为边界。

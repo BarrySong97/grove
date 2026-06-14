@@ -25,5 +25,5 @@ export const sortableTransition = { duration: 140, easing: 'cubic-bezier(0.25, 1
  * FLIP origin rect is stale and items appear to fly in from the wrong position.
  */
 export const sortableMeasuring: MeasuringConfiguration = {
-  droppable: { strategy: MeasuringStrategy.Always },
+  droppable: { strategy: MeasuringStrategy.Always }
 }

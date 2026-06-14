@@ -13,17 +13,21 @@ import {
   closestCenter,
   useSensor,
   useSensors,
-  type DragEndEvent,
+  type DragEndEvent
 } from '@dnd-kit/core'
 import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
-  verticalListSortingStrategy,
+  verticalListSortingStrategy
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { animateLayoutChanges, sortableMeasuring, sortableTransition } from '../../../shared/lib/sortable'
+import {
+  animateLayoutChanges,
+  sortableMeasuring,
+  sortableTransition
+} from '../../../shared/lib/sortable'
 import type { Density, Project, Worktree } from '../model'
 import { ChevronDown, ChevronRight, ChevronUp, Gear, Plus, ToTop } from '../../../shared/icons'
 import { Divider } from '../../../shared/ui/Divider'
@@ -66,7 +70,7 @@ export function ProjectSection({
   onMove,
   onMoveWorktree,
   onReorderWorktrees,
-  onContext,
+  onContext
 }: ProjectSectionProps) {
   const [collapsed, setCollapsed] = useState(false)
   const [showAll, setShowAll] = useState(false)
@@ -75,15 +79,23 @@ export function ProjectSection({
   const rest = project.worktrees.slice(VISIBLE_LIMIT)
   const rendered = showAll ? project.worktrees : head
 
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({
     id: project.id,
     animateLayoutChanges,
-    transition: sortableTransition,
+    transition: sortableTransition
   })
 
   const worktreeSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
   const handleWorktreeDragEnd = (event: DragEndEvent) => {
@@ -128,7 +140,9 @@ export function ProjectSection({
             <ChevronRight />
           </motion.span>
           <Dot color={project.accent} />
-          <span className="whitespace-nowrap text-[12px] font-semibold tracking-[0.2px]">{project.name}</span>
+          <span className="whitespace-nowrap text-[12px] font-semibold tracking-[0.2px]">
+            {project.name}
+          </span>
         </button>
 
         <div className="relative flex shrink-0 items-center">
@@ -151,7 +165,11 @@ export function ProjectSection({
                 <ChevronDown />
               </IconButton>
             )}
-            <IconButton title="Project settings" size="project" onClick={() => onEditSettings(project.id)}>
+            <IconButton
+              title="Project settings"
+              size="project"
+              onClick={() => onEditSettings(project.id)}
+            >
               <Gear />
             </IconButton>
             <IconButton
@@ -186,7 +204,10 @@ export function ProjectSection({
               modifiers={[restrictToVerticalAxis, restrictToParentElement]}
               onDragEnd={handleWorktreeDragEnd}
             >
-              <SortableContext items={rendered.map((worktree) => worktree.id)} strategy={verticalListSortingStrategy}>
+              <SortableContext
+                items={rendered.map((worktree) => worktree.id)}
+                strategy={verticalListSortingStrategy}
+              >
                 {head.map((worktree, index) => renderRow(worktree, index))}
 
                 <AnimatePresence initial={false}>
@@ -219,7 +240,11 @@ export function ProjectSection({
             )}
 
             {isAdding ? (
-              <NewWorktreeEditor project={project} onCreate={onCreateWorktree} onCancel={onCancelAdd} />
+              <NewWorktreeEditor
+                project={project}
+                onCreate={onCreateWorktree}
+                onCancel={onCancelAdd}
+              />
             ) : (
               <div
                 onClick={() => onAddWorktree(project.id)}
@@ -228,7 +253,9 @@ export function ProjectSection({
                 <span className="flex w-4 shrink-0 items-center justify-center text-accent">
                   <Plus />
                 </span>
-                <span className="flex-1 text-[12.5px] font-medium text-[#1c1c1e]">New worktree</span>
+                <span className="flex-1 text-[12.5px] font-medium text-[#1c1c1e]">
+                  New worktree
+                </span>
               </div>
             )}
           </motion.div>

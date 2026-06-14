@@ -25,7 +25,9 @@ export function useWorktreePanelState(initialProjects: Project[] = INITIAL_PROJE
   }
 
   const total = projects.reduce((n, project) => n + project.worktrees.length, 0)
-  const settingsProject = settingsFor ? projects.find((project) => project.id === settingsFor) : null
+  const settingsProject = settingsFor
+    ? projects.find((project) => project.id === settingsFor)
+    : null
 
   const patchWorktree = (projectId: string, worktreeId: string, patch: Partial<Worktree>) =>
     setProjects((current) =>
@@ -35,10 +37,10 @@ export function useWorktreePanelState(initialProjects: Project[] = INITIAL_PROJE
           : {
               ...project,
               worktrees: project.worktrees.map((worktree) =>
-                worktree.id === worktreeId ? { ...worktree, ...patch } : worktree,
-              ),
-            },
-      ),
+                worktree.id === worktreeId ? { ...worktree, ...patch } : worktree
+              )
+            }
+      )
     )
 
   const flash = (message: string, ms = 1500) => {
@@ -49,8 +51,10 @@ export function useWorktreePanelState(initialProjects: Project[] = INITIAL_PROJE
   const setCommands = (projectId: string, patch: Partial<ProjectCommands>) =>
     setProjects((current) =>
       current.map((project) =>
-        project.id !== projectId ? project : { ...project, commands: { ...project.commands, ...patch } },
-      ),
+        project.id !== projectId
+          ? project
+          : { ...project, commands: { ...project.commands, ...patch } }
+      )
     )
 
   const reorderProjects = (activeId: string, overId: string) =>
@@ -79,7 +83,7 @@ export function useWorktreePanelState(initialProjects: Project[] = INITIAL_PROJE
         const to = direction === 'top' ? 0 : direction === 'up' ? from - 1 : from + 1
         if (to < 0 || to >= project.worktrees.length) return project
         return { ...project, worktrees: arrayMove(project.worktrees, from, to) }
-      }),
+      })
     )
 
   const reorderWorktrees = (projectId: string, activeId: string, overId: string) =>
@@ -90,7 +94,7 @@ export function useWorktreePanelState(initialProjects: Project[] = INITIAL_PROJE
         const to = project.worktrees.findIndex((worktree) => worktree.id === overId)
         if (from === -1 || to === -1) return project
         return { ...project, worktrees: arrayMove(project.worktrees, from, to) }
-      }),
+      })
     )
 
   const switchTo = (worktree: Worktree, project: Project) =>
@@ -98,8 +102,14 @@ export function useWorktreePanelState(initialProjects: Project[] = INITIAL_PROJE
       current.map((item) =>
         item.id !== project.id
           ? item
-          : { ...item, worktrees: item.worktrees.map((next) => ({ ...next, current: next.id === worktree.id })) },
-      ),
+          : {
+              ...item,
+              worktrees: item.worktrees.map((next) => ({
+                ...next,
+                current: next.id === worktree.id
+              }))
+            }
+      )
     )
 
   const createWorktree = (project: Project, name: string, base: string) => {
@@ -107,15 +117,15 @@ export function useWorktreePanelState(initialProjects: Project[] = INITIAL_PROJE
 
     setProjects((current) =>
       current.map((item) =>
-        item.id !== project.id ? item : { ...item, worktrees: [...item.worktrees, newWorktree] },
-      ),
+        item.id !== project.id ? item : { ...item, worktrees: [...item.worktrees, newWorktree] }
+      )
     )
     setAddingTo(null)
     setToast(`Setup · ${project.name}/${name}`)
     after(2600, () => {
       patchWorktree(project.id, newWorktree.id, {
         status: 'ready',
-        message: `branched from ${newWorktree.base}`,
+        message: `branched from ${newWorktree.base}`
       })
       setToast(null)
     })
@@ -130,8 +140,8 @@ export function useWorktreePanelState(initialProjects: Project[] = INITIAL_PROJE
         current.map((item) =>
           item.id !== project.id
             ? item
-            : { ...item, worktrees: item.worktrees.filter((next) => next.id !== worktree.id) },
-        ),
+            : { ...item, worktrees: item.worktrees.filter((next) => next.id !== worktree.id) }
+        )
       )
       setToast(null)
     })
@@ -165,6 +175,6 @@ export function useWorktreePanelState(initialProjects: Project[] = INITIAL_PROJE
     settingsProject,
     switchTo,
     toast,
-    total,
+    total
   }
 }

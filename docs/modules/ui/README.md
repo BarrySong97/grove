@@ -15,3 +15,4 @@
 - shared UI 不能依赖 `src/modules/*`。
 - Icon-only button 必须有 `title`,后续补 a11y 时可统一加 aria-label。
 - 组件尺寸要稳定,hover/disabled/loading 不应引发布局跳动。
+- TSX UI 源码纳入根级 Oxlint/Oxfmt;纯格式化 diff 不改变组件契约。

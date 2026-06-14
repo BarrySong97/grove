@@ -16,14 +16,18 @@
 }
 
 @theme inline {
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, sans-serif;
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica,
+    sans-serif;
   --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, monospace;
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-amber-ink: #9a6a12;
   --color-amber-dot: #e0a93a;
-  --shadow-panel: inset 0 0.5px 0 rgba(255,255,255,0.7), 0 0 0 0.5px rgba(0,0,0,0.04), 0 18px 50px rgba(0,0,0,0.24), 0 5px 16px rgba(0,0,0,0.12);
-  --shadow-ctx: inset 0 0.5px 0 rgba(255,255,255,0.7), 0 16px 44px rgba(0,0,0,0.26);
+  --shadow-panel:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.7), 0 0 0 0.5px rgba(0, 0, 0, 0.04),
+    0 18px 50px rgba(0, 0, 0, 0.24), 0 5px 16px rgba(0, 0, 0, 0.12);
+  --shadow-ctx: inset 0 0.5px 0 rgba(255, 255, 255, 0.7), 0 16px 44px rgba(0, 0, 0, 0.26);
   --shadow-editor: inset 0 0 0 1.4px var(--accent), 0 4px 14px var(--accent-soft);
   --animate-panel-in: panel-in 0.14s cubic-bezier(0.2, 0.9, 0.3, 1);
 

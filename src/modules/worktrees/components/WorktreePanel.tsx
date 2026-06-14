@@ -11,10 +11,14 @@ import {
   closestCenter,
   useSensor,
   useSensors,
-  type DragEndEvent,
+  type DragEndEvent
 } from '@dnd-kit/core'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable'
 import type { Density, Project } from '../model'
 import { INITIAL_PROJECTS } from '../model'
 import { useWorktreePanelState } from '../hooks/useWorktreePanelState'
@@ -44,14 +48,14 @@ export function WorktreePanel({
   density = 'comfortable',
   showCommit = true,
   initialProjects = INITIAL_PROJECTS,
-  onQuit,
+  onQuit
 }: WorktreePanelProps) {
   const state = useWorktreePanelState(initialProjects)
   const panelStyle: CSSVars = { '--accent': accent, '--accent-soft': hexA(accent, 0.1) }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
   const handleProjectDragEnd = (event: DragEndEvent) => {
@@ -96,7 +100,10 @@ export function WorktreePanel({
         modifiers={[restrictToVerticalAxis]}
         onDragEnd={handleProjectDragEnd}
       >
-        <SortableContext items={state.projects.map((project) => project.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext
+          items={state.projects.map((project) => project.id)}
+          strategy={verticalListSortingStrategy}
+        >
           {state.projects.map((project, index) => (
             <ProjectSection
               key={project.id}
@@ -111,8 +118,12 @@ export function WorktreePanel({
               onCreateWorktree={state.createWorktree}
               onEditSettings={state.setSettingsFor}
               onMove={(direction) => state.moveProject(project.id, direction)}
-              onMoveWorktree={(worktreeId, direction) => state.moveWorktree(project.id, worktreeId, direction)}
-              onReorderWorktrees={(activeId, overId) => state.reorderWorktrees(project.id, activeId, overId)}
+              onMoveWorktree={(worktreeId, direction) =>
+                state.moveWorktree(project.id, worktreeId, direction)
+              }
+              onReorderWorktrees={(activeId, overId) =>
+                state.reorderWorktrees(project.id, activeId, overId)
+              }
               onContext={(event, worktree, item) =>
                 state.setCtx({ x: event.clientX, y: event.clientY, worktree, project: item })
               }
@@ -121,7 +132,9 @@ export function WorktreePanel({
         </SortableContext>
       </DndContext>
 
-      {state.toast && <Toast icon={<Spinner className="animate-spin text-[#7fb4ff]" />}>{state.toast}</Toast>}
+      {state.toast && (
+        <Toast icon={<Spinner className="animate-spin text-[#7fb4ff]" />}>{state.toast}</Toast>
+      )}
 
       {state.ctx && (
         <ContextMenu
