@@ -1,3 +1,9 @@
+/**
+ * @purpose Provides color utility helpers for runtime design tokens.
+ * @role    Shared pure helper used to derive accent transparency.
+ * @deps    TypeScript string manipulation
+ * @gotcha  hexA expects hex-like input and keeps theme derivation simple; docs/modules/lib/README.md
+ */
 export function hexA(hex: string, a: number): string {
   const h = hex.replace('#', '')
   const r = parseInt(h.slice(0, 2), 16)

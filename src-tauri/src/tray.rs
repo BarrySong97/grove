@@ -1,3 +1,7 @@
+// @purpose Sets up the macOS tray icon, menu, and panel toggle behavior.
+// @role    Runtime module connecting tray events to window show/hide/positioning.
+// @deps    tauri tray/menu APIs, positioning/window/tray_icon modules
+// @gotcha  Left-click toggles panel; menu show centers when tray rect is unavailable; docs/modules/tauri-runtime/README.md
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},

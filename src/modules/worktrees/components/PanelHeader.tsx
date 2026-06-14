@@ -1,3 +1,9 @@
+/**
+ * @purpose Renders Grove panel header with counts and add-project affordance.
+ * @role    Header slot for PanelShell used by WorktreePanel.
+ * @deps    shared icons/ui
+ * @gotcha  Add project currently only flashes a toast; docs/modules/worktrees/README.md
+ */
 import { GroveIcon, Import } from '../../../shared/icons'
 import { Divider } from '../../../shared/ui/Divider'
 

@@ -1,3 +1,7 @@
+// @purpose Configures transparent webview/window surfaces for the tray panel.
+// @role    Platform adapter called during setup and before showing the panel.
+// @deps    tauri WebviewWindow, macOS objc2 appkit/foundation/webkit APIs
+// @gotcha  macOS branch uses unsafe Objective-C bridge and must be manually verified; docs/modules/tauri-runtime/README.md
 use tauri::WebviewWindow;
 
 #[cfg(target_os = "macos")]

@@ -1,3 +1,9 @@
+/**
+ * @purpose Centralizes dnd-kit measuring and animation configuration.
+ * @role    Shared sortable behavior for drag and programmatic reorders.
+ * @deps    @dnd-kit/core, @dnd-kit/sortable
+ * @gotcha  Programmatic move buttons rely on forced animateLayoutChanges; docs/modules/lib/README.md
+ */
 import { MeasuringStrategy, type MeasuringConfiguration } from '@dnd-kit/core'
 import { defaultAnimateLayoutChanges, type AnimateLayoutChanges } from '@dnd-kit/sortable'
 

@@ -1,3 +1,9 @@
+/**
+ * @purpose Renders transient floating feedback inside the panel.
+ * @role    Reusable feedback primitive for simulated commands and lightweight notices.
+ * @deps    ReactNode
+ * @gotcha  Use for short status feedback, not durable errors or instructions; docs/modules/ui/README.md
+ */
 import type { ReactNode } from 'react'
 
 interface ToastProps {

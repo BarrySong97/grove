@@ -1,3 +1,9 @@
+/**
+ * @purpose Defines configurable project command metadata and placeholders.
+ * @role    Command catalog used by context menus and project settings.
+ * @deps    ./types
+ * @gotcha  Commands are labels/placeholders until real execution is implemented; docs/topics/worktree-command-simulation.md
+ */
 import type { CommandDef, CommandId } from './types'
 
 export const COMMANDS: CommandDef[] = [

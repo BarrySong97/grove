@@ -1,3 +1,9 @@
+/**
+ * @purpose Renders a sortable worktree row with status subtitle and hover actions.
+ * @role    Row-level UI for branch metadata, busy state, move controls, and context menu trigger.
+ * @deps    @dnd-kit/sortable, Worktrees model selectors, shared icons/ui
+ * @gotcha  Busy rows suppress context/actions to avoid conflicting simulated operations; docs/modules/worktrees/README.md
+ */
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { animateLayoutChanges, sortableTransition } from '../../../shared/lib/sortable'

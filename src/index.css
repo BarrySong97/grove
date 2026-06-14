@@ -1,3 +1,9 @@
+/**
+ * @purpose Defines global Tailwind import, design tokens, transparent app shell, and glass surfaces.
+ * @role    Global stylesheet for the Tauri webview and Grove panel visuals.
+ * @deps    Tailwind CSS, CSS custom properties
+ * @gotcha  Transparent background and rounded clipping are required for tray panel illusion; design.md
+ */
 @import "tailwindcss";
 
 :root {

@@ -1,3 +1,9 @@
+/**
+ * @purpose Defines fixed-size icon-only buttons for project and row actions.
+ * @role    Reusable UI primitive consumed by worktree components.
+ * @deps    React MouseEvent/ReactNode
+ * @gotcha  Always provide title text for icon-only controls; docs/modules/ui/README.md
+ */
 import type { MouseEvent, ReactNode } from 'react'
 
 type IconButtonSize = 'project' | 'row'

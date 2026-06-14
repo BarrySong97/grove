@@ -1,3 +1,7 @@
+// @purpose Builds and runs the Tauri application.
+// @role    Runtime composition layer for invoke handlers, setup, tray, and window events.
+// @deps    tauri Builder/Manager/WindowEvent plus local runtime modules
+// @gotcha  Close/focus loss hides the panel instead of quitting; docs/modules/tauri-runtime/README.md
 mod commands;
 mod positioning;
 mod tray;

@@ -1,3 +1,9 @@
+/**
+ * @purpose Owns in-memory WorktreePanel state transitions and simulated async actions.
+ * @role    Feature hook connecting model helpers to panel components and menus.
+ * @deps    React state/effect/ref, @dnd-kit/sortable, Worktrees model, ContextMenu types
+ * @gotcha  Timers simulate setup/archive/run flows; clear timers on unmount; docs/modules/worktrees/README.md
+ */
 import { useEffect, useRef, useState } from 'react'
 import { arrayMove } from '@dnd-kit/sortable'
 import { INITIAL_PROJECTS, createDraftWorktree } from '../model'

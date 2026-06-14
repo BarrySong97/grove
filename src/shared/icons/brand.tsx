@@ -1,3 +1,9 @@
+/**
+ * @purpose Defines Grove brand icon components.
+ * @role    Brand icon source for panel header and related UI.
+ * @deps    React SVG props pattern
+ * @gotcha  Coordinate changes with generated tray icon shape where relevant; docs/modules/icons/README.md
+ */
 import type { SVGProps } from 'react'
 
 type IconProps = SVGProps<SVGSVGElement>

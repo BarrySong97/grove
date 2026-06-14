@@ -1,3 +1,7 @@
+// @purpose Positions the panel near the tray icon across monitors and scale factors.
+// @role    Geometry helper used by tray show/toggle flow.
+// @deps    tauri WebviewWindow, Rect, monitor geometry types
+// @gotcha  Clamp to monitor work area and fall back safely when placement cannot resolve; docs/modules/tauri-runtime/README.md
 use tauri::{LogicalPosition, LogicalSize, PhysicalPosition, Rect, WebviewWindow};
 
 pub(crate) fn position_panel(

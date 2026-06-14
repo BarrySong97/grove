@@ -1,3 +1,9 @@
+/**
+ * @purpose Renders the worktree context menu and command submenu.
+ * @role    Floating menu for row actions, command simulation, copy path, and archive trigger.
+ * @deps    React effect/ref/state, Worktrees model, shared icons/ui
+ * @gotcha  Menu position is clamped to viewport and most actions are prototype placeholders; docs/modules/worktrees/README.md
+ */
 import { useEffect, useRef, useState } from 'react'
 import type { CommandDef, Project, Worktree } from '../model'
 import { COMMANDS } from '../model'

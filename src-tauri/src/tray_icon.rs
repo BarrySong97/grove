@@ -1,3 +1,7 @@
+// @purpose Generates the Grove template tray icon at runtime.
+// @role    Icon rasterization helper consumed by tray setup.
+// @deps    tauri image Image
+// @gotcha  Keep alpha-only template behavior for macOS menu bar rendering; docs/modules/tauri-runtime/README.md
 use tauri::image::Image;
 
 pub(crate) fn tray_icon() -> Image<'static> {

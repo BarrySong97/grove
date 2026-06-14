@@ -1,3 +1,9 @@
+/**
+ * @purpose Renders one project group with collapsible worktree rows and project controls.
+ * @role    Sortable project section inside WorktreePanel; owns local collapse/show-all UI state.
+ * @deps    React state, motion, @dnd-kit, shared icons/ui, WorktreeRow, NewWorktreeEditor
+ * @gotcha  VISIBLE_LIMIT controls collapsed list preview; docs/modules/worktrees/README.md
+ */
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import {

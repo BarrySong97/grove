@@ -1,3 +1,9 @@
+/**
+ * @purpose Defines Worktree, Project, command, and density TypeScript contracts.
+ * @role    Shared domain types for Worktrees state, UI components, and model helpers.
+ * @deps    TypeScript only
+ * @gotcha  Current statuses are prototype states, not a complete backend task model; docs/modules/worktrees/README.md
+ */
 export type WorktreeStatus = 'ready' | 'setting-up' | 'archiving'
 
 export interface Worktree {

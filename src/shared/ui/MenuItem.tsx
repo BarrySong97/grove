@@ -1,3 +1,9 @@
+/**
+ * @purpose Defines context menu item and separator primitives.
+ * @role    Reusable UI primitive for Grove context menus.
+ * @deps    ReactNode
+ * @gotcha  Hover tone changes icon/text color through group classes; docs/modules/ui/README.md
+ */
 import type { ReactNode } from 'react'
 
 interface MenuItemProps {

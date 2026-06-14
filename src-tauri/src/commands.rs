@@ -1,3 +1,7 @@
+// @purpose Defines Tauri commands callable from the frontend.
+// @role    Command boundary for hiding the panel and quitting the app.
+// @deps    tauri AppHandle/Manager
+// @gotcha  Register new commands in lib.rs and capabilities before frontend use; docs/modules/tauri-runtime/README.md
 use tauri::Manager;
 
 #[tauri::command]

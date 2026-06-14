@@ -1,3 +1,9 @@
+/**
+ * @purpose Provides Worktree model helpers and draft worktree construction.
+ * @role    Pure helper layer used by state hooks and row components.
+ * @deps    ./types
+ * @gotcha  createDraftWorktree only simulates paths/status; docs/topics/worktree-command-simulation.md
+ */
 import type { Project, Worktree } from './types'
 
 export function isWorktreeBusy(worktree: Worktree) {

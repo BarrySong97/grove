@@ -1,3 +1,9 @@
+/**
+ * @purpose Composes the full Grove worktree panel UI.
+ * @role    Feature root component; wires state hook, project sorting, settings, toast, and context menu.
+ * @deps    @dnd-kit/core/sortable, Worktrees model/state, shared UI/lib/icons
+ * @gotcha  Panel shell transparency and settings view share the same glass surface constraints; docs/modules/worktrees/README.md
+ */
 import {
   DndContext,
   KeyboardSensor,

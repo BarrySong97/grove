@@ -1,3 +1,9 @@
+/**
+ * @purpose Defines action-oriented SVG icon components.
+ * @role    Shared icon set for menus, buttons, and worktree row actions.
+ * @deps    React SVG props pattern
+ * @gotcha  Keep stroke width and viewBox consistent with existing icons; docs/modules/icons/README.md
+ */
 import type { SVGProps } from 'react'
 
 type IconProps = SVGProps<SVGSVGElement>

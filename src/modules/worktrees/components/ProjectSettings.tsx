@@ -1,3 +1,9 @@
+/**
+ * @purpose Renders per-project command configuration controls.
+ * @role    Settings subview for editing in-memory run/setup/archive command strings.
+ * @deps    Worktrees model command catalog, shared icons/ui
+ * @gotcha  Changes are not persisted and do not execute shell commands; docs/modules/worktrees/README.md
+ */
 import type { Project } from '../model'
 import { COMMAND_PLACEHOLDERS, COMMANDS } from '../model'
 import { ChevronLeft } from '../../../shared/icons'

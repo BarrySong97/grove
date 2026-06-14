@@ -1,3 +1,9 @@
+/**
+ * @purpose Provides mock projects and worktrees for the Grove prototype.
+ * @role    Seed data for WorktreePanel state before real project discovery exists.
+ * @deps    ./types
+ * @gotcha  Mock data is not persisted and must not be treated as live git state; docs/modules/worktrees/README.md
+ */
 import type { Project } from './types'
 
 export const INITIAL_PROJECTS: Project[] = [

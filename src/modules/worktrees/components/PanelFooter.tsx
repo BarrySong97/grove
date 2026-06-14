@@ -1,3 +1,9 @@
+/**
+ * @purpose Renders the panel footer and quit action.
+ * @role    Footer slot for PanelShell; delegates quit to the app shell.
+ * @deps    shared icons/ui
+ * @gotcha  Quit action is provided by Tauri command callback; docs/modules/app/README.md
+ */
 import { Quit } from '../../../shared/icons'
 import { Divider } from '../../../shared/ui/Divider'
 

@@ -1,3 +1,9 @@
+/**
+ * @purpose Defines a flex scroll container with hidden native scrollbars.
+ * @role    Reusable layout primitive for panel body and settings view.
+ * @deps    ReactNode
+ * @gotcha  Parent must provide bounded height/flex context; docs/modules/ui/README.md
+ */
 import type { ReactNode } from 'react'
 
 interface ScrollAreaProps {

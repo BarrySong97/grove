@@ -1,3 +1,9 @@
+/**
+ * @purpose Defines status SVG icon components.
+ * @role    Shared icon set for loading and transient operation states.
+ * @deps    React SVG props pattern
+ * @gotcha  Spinner consumers are responsible for animation classes; docs/modules/icons/README.md
+ */
 import type { SVGProps } from 'react'
 
 type IconProps = SVGProps<SVGSVGElement>

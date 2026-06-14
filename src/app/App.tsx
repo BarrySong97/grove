@@ -1,3 +1,9 @@
+/**
+ * @purpose Mounts the Grove React shell and wires global panel keyboard actions.
+ * @role    Application composition layer; renders WorktreePanel and invokes Tauri hide/quit commands.
+ * @deps    React, src/modules/worktrees, src/app/tauriCommands.ts
+ * @gotcha  Keep global Escape behavior compatible with focused editors; docs/modules/app/README.md
+ */
 import { useEffect } from 'react'
 import { WorktreePanel } from '../modules/worktrees'
 import { invokeQuietly } from './tauriCommands'

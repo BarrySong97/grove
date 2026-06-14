@@ -1,3 +1,9 @@
+/**
+ * @purpose Provides the glass panel frame, header/body/footer layout, and scroll containment.
+ * @role    Shared shell for WorktreePanel primary and nested content.
+ * @deps    ReactNode, shared ScrollArea
+ * @gotcha  Preserve transparent background, window radius, and overflow clipping; design.md
+ */
 import type { ReactNode } from 'react'
 import { ScrollArea } from '../../../shared/ui/ScrollArea'
 

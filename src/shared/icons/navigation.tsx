@@ -1,3 +1,9 @@
+/**
+ * @purpose Defines navigation and ordering SVG icon components.
+ * @role    Shared icon set for collapse, back, up/down, and move-to-top controls.
+ * @deps    React SVG props pattern
+ * @gotcha  Keep icons legible at 16px and 22px button sizes; docs/modules/icons/README.md
+ */
 import type { SVGProps } from 'react'
 
 type IconProps = SVGProps<SVGSVGElement>

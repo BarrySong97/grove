@@ -1,3 +1,9 @@
+/**
+ * @purpose Renders a small colored status or project dot.
+ * @role    Reusable visual marker used by projects and command settings.
+ * @deps    Inline style background color
+ * @gotcha  Color is caller-provided and should match project/command semantics; docs/modules/ui/README.md
+ */
 interface DotProps {
   color?: string
   className?: string
