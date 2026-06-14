@@ -27,6 +27,7 @@
 ```
 
 文件头不写函数签名和易过期实现细节。改职责、依赖或约束时同步更新。
+详细规则见 [AI 文件头规范](topics/ai-file-headers.md)。
 
 ## React 与状态
 - 状态变更保持不可变更新,沿用当前 `setProjects(current => ...)` 风格。

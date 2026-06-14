@@ -37,10 +37,21 @@ pnpm tauri:build
 
 构建桌面应用包。
 
+## Lint 与格式化
+```bash
+pnpm lint
+pnpm format
+pnpm format:check
+```
+
+`pnpm lint` 使用 Oxlint。`pnpm format` 使用 Oxfmt 写回文件,`pnpm format:check` 只检查不写入。Oxfmt 配置见 `.oxfmtrc.json`,当前排除 docs 和 Tauri Rust 壳,避免和现有文档风格、Rust 工具链混在一起。
+
 ## 测试与验证
-当前仓库还没有独立 test/lint 脚本。收尾至少运行:
+当前仓库还没有独立 test 脚本。收尾至少运行:
 
 ```bash
+pnpm format:check
+pnpm lint
 pnpm build
 node scripts/check-docs.mjs
 ```

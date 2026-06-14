@@ -1,6 +1,15 @@
 {
   "sourceExts": [".ts", ".tsx", ".rs", ".css"],
-  "sourceRoots": ["src/app", "src/modules", "src/shared", "src-tauri/src"],
+  "sourceRoots": [
+    "src/app",
+    "src/modules",
+    "src/shared",
+    "src-tauri/src",
+    "src/main.tsx",
+    "src/vite-env.d.ts",
+    "vite.config.ts",
+    "src-tauri/build.rs"
+  ],
   "ignoreDirs": [
     "node_modules",
     ".git",
@@ -21,7 +30,21 @@
     ".vscode",
     "templates"
   ],
-  "nonModuleDirs": ["app", "scripts", "test", "tests", "__tests__", "spec", "bin", "config", "public", "assets", "types", "typings", "migrations"],
+  "nonModuleDirs": [
+    "app",
+    "scripts",
+    "test",
+    "tests",
+    "__tests__",
+    "spec",
+    "bin",
+    "config",
+    "public",
+    "assets",
+    "types",
+    "typings",
+    "migrations"
+  ],
   "headerMarker": "@purpose",
   "headerScanLines": 20,
   "docsDir": "docs"

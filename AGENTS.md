@@ -21,5 +21,5 @@
 - 应用入口:[docs/modules/app/](docs/modules/app/)
 - Worktree 面板:[docs/modules/worktrees/](docs/modules/worktrees/)
 - 共享 UI:[docs/modules/ui/](docs/modules/ui/) · 图标:[docs/modules/icons/](docs/modules/icons/) · 工具库:[docs/modules/lib/](docs/modules/lib/)
-- Tauri 运行壳:[docs/modules/tauri-runtime/](docs/modules/tauri-runtime/)
+- Tauri 运行壳:[docs/modules/tauri-runtime/](docs/modules/tauri-runtime/) · 工具链:[docs/modules/tooling/](docs/modules/tooling/)
 - 专题:[docs/topics/](docs/topics/) · 运行:[docs/run.md](docs/run.md) · 规范:[docs/conventions.md](docs/conventions.md) · 测试:[docs/testing.md](docs/testing.md) · 设计:[design.md](design.md)

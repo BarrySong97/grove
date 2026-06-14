@@ -1,12 +1,14 @@
 {
   "name": "tauri-tray",
-  "private": true,
   "version": "0.1.0",
+  "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.14.0",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 1420",
     "build": "tsc --noEmit && vite build",
+    "lint": "oxlint . --deny-warnings --no-error-on-unmatched-pattern",
+    "format": "oxfmt --write . --no-error-on-unmatched-pattern",
+    "format:check": "oxfmt --check . --no-error-on-unmatched-pattern",
     "preview": "vite preview --host 127.0.0.1",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
@@ -28,8 +30,11 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "oxfmt": "^0.54.0",
+    "oxlint": "^1.69.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.0.0",
     "vite": "^7.0.0"
-  }
+  },
+  "packageManager": "pnpm@10.14.0"
 }

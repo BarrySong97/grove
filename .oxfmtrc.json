@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "semi": false,
+  "singleQuote": true,
+  "trailingComma": "none",
+  "ignorePatterns": [
+    ".claude/**",
+    ".codex/**",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "README.md",
+    "design.md",
+    "docs/**",
+    "src-tauri/**"
+  ],
+  "overrides": [
+    {
+      "files": ["*.css"],
+      "options": {
+        "singleQuote": false
+      }
+    }
+  ]
+}

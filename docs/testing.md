@@ -1,13 +1,17 @@
 # 测试与验证策略
 
 ## 当前状态
-仓库目前没有单元测试、E2E 测试或 lint 脚本。可用的确定性验证是 TypeScript 构建和 harness 文档检查。
+仓库目前没有单元测试或 E2E 测试。可用的确定性验证是 Oxlint、TypeScript 构建和 harness 文档检查;Oxfmt 可用于显式格式化/格式检查。
 
 ## 必跑命令
 ```bash
+pnpm format:check
+pnpm lint
 pnpm build
 node scripts/check-docs.mjs
 ```
+
+涉及格式化工具、hook 或大范围前端文本改动时,也可以先跑 `pnpm format` 写回格式,再跑以上命令确认。
 
 ## 什么时候跑 Tauri
 涉及以下区域时,必须启动完整桌面壳:
