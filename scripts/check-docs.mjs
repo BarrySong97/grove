@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
  * @purpose 跨工具防漂移检查器:校验源文件 AI 文件头、文档与代码是否同步、引用是否失效。
- * @role    AI-Doc-System 的收尾闸门;被 agent 的 DoD、Claude Code Stop hook、人工审计三种方式调用。
+ * @role    AI-Doc-System 的收尾闸门;被 agent 的 DoD、Codex/Claude Stop hook、人工审计三种方式调用。
  * @deps    node 内置 fs/path/child_process、git(可选)
- * @gotcha  纯 node 无三方依赖;非 git 仓库自动跳过漂移检查;templates/ 与忽略目录不参与检查。
+ * @gotcha  --hook 模式只输出 Stop hook JSON;普通日志会导致 Codex hook 解析失败。
  */
 
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
@@ -13,14 +13,17 @@ import { execSync } from 'node:child_process'
 const ROOT = process.cwd()
 const rawArgs = process.argv.slice(2)
 const STRICT = rawArgs.includes('--strict')
-const HOOK = rawArgs.includes('--hook') // Stop hook 模式:硬错误 exit 2,让 Claude/Codex 真正拦截收尾
+const HOOK = rawArgs.includes('--hook') // Stop hook 模式:stdout 必须是 Codex 可解析 JSON
+const hookNotes = []
 let BASE = null // 对比基准 ref:git diff <BASE>...HEAD(供 CI / 审一个分支)
 {
   const i = rawArgs.findIndex((a) => a === '--base' || a.startsWith('--base='))
   if (i !== -1)
     BASE = rawArgs[i].includes('=') ? rawArgs[i].slice('--base='.length) : rawArgs[i + 1]
   if (BASE && !/^[\w./@~^-]+$/.test(BASE)) {
-    console.error('⚠️  --base 引用含非法字符,已忽略')
+    const message = '⚠️  --base 引用含非法字符,已忽略'
+    if (HOOK) hookNotes.push(message)
+    else console.error(message)
     BASE = null
   }
 }
@@ -29,7 +32,7 @@ if (rawArgs.includes('--help') || rawArgs.includes('-h')) {
   console.log(`check-docs — AI-Doc-System 防漂移检查器
 用法: node scripts/check-docs.mjs [--strict] [--hook] [--base <ref>]
   --strict       把警告(⚠️)也算作失败
-  --hook         Stop hook 模式:有硬错误时 exit 2 并把原因写 stderr(Claude/Codex 才会真正拦截收尾)
+  --hook         Stop hook 模式:stdout 只输出 {} 或 {"decision":"block","reason":"..."}
   --base <ref>   漂移检测改用 git diff <ref>...HEAD(对比已提交差异,供 CI / 审分支);并入未提交工作区
 检查:
   ① 源文件是否缺 AI 文件头(@purpose 标记)
@@ -100,7 +103,9 @@ if (existsSync(cfgPath)) {
   try {
     CONFIG = { ...DEFAULTS, ...JSON.parse(readFileSync(cfgPath, 'utf8')) }
   } catch (e) {
-    console.error('⚠️  check-docs.config.json 解析失败,改用默认配置:', e.message)
+    const message = `⚠️  check-docs.config.json 解析失败,改用默认配置: ${e.message}`
+    if (HOOK) hookNotes.push(message)
+    else console.error(message)
   }
 }
 
@@ -179,7 +184,9 @@ function gitChangedFiles(base) {
       const out = execSync(`git diff --name-only ${base}...HEAD`, { cwd: ROOT, encoding: 'utf8' })
       for (const l of out.split(/\r?\n/)) if (l.trim()) files.add(toPosix(unquote(l.trim())))
     } catch (e) {
-      console.error(`⚠️  git diff ${base}...HEAD 失败(base 是否存在?):`, e.message)
+      const message = `⚠️  git diff ${base}...HEAD 失败(base 是否存在?): ${e.message}`
+      if (HOOK) hookNotes.push(message)
+      else console.error(message)
     }
   }
   // 未提交工作区(始终并入)
@@ -275,6 +282,13 @@ const lines = ['── check-docs ──', '']
 let hard = 0
 let soft = 0
 
+if (hookNotes.length) {
+  soft += hookNotes.length
+  lines.push(`⚠️  Hook 检查提示 (${hookNotes.length})`)
+  for (const note of hookNotes) lines.push(`   · ${note}`)
+  lines.push('')
+}
+
 if (missingHeaders.length) {
   hard += missingHeaders.length
   lines.push(`❌ 缺 AI 文件头 (${missingHeaders.length})`)
@@ -298,14 +312,19 @@ lines.push(!hard && !soft ? '✅ 全部通过' : `小结: ${hard} 个错误, ${s
 if (changed === null) lines.push('(提示: 非 git 仓库或 git 不可用,已跳过文档漂移检查)')
 
 const report = lines.join('\n')
-console.log(report)
-
 const failed = hard > 0 || (STRICT && soft > 0)
 if (HOOK && failed) {
-  // 只有 exit 2 才会被 Claude/Codex 当作"阻止收尾",并把 stderr 反馈给模型
-  process.stderr.write(
-    `${report}\n\n[check-docs] 以上问题需先解决再结束本次任务(补文件头 / 修引用 / 同步模块文档)。\n`
+  process.stdout.write(
+    JSON.stringify({
+      decision: 'block',
+      reason: `${report}\n\n[check-docs] 以上问题需先解决再结束本次任务(补文件头 / 修引用 / 同步模块文档)。`
+    })
   )
-  process.exit(2)
+  process.exit(0)
 }
+if (HOOK) {
+  process.stdout.write(JSON.stringify({}))
+  process.exit(0)
+}
+console.log(report)
 process.exit(failed ? 1 : 0)

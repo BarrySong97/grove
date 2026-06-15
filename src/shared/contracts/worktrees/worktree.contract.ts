@@ -1,8 +1,8 @@
 /**
- * @purpose Defines Worktree, Project, command, and density TypeScript contracts.
- * @role    Shared domain types for Worktrees state, UI components, and model helpers.
+ * @purpose Defines browser-safe Worktree, Project, command, and density contracts.
+ * @role    Shared contract layer imported by frontend UI, domain rules, and use cases.
  * @deps    TypeScript only
- * @gotcha  Current statuses are prototype states, not a complete backend task model; docs/modules/worktrees/README.md
+ * @gotcha  Prototype statuses are not a complete backend task model; docs/modules/worktrees/README.md
  */
 export type WorktreeStatus = 'ready' | 'setting-up' | 'archiving'
 
@@ -30,7 +30,9 @@ export interface Project {
   id: string
   name: string
   path: string
+  workspaceRoot: string
   accent: string
+  archivePolicy: 'ask' | 'hide' | 'remove_worktree'
   commands: ProjectCommands
   worktrees: Worktree[]
 }

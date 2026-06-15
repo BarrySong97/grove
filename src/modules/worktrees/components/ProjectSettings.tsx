@@ -1,22 +1,47 @@
 /**
- * @purpose Renders per-project command configuration controls.
- * @role    Settings subview for editing in-memory run/setup/archive command strings.
- * @deps    Worktrees model command catalog, shared icons/ui
- * @gotcha  Changes are not persisted and do not execute shell commands; docs/modules/worktrees/README.md
+ * @purpose Renders per-project persisted configuration controls.
+ * @role    Settings subview for editing workspace root, commands, and archive policy.
+ * @deps    Worktrees contracts/domain command catalog, shared icons/ui
+ * @gotcha  Saves Grove overrides only; it does not write Conductor config files.
  */
-import type { Project } from '../model'
-import { COMMAND_PLACEHOLDERS, COMMANDS } from '../model'
+import { useEffect, useState } from 'react'
+import type { Project } from '../../../shared/contracts/worktrees'
 import { ChevronLeft } from '../../../shared/icons'
 import { Divider } from '../../../shared/ui/Divider'
 import { Dot } from '../../../shared/ui/Dot'
+import { COMMAND_PLACEHOLDERS, COMMANDS } from '../domain/commands'
 
 interface ProjectSettingsProps {
   project: Project
-  onChange: (projectId: string, patch: Partial<Project['commands']>) => void
+  onSave: (
+    projectId: string,
+    input: {
+      workspaceRoot: string
+      archivePolicy: Project['archivePolicy']
+      commands: Project['commands']
+    }
+  ) => void
   onClose: () => void
 }
 
-export function ProjectSettings({ project, onChange, onClose }: ProjectSettingsProps) {
+export function ProjectSettings({ project, onSave, onClose }: ProjectSettingsProps) {
+  const [workspaceRoot, setWorkspaceRoot] = useState(project.workspaceRoot)
+  const [archivePolicy, setArchivePolicy] = useState(project.archivePolicy)
+  const [commands, setCommands] = useState(project.commands)
+
+  useEffect(() => {
+    setWorkspaceRoot(project.workspaceRoot)
+    setArchivePolicy(project.archivePolicy)
+    setCommands(project.commands)
+  }, [project])
+
+  const save = () =>
+    onSave(project.id, {
+      workspaceRoot,
+      archivePolicy,
+      commands
+    })
+
   return (
     <div className="p-0.5">
       <div className="flex items-center px-0.5 pb-1 pt-0.5">
@@ -37,6 +62,48 @@ export function ProjectSettings({ project, onChange, onClose }: ProjectSettingsP
       <Divider />
 
       <div className="px-2.5 pb-1 pt-2 text-[10.5px] font-semibold uppercase tracking-[0.5px] text-black/[0.34]">
+        Project
+      </div>
+
+      <div className="px-2.5 py-[7px]">
+        <div className="flex items-center gap-2.5">
+          <span className="w-[96px] shrink-0 text-[12.5px] font-semibold text-[#1c1c1e]">
+            Workspace root
+          </span>
+          <label className="flex min-w-0 flex-1 items-center rounded-lg bg-black/[0.04] px-2.5 py-[7px] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.09)] transition focus-within:bg-[var(--glass-surface-strong)] focus-within:shadow-[inset_0_0_0_1.4px_var(--accent)] focus-within:backdrop-blur-xl">
+            <input
+              value={workspaceRoot}
+              spellCheck={false}
+              autoComplete="off"
+              onChange={(event) => setWorkspaceRoot(event.target.value)}
+              className="min-w-0 flex-1 bg-transparent font-mono text-[12px] text-[#1c1c1e] outline-none placeholder:text-black/[0.22]"
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="px-2.5 py-[7px]">
+        <div className="flex items-center gap-2.5">
+          <span className="w-[96px] shrink-0 text-[12.5px] font-semibold text-[#1c1c1e]">
+            Archive
+          </span>
+          <label className="flex min-w-0 flex-1 items-center rounded-lg bg-black/[0.04] px-2.5 py-[7px] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.09)] transition focus-within:bg-[var(--glass-surface-strong)] focus-within:shadow-[inset_0_0_0_1.4px_var(--accent)] focus-within:backdrop-blur-xl">
+            <select
+              value={archivePolicy}
+              onChange={(event) => setArchivePolicy(event.target.value as Project['archivePolicy'])}
+              className="min-w-0 flex-1 bg-transparent text-[12px] font-medium text-[#1c1c1e] outline-none"
+            >
+              <option value="ask">Ask</option>
+              <option value="hide">Hide</option>
+              <option value="remove_worktree">Remove worktree</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <Divider />
+
+      <div className="px-2.5 pb-1 pt-2 text-[10.5px] font-semibold uppercase tracking-[0.5px] text-black/[0.34]">
         Commands
       </div>
 
@@ -50,11 +117,13 @@ export function ProjectSettings({ project, onChange, onClose }: ProjectSettingsP
             <label className="flex min-w-0 flex-1 items-center rounded-lg bg-black/[0.04] px-2.5 py-[7px] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.09)] transition focus-within:bg-[var(--glass-surface-strong)] focus-within:shadow-[inset_0_0_0_1.4px_var(--accent)] focus-within:backdrop-blur-xl">
               <span className="mr-[7px] shrink-0 font-mono text-[12px] text-black/[0.22]">$</span>
               <input
-                value={project.commands[command.id]}
+                value={commands[command.id]}
                 placeholder={COMMAND_PLACEHOLDERS[command.id]}
                 spellCheck={false}
                 autoComplete="off"
-                onChange={(event) => onChange(project.id, { [command.id]: event.target.value })}
+                onChange={(event) =>
+                  setCommands((current) => ({ ...current, [command.id]: event.target.value }))
+                }
                 className="min-w-0 flex-1 bg-transparent font-mono text-[12px] text-[#1c1c1e] outline-none placeholder:text-black/[0.22]"
               />
             </label>
@@ -67,10 +136,10 @@ export function ProjectSettings({ project, onChange, onClose }: ProjectSettingsP
 
       <div className="flex justify-end px-1.5 pb-1 pt-2.5">
         <button
-          onClick={onClose}
+          onClick={save}
           className="rounded-lg bg-accent px-[18px] py-[7px] text-[12.5px] font-semibold text-white"
         >
-          Done
+          Save
         </button>
       </div>
     </div>

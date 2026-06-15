@@ -4,7 +4,7 @@
 **架构**:Tauri 2 + Rust 后端窗口/托盘壳 · React 19 + TypeScript + Tailwind CSS 前端 · 运行见 [docs/run.md](docs/run.md)
 
 ## 红线
-- 不要把当前 worktree 数据当成真实 git 状态或持久化状态。现在 `src/modules/worktrees/model/data.ts` 是 mock 数据,行为是前端模拟。见 [docs/modules/worktrees/README.md](docs/modules/worktrees/README.md)。
+- 不要把前端内存操作状态当成真实 git 状态或持久化状态。项目/workspace 列表、create/archive/open/settings 由 Rust/SQLite/git/native 后端命令提供;排序、当前选择和 run command 仍是前端状态。见 [docs/modules/worktrees/README.md](docs/modules/worktrees/README.md)。
 - 新增前端 `invoke(...)` 命令时,必须同步 Rust handler、Tauri capability/权限和模块文档。见 [docs/modules/tauri-runtime/README.md](docs/modules/tauri-runtime/README.md)。
 - 不要破坏 tray panel 的透明窗口约束:根节点、body、panel shell 必须保持透明背景、圆角裁切和隐藏滚动条。见 [design.md](design.md)。
 - 改源码必须同步文件头和对应模块文档,收尾跑 `node scripts/check-docs.mjs`。这是 harness 的防漂移 sensor。

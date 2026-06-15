@@ -3,12 +3,13 @@
 ## 命名
 - React 组件文件用 PascalCase,例如 `WorktreePanel.tsx`。
 - hooks 用 `useXxx.ts`,例如 `useWorktreePanelState.ts`。
-- 模型、选择器和常量用小写文件名,例如 `types.ts`、`selectors.ts`、`commands.ts`。
+- 契约、领域规则、用例和 infrastructure 文件用小写短横线或点后缀,例如 `worktree.contract.ts`、`worktree-rules.ts`、`worktree-panel-actions.ts`。
 - Rust 模块用 snake_case 文件名,通过 `src-tauri/src/lib.rs` 显式注册。
 
 ## 目录边界
 - `src/app/` 只放应用装配、Tauri invoke 封装和全局入口逻辑。
-- `src/modules/worktrees/` 拥有 worktree 领域类型、mock 数据、状态 hook 和面板 UI。
+- `src/shared/contracts/` 放 browser-safe 共享契约,不能依赖 React、Tauri、mock 数据或业务用例。
+- `src/modules/worktrees/` 拥有 worktree presentation、前端 API wrapper、domain 和局部 UI use-cases;共享类型从 `src/shared/contracts/worktrees/` 或 generated bindings 导入。
 - `src/shared/ui/` 放可复用基础组件,不能依赖业务模块。
 - `src/shared/icons/` 放图标导出,不要在业务组件里重复手写同语义图标。
 - `src/shared/lib/` 放无 React 业务状态的工具函数和共享配置。

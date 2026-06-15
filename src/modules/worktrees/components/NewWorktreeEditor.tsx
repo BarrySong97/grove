@@ -1,13 +1,13 @@
 /**
  * @purpose Renders the inline new-worktree editor.
  * @role    Focused form for branch name and base branch selection within a ProjectSection.
- * @deps    React state/effect/ref, Worktrees model helpers, shared icons
+ * @deps    React state/effect/ref, Worktrees contracts/domain rules, shared icons
  * @gotcha  Enter submits and Escape cancels locally; docs/modules/worktrees/README.md
  */
 import { useEffect, useRef, useState } from 'react'
-import type { Project } from '../model'
-import { getCurrentWorktree } from '../model'
+import type { Project } from '../../../shared/contracts/worktrees'
 import { Branch } from '../../../shared/icons'
+import { getCurrentWorktree } from '../domain/worktree-rules'
 
 interface NewWorktreeEditorProps {
   project: Project

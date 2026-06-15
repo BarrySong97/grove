@@ -5,6 +5,7 @@
 
 ## 文件
 - `src/main.tsx`:Vite/React 浏览器入口,只负责挂载 `App` 和全局 CSS。
+- `src/index.css`:全局 Tailwind 入口、透明窗口壳、玻璃 surface 和菜单浮层 token。
 - `src/app/App.tsx`:根组件,注册 Escape 隐藏面板,渲染 `WorktreePanel`。
 - `src/app/tauriCommands.ts`:封装 `@tauri-apps/api/core` 的 `invoke`,提供可忽略失败的命令调用。
 

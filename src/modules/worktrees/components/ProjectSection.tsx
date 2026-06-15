@@ -2,7 +2,7 @@
  * @purpose Renders one project group with collapsible worktree rows and project controls.
  * @role    Sortable project section inside WorktreePanel; owns local collapse/show-all UI state.
  * @deps    React state, motion, @dnd-kit, shared icons/ui, WorktreeRow, NewWorktreeEditor
- * @gotcha  VISIBLE_LIMIT controls collapsed list preview; docs/modules/worktrees/README.md
+ * @gotcha  VISIBLE_LIMIT controls collapsed preview; activeContextWorktreeId pins row actions; docs/modules/worktrees/README.md
  */
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
@@ -28,7 +28,7 @@ import {
   sortableMeasuring,
   sortableTransition
 } from '../../../shared/lib/sortable'
-import type { Density, Project, Worktree } from '../model'
+import type { Density, Project, Worktree } from '../../../shared/contracts/worktrees'
 import { ChevronDown, ChevronRight, ChevronUp, Gear, Plus, ToTop } from '../../../shared/icons'
 import { Divider } from '../../../shared/ui/Divider'
 import { Dot } from '../../../shared/ui/Dot'
@@ -44,6 +44,7 @@ interface ProjectSectionProps {
   density: Density
   showCommit: boolean
   isAdding: boolean
+  activeContextWorktreeId: string | null
   isFirst: boolean
   isLast: boolean
   onAddWorktree: (projectId: string) => void
@@ -61,6 +62,7 @@ export function ProjectSection({
   density,
   showCommit,
   isAdding,
+  activeContextWorktreeId,
   isFirst,
   isLast,
   onAddWorktree,
@@ -110,6 +112,7 @@ export function ProjectSection({
       project={project}
       density={density}
       showCommit={showCommit}
+      isContextOpen={activeContextWorktreeId === worktree.id}
       isFirst={index === 0}
       isLast={index === project.worktrees.length - 1}
       onMove={(direction) => onMoveWorktree(worktree.id, direction)}

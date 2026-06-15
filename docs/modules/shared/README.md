@@ -1,0 +1,16 @@
+# Rust Shared 模块
+
+## 职责
+`src-tauri/src/shared/` 放 Rust 后端跨层共享类型,当前主要是 command DTO 和 typed error。
+
+## 文件
+- `dto/projects.rs`:Project、config source、archive policy DTO。
+- `dto/workspaces.rs`:Workspace、lifecycle、operation 和 git state DTO。
+- `dto/operations.rs`:operation DTO。
+- `dto/conductor.rs`:Conductor import candidate DTO。
+- `dto/errors.rs`:业务 command typed error。
+
+## 约束
+- DTO 是 command API 契约,不是数据库 row 或 domain object。
+- 前端可见类型必须 derive `serde` 和 `specta::Type`,并通过 `tauri-specta` 导出到 [Bindings 模块](../bindings/)。
+- 错误 message 要适合 UI 展示,长日志和敏感命令输出只通过 log path 暴露。

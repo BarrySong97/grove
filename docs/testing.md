@@ -11,6 +11,12 @@ pnpm build
 node scripts/check-docs.mjs
 ```
 
+涉及 Rust DTO、Tauri command 或 bindings 时,还必须运行:
+
+```bash
+cd src-tauri && cargo test export_bindings
+```
+
 涉及格式化工具、hook 或大范围前端文本改动时,也可以先跑 `pnpm format` 写回格式,再跑以上命令确认。
 
 ## 什么时候跑 Tauri
@@ -34,6 +40,7 @@ pnpm tauri:dev
 - Archive 非当前 worktree 会进入 archiving,延迟后从列表移除。
 
 ## 后续测试补强
-- `src/modules/worktrees/model/selectors.ts` 和 `useWorktreePanelState` 适合先补单元测试。
+- `src/modules/worktrees/domain/worktree-rules.ts`、`src/modules/worktrees/use-cases/worktree-panel-actions.ts` 和 `useWorktreePanelState` 适合先补单元测试。
 - Tauri 命令增加真实 git 操作前,应补 Rust 单元测试或集成测试。
+- Rust DTO 或 command 改动需要确认 `src/shared/bindings/commands.ts` 已重新生成。
 - UI 关键路径可用 Playwright 访问 Vite 页面做无障碍树/DOM 断言。

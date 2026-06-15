@@ -551,6 +551,63 @@ Manual verification:
 - Archive with `ask -> remove_worktree` on a clean workspace.
 - Verify remove-worktree is rejected on a dirty workspace.
 
+## Definition Of Done
+
+This spec is complete only when every item below has direct evidence from code, generated artifacts, automated checks, or manual E2E verification.
+
+1. Backend architecture
+   - Rust backend modules follow the planned presentation/use-case/domain/infrastructure boundaries.
+   - SQLite migrations cover `projects`, `project_commands`, `workspaces`, `workspace_git_state`, and `operations`.
+   - Use cases, not Tauri handlers, own import, refresh, create, setup, archive, and open workflows.
+   - Grove DB stores Grove state only; git status, Conductor config, and filesystem state are refreshed from their source of truth.
+
+2. Type safety
+   - Every business command has Rust DTO input/output/error types.
+   - Every business command is registered with `tauri-specta` and exported to `src/shared/bindings/commands.ts`.
+   - Frontend business code calls generated command bindings through module `api/` wrappers, not raw `invoke(...)` strings.
+   - `cd src-tauri && cargo test export_bindings` passes and leaves no binding drift.
+
+3. Conductor import
+   - Grove scans the default `~/conductor/workspaces` location.
+   - Grove honors a Conductor workspace location override when present.
+   - Grove resolves `.conductor/settings.local.toml`, `.conductor/settings.toml`, `~/.conductor/settings.toml`, and `conductor.json` fallback using the documented precedence.
+   - Importing existing workspaces is read-only: it does not move, modify, setup, archive, or delete anything.
+
+4. Real git/worktree behavior
+   - The Worktrees UI no longer depends on `mock-projects-repository.ts`.
+   - Project/workspace data shown in the UI comes from SQLite plus git refresh, not frontend mock state.
+   - Creating a workspace executes real `git worktree add`.
+   - Refreshing a project makes Grove state consistent with `git worktree list --porcelain`.
+
+5. Files to copy
+   - `.worktreeinclude` is supported.
+   - `.conductor/settings.toml` `file_include_globs` is supported.
+   - Default `.env*` copy behavior works when no stronger rule exists.
+   - Only gitignored files matching the active rule are copied, preserving relative paths.
+
+6. Setup and archive
+   - Setup command runs in the new workspace directory after creation.
+   - Archive command runs in the workspace directory before hide/remove behavior.
+   - Archive policy defaults to `ask`.
+   - First archive choice can be saved per project.
+   - `hide` marks the workspace hidden without deleting the directory or unregistering the git worktree.
+   - `remove_worktree` runs `git worktree remove` only for clean workspaces.
+   - Dirty workspaces reject `remove_worktree` and can still use `hide`.
+
+7. Native openers
+   - Finder, Zed, Cursor, VS Code, Ghostty, and macOS Terminal open the selected workspace path.
+   - Paths containing spaces are handled correctly.
+   - Open failures return typed errors and show user-visible feedback.
+
+8. Verification gates
+   - `cd src-tauri && cargo test` passes.
+   - `cd src-tauri && cargo test export_bindings` passes.
+   - `pnpm format:check` passes.
+   - `pnpm lint` passes.
+   - `pnpm build` passes.
+   - `node scripts/check-docs.mjs` passes.
+   - A real-repo manual E2E run covers import, refresh, create/setup, files-to-copy, native openers, archive hide, archive remove, and dirty remove rejection.
+
 ## Open Decisions Resolved
 
 - Backend stays Rust, not TypeScript.

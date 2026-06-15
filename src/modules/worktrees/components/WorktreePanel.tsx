@@ -1,7 +1,7 @@
 /**
  * @purpose Composes the full Grove worktree panel UI.
  * @role    Feature root component; wires state hook, project sorting, settings, toast, and context menu.
- * @deps    @dnd-kit/core/sortable, Worktrees model/state, shared UI/lib/icons
+ * @deps    @dnd-kit/core/sortable, Worktrees contracts/state/API, shared UI/lib/icons
  * @gotcha  Panel shell transparency and settings view share the same glass surface constraints; docs/modules/worktrees/README.md
  */
 import {
@@ -19,8 +19,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
-import type { Density, Project } from '../model'
-import { INITIAL_PROJECTS } from '../model'
+import type { Density, Project } from '../../../shared/contracts/worktrees'
 import { useWorktreePanelState } from '../hooks/useWorktreePanelState'
 import { sortableMeasuring } from '../../../shared/lib/sortable'
 import { hexA } from '../../../shared/lib/color'
@@ -47,7 +46,7 @@ export function WorktreePanel({
   accent = '#2f6fe0',
   density = 'comfortable',
   showCommit = true,
-  initialProjects = INITIAL_PROJECTS,
+  initialProjects = [],
   onQuit
 }: WorktreePanelProps) {
   const state = useWorktreePanelState(initialProjects)
@@ -73,7 +72,7 @@ export function WorktreePanel({
         <ScrollArea>
           <ProjectSettings
             project={state.settingsProject}
-            onChange={state.setCommands}
+            onSave={state.saveProjectSettings}
             onClose={() => state.setSettingsFor(null)}
           />
         </ScrollArea>
@@ -88,7 +87,7 @@ export function WorktreePanel({
         <PanelHeader
           total={state.total}
           projectCount={state.projects.length}
-          onAddProject={() => state.flash('Add project · choose a folder')}
+          onAddProject={state.importFromConductor}
         />
       }
       footer={<PanelFooter onQuit={onQuit} />}
@@ -111,6 +110,7 @@ export function WorktreePanel({
               density={density}
               showCommit={showCommit}
               isAdding={state.addingTo === project.id}
+              activeContextWorktreeId={state.ctx?.worktree.id ?? null}
               isFirst={index === 0}
               isLast={index === state.projects.length - 1}
               onAddWorktree={state.setAddingTo}
@@ -142,6 +142,7 @@ export function WorktreePanel({
           onClose={() => state.setCtx(null)}
           onRunCommand={state.runCommand}
           onArchive={state.archiveWorktree}
+          onOpenWorkspace={state.openWorktree}
           onEditCommands={(project) => {
             state.setCtx(null)
             state.setSettingsFor(project.id)

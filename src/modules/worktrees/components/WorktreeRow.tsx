@@ -1,14 +1,13 @@
 /**
- * @purpose Renders a sortable worktree row with status subtitle and hover actions.
+ * @purpose Renders a sortable worktree row with status subtitle and hover/menu-pinned actions.
  * @role    Row-level UI for branch metadata, busy state, move controls, and context menu trigger.
- * @deps    @dnd-kit/sortable, Worktrees model selectors, shared icons/ui
- * @gotcha  Busy rows suppress context/actions to avoid conflicting simulated operations; docs/modules/worktrees/README.md
+ * @deps    @dnd-kit/sortable, Worktrees contracts/domain rules, shared icons/ui
+ * @gotcha  Busy rows suppress context/actions; menu-open rows keep actions visible; docs/modules/worktrees/README.md
  */
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { animateLayoutChanges, sortableTransition } from '../../../shared/lib/sortable'
-import type { Density, Project, Worktree } from '../model'
-import { getBusyLabel, isWorktreeBusy } from '../model'
+import type { Density, Project, Worktree } from '../../../shared/contracts/worktrees'
 import {
   ChevronDown,
   ChevronUp,
@@ -19,12 +18,14 @@ import {
   ToTop
 } from '../../../shared/icons'
 import { IconButton } from '../../../shared/ui/IconButton'
+import { getBusyLabel, isWorktreeBusy } from '../domain/worktree-rules'
 
 interface WorktreeRowProps {
   worktree: Worktree
   project: Project
   density: Density
   showCommit: boolean
+  isContextOpen: boolean
   isFirst: boolean
   isLast: boolean
   onMove: (direction: 'up' | 'down' | 'top') => void
@@ -36,6 +37,7 @@ export function WorktreeRow({
   project,
   density,
   showCommit,
+  isContextOpen,
   isFirst,
   isLast,
   onMove,
@@ -65,7 +67,9 @@ export function WorktreeRow({
         `group relative mb-[3px] flex items-center ${gap} ${padY} rounded-[9px] px-2.5 transition-colors ` +
         (isDragging
           ? 'z-10 bg-black/[0.05] opacity-80 active:cursor-grabbing '
-          : 'hover:bg-black/[0.038] active:bg-black/[0.07] ')
+          : isContextOpen
+            ? 'bg-black/[0.038] active:bg-black/[0.07] '
+            : 'hover:bg-black/[0.038] active:bg-black/[0.07] ')
       }
     >
       <span className="flex w-4 shrink-0 items-center justify-center">
@@ -80,7 +84,9 @@ export function WorktreeRow({
       </span>
 
       {!running && (
-        <div className="hidden shrink-0 items-center gap-0.5 group-hover:flex">
+        <div
+          className={`shrink-0 items-center gap-0.5 ${isContextOpen ? 'flex' : 'hidden group-hover:flex'}`}
+        >
           {!isFirst && (
             <IconButton
               title="Move to top"

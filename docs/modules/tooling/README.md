@@ -21,6 +21,7 @@
 - `pnpm lint` 使用 Oxlint 扫描项目 JS/TS/TSX 文件,提交前作为兜底。
 - `pnpm format` 使用 Oxfmt 写回前端源码、配置和 hook 支持的文本文件;`pnpm format:check` 只检查不写入。
 - `scripts/hooks/format-lint.mjs` 在 Write/Edit 后对单文件跑 Oxfmt,并对 JS/TS 文件追加 Oxlint。
+- `node scripts/check-docs.mjs --hook` 是 Stop hook 专用模式:成功只输出 `{}`,失败只输出 `{"decision":"block","reason":"..."}`,不能打印普通日志或 `hookSpecificOutput`。
 - `scripts/hooks/pre-commit` 跑 `node scripts/check-docs.mjs`、`pnpm format:check`、`pnpm lint` 和 `pnpm build`。
 
 ## 约束

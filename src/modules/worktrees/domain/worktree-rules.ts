@@ -1,10 +1,10 @@
 /**
- * @purpose Provides Worktree model helpers and draft worktree construction.
- * @role    Pure helper layer used by state hooks and row components.
- * @deps    ./types
- * @gotcha  createDraftWorktree only simulates paths/status; docs/topics/worktree-command-simulation.md
+ * @purpose Provides pure Worktree domain rules and derived labels.
+ * @role    Side-effect-free rule layer used by use cases and row/editor components.
+ * @deps    Shared Worktrees contracts
+ * @gotcha  Rules must not read filesystem, Tauri APIs, timers, or mock data.
  */
-import type { Project, Worktree } from './types'
+import type { Project, Worktree } from '../../../shared/contracts/worktrees'
 
 export function isWorktreeBusy(worktree: Worktree) {
   return worktree.status === 'setting-up' || worktree.status === 'archiving'
@@ -22,11 +22,23 @@ export function getCurrentWorktree(project: Project) {
   return project.worktrees.find((worktree) => worktree.current) ?? project.worktrees[0]
 }
 
-export function createDraftWorktree(project: Project, name: string, base: string): Worktree {
-  const slug = name.replace(/[^a-z0-9]+/gi, '-')
+export function normalizeWorktreeSlug(name: string) {
+  return name.replace(/[^a-z0-9]+/gi, '-')
+}
 
+export function buildDraftWorktree({
+  project,
+  name,
+  base,
+  id
+}: {
+  project: Project
+  name: string
+  base: string
+  id: string
+}): Worktree {
   return {
-    id: `${project.id}-${Date.now()}`,
+    id,
     branch: name,
     base,
     current: false,
@@ -36,6 +48,6 @@ export function createDraftWorktree(project: Project, name: string, base: string
     status: 'setting-up',
     time: 'now',
     message: `created from ${base}`,
-    path: `${project.id}/.worktrees/${slug}`
+    path: `${project.id}/.worktrees/${normalizeWorktreeSlug(name)}`
   }
 }

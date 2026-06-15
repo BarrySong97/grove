@@ -1,10 +1,10 @@
 /**
- * @purpose Defines configurable project command metadata and placeholders.
- * @role    Command catalog used by context menus and project settings.
- * @deps    ./types
- * @gotcha  Commands are labels/placeholders until real execution is implemented; docs/topics/worktree-command-simulation.md
+ * @purpose Defines Worktree command metadata and placeholder command strings.
+ * @role    Domain catalog consumed by menus and project settings UI.
+ * @deps    Shared Worktrees contracts
+ * @gotcha  Commands remain prototype labels until real execution is specified; docs/topics/worktree-command-simulation.md
  */
-import type { CommandDef, CommandId } from './types'
+import type { CommandDef, CommandId } from '../../../shared/contracts/worktrees'
 
 export const COMMANDS: CommandDef[] = [
   { id: 'run', name: 'Run', desc: 'start the worktree', color: '#3aa856' },

@@ -11,8 +11,7 @@
   --glass-surface: rgba(244, 244, 241, 0.34);
   --glass-surface-strong: rgba(242, 242, 239, 0.46);
   --glass-border: rgba(255, 255, 255, 0.72);
-  --menu-surface: var(--glass-surface);
-  --menu-surface-strong: var(--glass-surface-strong);
+  --menu-surface: rgba(242, 242, 239, 0.74);
 }
 
 @theme inline {
@@ -63,7 +62,8 @@ body {
 }
 
 .glass-surface,
-.glass-surface-strong {
+.glass-surface-strong,
+.menu-surface {
   border-color: var(--glass-border);
   -webkit-backdrop-filter: blur(54px) saturate(1.8);
   backdrop-filter: blur(54px) saturate(1.8);
@@ -72,7 +72,8 @@ body {
 }
 
 .glass-surface::-webkit-scrollbar,
-.glass-surface-strong::-webkit-scrollbar {
+.glass-surface-strong::-webkit-scrollbar,
+.menu-surface::-webkit-scrollbar {
   display: none;
 }
 
@@ -101,6 +102,14 @@ body {
     var(--glass-surface-strong);
 }
 
+.menu-surface {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(224, 224, 221, 0.12)),
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.14), transparent 34%),
+    radial-gradient(circle at 88% 10%, rgba(186, 184, 178, 0.08), transparent 44%),
+    var(--menu-surface);
+}
+
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass-surface {
     background: rgba(244, 244, 241, 0.76);
@@ -108,5 +117,9 @@ body {
 
   .glass-surface-strong {
     background: rgba(242, 242, 239, 0.84);
+  }
+
+  .menu-surface {
+    background: rgba(242, 242, 239, 0.92);
   }
 }
