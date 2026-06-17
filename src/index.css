@@ -1,5 +1,5 @@
 /**
- * @purpose Defines global Tailwind import, design tokens, settings density, transparent app shell, and glass surfaces.
+ * @purpose Defines global Tailwind import, design tokens, settings density, transparent app shell, and shared surfaces.
  * @role    Global stylesheet for the Tauri webview and Grove panel visuals.
  * @deps    Tailwind CSS, Hero UI v3 styles, CSS custom properties
  * @gotcha  Transparent background and rounded clipping are required for tray panel illusion; design.md
@@ -15,6 +15,7 @@
 @import "@heroui/styles/components/list-box-item.css" layer(components);
 @import "@heroui/styles/components/popover.css" layer(components);
 @import "@heroui/styles/components/select.css" layer(components);
+@import "@heroui/styles/components/tooltip.css" layer(components);
 @import "@heroui/styles/themes/default" layer(theme);
 @import "@heroui/styles/utilities";
 @import "@heroui/styles/variants";
@@ -25,6 +26,7 @@
   --glass-surface-strong: rgba(242, 242, 239, 0.46);
   --glass-border: rgba(255, 255, 255, 0.72);
   --menu-surface: rgba(242, 242, 239, 0.74);
+  --bottom-sheet-surface: #f4f4f1;
   --background: transparent;
   --surface: rgba(255, 255, 255, 0.16);
   --surface-foreground: #1c1c1e;
@@ -117,7 +119,8 @@ body {
 
 .glass-surface,
 .glass-surface-strong,
-.menu-surface {
+.menu-surface,
+.bottom-sheet-surface {
   border-color: var(--glass-border);
   -webkit-backdrop-filter: blur(54px) saturate(1.8);
   backdrop-filter: blur(54px) saturate(1.8);
@@ -127,7 +130,8 @@ body {
 
 .glass-surface::-webkit-scrollbar,
 .glass-surface-strong::-webkit-scrollbar,
-.menu-surface::-webkit-scrollbar {
+.menu-surface::-webkit-scrollbar,
+.bottom-sheet-surface::-webkit-scrollbar {
   display: none;
 }
 
@@ -170,22 +174,11 @@ body {
     var(--menu-surface);
 }
 
-.grove-settings-back-button {
-  height: auto;
-  gap: 3px;
-  border-radius: 7px;
-  padding: 5px 9px 5px 5px;
-  font-size: var(--settings-label-size);
-  font-weight: 500;
-  color: rgba(0, 0, 0, 0.5);
-  transition:
-    color 0.15s ease,
-    background-color 0.15s ease;
-}
-
-.grove-settings-back-button:hover {
-  background: rgba(0, 0, 0, 0.038);
-  color: rgba(0, 0, 0, 0.9);
+.bottom-sheet-surface {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(224, 224, 221, 0.16)),
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.18), transparent 34%),
+    var(--bottom-sheet-surface);
 }
 
 .grove-settings-title {

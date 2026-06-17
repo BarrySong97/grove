@@ -91,7 +91,7 @@ pub(crate) struct OpenWorkspaceInput {
     pub target: OpenWorkspaceTargetDto,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum OpenWorkspaceTargetDto {
     Finder,

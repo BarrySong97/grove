@@ -18,6 +18,7 @@ import {
   updateProjectSettings
 } from '../api/groveCommands'
 import type { AppSettingsDto, GhosttyOpenModeDto } from '../../../shared/bindings/commands'
+import type { OpenWorkspaceTargetDto } from '../../../shared/bindings/commands'
 import type { ContextState } from '../components/ContextMenu'
 import {
   getCommandCompletePatch,
@@ -31,7 +32,10 @@ import {
 } from '../use-cases/worktree-panel-actions'
 
 const COLLAPSED_PROJECT_IDS_KEY = 'grove.worktrees.collapsedProjectIds'
-const DEFAULT_APP_SETTINGS: AppSettingsDto = { ghosttyOpenMode: 'window' }
+const DEFAULT_APP_SETTINGS: AppSettingsDto = {
+  defaultOpenTarget: 'cursor',
+  ghosttyOpenMode: 'window'
+}
 type ToastTone = 'notice' | 'progress' | 'error'
 interface ToastState {
   message: string
@@ -257,8 +261,15 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
   }
 
   const setGhosttyOpenMode = (mode: GhosttyOpenModeDto) => {
+    saveAppSettings({ ...appSettings, ghosttyOpenMode: mode })
+  }
+
+  const setDefaultOpenTarget = (target: OpenWorkspaceTargetDto) => {
+    saveAppSettings({ ...appSettings, defaultOpenTarget: target })
+  }
+
+  const saveAppSettings = (next: AppSettingsDto) => {
     const previous = appSettings
-    const next: AppSettingsDto = { ...appSettings, ghosttyOpenMode: mode }
     setAppSettings(next)
     setAppSettingsSaving(true)
     void updateAppSettings(next)
@@ -273,11 +284,7 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
       })
   }
 
-  const openWorktree = (
-    worktree: Worktree,
-    project: Project,
-    target: 'finder' | 'zed' | 'cursor' | 'vs_code' | 'ghostty' | 'terminal'
-  ) => {
+  const openWorktree = (worktree: Worktree, project: Project, target: OpenWorkspaceTargetDto) => {
     setCtx(null)
     void openWorkspace(worktree.id, target).catch((error: unknown) =>
       showToast(describeError(error, `Open failed · ${project.name}/${worktree.branch}`), 'error')
@@ -306,6 +313,7 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
     setAddingTo,
     setProjectCollapsed,
     setCtx,
+    setDefaultOpenTarget,
     setGhosttyOpenMode,
     setGlobalSettingsOpen,
     setSettingsFor,

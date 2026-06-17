@@ -1,24 +1,18 @@
 /**
  * @purpose Renders a sortable worktree row with status subtitle and hover/menu-pinned actions.
  * @role    Row-level UI for branch metadata, busy state, move controls, and context menu trigger.
- * @deps    @dnd-kit/sortable, Worktrees contracts/domain rules, shared icons/ui
+ * @deps    @dnd-kit/sortable, generated open target DTO, Worktrees contracts/domain rules, shared icons/ui
  * @gotcha  Busy rows suppress context/actions; menu-open rows keep actions visible; docs/modules/worktrees/README.md
  */
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { animateLayoutChanges, sortableTransition } from '../../../shared/lib/sortable'
+import type { OpenWorkspaceTargetDto } from '../../../shared/bindings/commands'
 import type { Density, Project, Worktree } from '../../../shared/contracts/worktrees'
-import {
-  ChevronDown,
-  ChevronUp,
-  Editor,
-  More,
-  Spinner,
-  Terminal,
-  ToTop
-} from '../../../shared/icons'
+import { ChevronDown, ChevronUp, More, Spinner, ToTop } from '../../../shared/icons'
 import { IconButton } from '../../../shared/ui/IconButton'
 import { getBusyLabel, isWorktreeBusy } from '../domain/worktree-rules'
+import { OpenTargetIcon } from './OpenTargetIcon'
 
 interface WorktreeRowProps {
   worktree: Worktree
@@ -28,8 +22,12 @@ interface WorktreeRowProps {
   isContextOpen: boolean
   isFirst: boolean
   isLast: boolean
+  defaultOpenLabel: string
+  defaultOpenTarget: OpenWorkspaceTargetDto
   onMove: (direction: 'up' | 'down' | 'top') => void
   onContext: (event: React.MouseEvent, worktree: Worktree, project: Project) => void
+  onOpenDefault: () => void
+  onOpenTerminal: () => void
 }
 
 export function WorktreeRow({
@@ -40,8 +38,12 @@ export function WorktreeRow({
   isContextOpen,
   isFirst,
   isLast,
+  defaultOpenLabel,
+  defaultOpenTarget,
   onMove,
-  onContext
+  onContext,
+  onOpenDefault,
+  onOpenTerminal
 }: WorktreeRowProps) {
   const running = isWorktreeBusy(worktree)
   const padY = density === 'compact' ? 'py-1.5' : 'py-[9px]'
@@ -120,11 +122,23 @@ export function WorktreeRow({
               <ChevronDown />
             </IconButton>
           )}
-          <IconButton title="Open in editor" onClick={(event) => event.stopPropagation()}>
-            <Editor />
+          <IconButton
+            title={defaultOpenLabel}
+            onClick={(event) => {
+              event.stopPropagation()
+              onOpenDefault()
+            }}
+          >
+            <OpenTargetIcon target={defaultOpenTarget} />
           </IconButton>
-          <IconButton title="Open in terminal" onClick={(event) => event.stopPropagation()}>
-            <Terminal />
+          <IconButton
+            title="Open in Terminal"
+            onClick={(event) => {
+              event.stopPropagation()
+              onOpenTerminal()
+            }}
+          >
+            <OpenTargetIcon target="terminal" />
           </IconButton>
           <IconButton
             title="More…"

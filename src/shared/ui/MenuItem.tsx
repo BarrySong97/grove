@@ -20,7 +20,7 @@ export function MenuItem({ icon, label, kbd, danger, disabled, onClick, onHover 
   const hoverClass = danger ? 'hover:bg-red-500' : 'hover:bg-accent'
   const disabledClass = disabled
     ? 'pointer-events-none opacity-40'
-    : `${hoverClass} hover:text-white`
+    : `cursor-pointer ${hoverClass} hover:text-white`
 
   return (
     <div

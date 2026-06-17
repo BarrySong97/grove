@@ -1,18 +1,20 @@
 /**
  * @purpose Renders application-wide Grove settings controls.
- * @role    Global settings subview for backend-owned native behavior preferences.
+ * @role    Bottom sheet content for backend-owned native behavior preferences.
  * @deps    Hero UI Button/Switch, generated settings DTOs, shared icons/ui
  * @gotcha  Settings are persisted through Rust commands; density comes from src/index.css tokens.
  */
 import { Button } from '@heroui/react/button'
 import { Switch } from '@heroui/react/switch'
-import type { AppSettingsDto } from '../../../shared/bindings/commands'
-import { ChevronLeft, Terminal } from '../../../shared/icons'
+import type { AppSettingsDto, OpenWorkspaceTargetDto } from '../../../shared/bindings/commands'
 import { Divider } from '../../../shared/ui/Divider'
+import { OPEN_TARGET_OPTIONS } from '../domain/open-targets'
+import { OpenTargetIcon } from './OpenTargetIcon'
 
 interface GlobalSettingsProps {
   settings: AppSettingsDto
   saving: boolean
+  onDefaultOpenTargetChange: (target: OpenWorkspaceTargetDto) => void
   onGhosttyOpenModeChange: (openInTabs: boolean) => void
   onClose: () => void
 }
@@ -20,6 +22,7 @@ interface GlobalSettingsProps {
 export function GlobalSettings({
   settings,
   saving,
+  onDefaultOpenTargetChange,
   onGhosttyOpenModeChange,
   onClose
 }: GlobalSettingsProps) {
@@ -27,21 +30,34 @@ export function GlobalSettings({
 
   return (
     <div className="p-0.5">
-      <div className="flex items-center px-0.5 pb-1 pt-0.5">
-        <Button
-          type="button"
-          onClick={onClose}
-          size="sm"
-          variant="secondary"
-          className="grove-icon-scale grove-settings-back-button"
-        >
-          <ChevronLeft className="text-black/[0.34]" /> Projects
-        </Button>
-      </div>
-
-      <div className="px-2.5 pb-2.5 pt-0.5">
+      <div className="px-2.5 pb-2.5 pt-2">
         <span className="grove-settings-title block">Settings</span>
         <span className="grove-settings-subtitle">Application preferences</span>
+      </div>
+
+      <Divider />
+
+      <div className="grove-settings-section-title">Open</div>
+
+      <div className="grove-settings-row">
+        <div className="grove-settings-row-inner">
+          <span className="grove-settings-label">默认打开</span>
+          <select
+            aria-label="Default open target"
+            className="grove-field-thin-focus grove-settings-field min-w-0 flex-1 appearance-auto border-0 font-medium"
+            disabled={saving}
+            value={settings.defaultOpenTarget}
+            onChange={(event) =>
+              onDefaultOpenTargetChange(event.target.value as OpenWorkspaceTargetDto)
+            }
+          >
+            {OPEN_TARGET_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <Divider />
@@ -61,7 +77,7 @@ export function GlobalSettings({
             <>
               <span className="flex min-w-0 items-center gap-2.5">
                 <span className="grove-icon-scale flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-black/[0.04] text-black/45 shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.08)]">
-                  <Terminal />
+                  <OpenTargetIcon target="ghostty" />
                 </span>
                 <span className="min-w-0">
                   <span className="grove-settings-row-title block truncate">
@@ -86,6 +102,18 @@ export function GlobalSettings({
             </>
           )}
         </Switch>
+      </div>
+
+      <div className="flex justify-end px-1.5 pb-1 pt-2.5">
+        <Button
+          className="h-auto rounded-[var(--settings-control-radius)] px-[14px] py-[6px] text-[length:var(--settings-label-size)] font-semibold"
+          onClick={onClose}
+          size="sm"
+          type="button"
+          variant="secondary"
+        >
+          关闭
+        </Button>
       </div>
     </div>
   )

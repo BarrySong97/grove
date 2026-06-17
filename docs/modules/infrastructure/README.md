@@ -8,7 +8,7 @@
 - `db/repositories/projects_repository.rs`:读写 Grove project、命令和 archive policy 持久化记录;项目列表按最新登记优先返回。
 - `db/repositories/workspaces_repository.rs`:写入导入/刷新得到的 workspace 记录、git state 和 lifecycle/operation 状态。
 - `db/repositories/operations_repository.rs`:记录 create/archive 等长操作状态、退出码和日志路径。
-- `db/repositories/settings_repository.rs`:读写全局 app settings,当前包含 Ghostty 打开模式。
+- `db/repositories/settings_repository.rs`:读写全局 app settings,当前包含默认打开目标和 Ghostty 打开模式。
 - `git/worktree_repository.rs`:运行并解析 `git worktree list --porcelain`,并封装 `git worktree add/remove`。
 - `git/status_repository.rs`:读取 dirty/ahead/behind/latest commit 的 git snapshot。
 - `conductor/config_repository.rs`:读取 `.conductor/settings*.toml`、user settings 和 legacy `conductor.json` 的 scripts/files-to-copy 配置。

@@ -14,6 +14,7 @@ pub(crate) async fn run(
 ) -> AppResult<AppSettingsDto> {
     let settings = AppSettingsDto {
         ghostty_open_mode: input.ghostty_open_mode,
+        default_open_target: input.default_open_target,
     };
     settings_repository::update_app_settings(pool, &settings).await
 }

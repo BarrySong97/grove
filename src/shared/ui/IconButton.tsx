@@ -1,10 +1,11 @@
 /**
  * @purpose Defines fixed-size icon-only buttons for project and row actions.
  * @role    Reusable UI primitive consumed by worktree components.
- * @deps    Hero UI Button, React button props/ReactNode
+ * @deps    Hero UI Button/Tooltip, React button props/ReactNode
  * @gotcha  Always provide title text for icon-only controls; docs/modules/ui/README.md
  */
 import { Button } from '@heroui/react/button'
+import { Tooltip } from '@heroui/react/tooltip'
 import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from 'react'
 
 type IconButtonSize = 'project' | 'row'
@@ -45,18 +46,28 @@ export function IconButton({
   const titleProps = { title }
 
   return (
-    <Button
-      {...titleProps}
-      aria-label={title}
-      type={type}
-      onClick={onClick}
-      isDisabled={isDisabled}
-      isIconOnly
-      size="sm"
-      variant="ghost"
-      className={`grove-icon-scale min-w-0 p-0 text-black/50 transition-colors ${sizeClasses[size]} ${toneClasses[tone]} ${className}`}
-    >
-      {children}
-    </Button>
+    <Tooltip delay={450}>
+      <Tooltip.Trigger>
+        <Button
+          {...titleProps}
+          aria-label={title}
+          type={type}
+          onClick={onClick}
+          isDisabled={isDisabled}
+          isIconOnly
+          size="sm"
+          variant="ghost"
+          className={`grove-icon-scale min-w-0 p-0 text-black/50 transition-colors ${sizeClasses[size]} ${toneClasses[tone]} ${className}`}
+        >
+          {children}
+        </Button>
+      </Tooltip.Trigger>
+      <Tooltip.Content
+        offset={5}
+        className="rounded-md border border-black/[0.06] bg-[#1c1c1e] px-2 py-1 text-[10.5px] font-medium leading-none text-white shadow-[0_8px_22px_rgba(0,0,0,0.24)]"
+      >
+        {title}
+      </Tooltip.Content>
+    </Tooltip>
   )
 }

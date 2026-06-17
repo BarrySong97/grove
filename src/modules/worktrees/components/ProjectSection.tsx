@@ -29,6 +29,7 @@ import {
   sortableMeasuring,
   sortableTransition
 } from '../../../shared/lib/sortable'
+import type { OpenWorkspaceTargetDto } from '../../../shared/bindings/commands'
 import type { Density, Project, Worktree } from '../../../shared/contracts/worktrees'
 import { ChevronDown, ChevronRight, ChevronUp, Gear, Plus, ToTop } from '../../../shared/icons'
 import { Divider } from '../../../shared/ui/Divider'
@@ -43,6 +44,8 @@ const collapseTransition = { duration: 0.22, ease: [0.4, 0, 0.2, 1] as const }
 interface ProjectSectionProps {
   project: Project
   density: Density
+  defaultOpenLabel: string
+  defaultOpenTarget: OpenWorkspaceTargetDto
   showCommit: boolean
   isAdding: boolean
   collapsed: boolean
@@ -56,6 +59,7 @@ interface ProjectSectionProps {
   onEditSettings: (projectId: string) => void
   onMove: (direction: 'up' | 'down' | 'top') => void
   onMoveWorktree: (worktreeId: string, direction: 'up' | 'down' | 'top') => void
+  onOpenWorkspace: (worktree: Worktree, project: Project, target: OpenWorkspaceTargetDto) => void
   onReorderWorktrees: (activeId: string, overId: string) => void
   onContext: (event: React.MouseEvent, worktree: Worktree, project: Project) => void
 }
@@ -63,6 +67,8 @@ interface ProjectSectionProps {
 export function ProjectSection({
   project,
   density,
+  defaultOpenLabel,
+  defaultOpenTarget,
   showCommit,
   isAdding,
   collapsed,
@@ -76,6 +82,7 @@ export function ProjectSection({
   onEditSettings,
   onMove,
   onMoveWorktree,
+  onOpenWorkspace,
   onReorderWorktrees,
   onContext
 }: ProjectSectionProps) {
@@ -119,8 +126,12 @@ export function ProjectSection({
       isContextOpen={activeContextWorktreeId === worktree.id}
       isFirst={index === 0}
       isLast={index === project.worktrees.length - 1}
+      defaultOpenLabel={defaultOpenLabel}
+      defaultOpenTarget={defaultOpenTarget}
       onMove={(direction) => onMoveWorktree(worktree.id, direction)}
       onContext={onContext}
+      onOpenDefault={() => onOpenWorkspace(worktree, project, defaultOpenTarget)}
+      onOpenTerminal={() => onOpenWorkspace(worktree, project, 'terminal')}
     />
   )
 

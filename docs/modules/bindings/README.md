@@ -8,6 +8,6 @@
 
 ## 约束
 - 不要手工编辑生成文件;运行 Rust `export_bindings` 测试或启动 debug Tauri app 重新生成。
-- 新增 Rust command 或 DTO 后必须重新生成本文件;例如 Add project UI 使用 `commands.addProjectFromFolderPicker`,内部登记逻辑仍可复用 `commands.createProject` 和 `CreateProjectInput`。
+- 新增 Rust command 或 DTO 后必须重新生成本文件;例如 Add project UI 使用 `commands.addProjectFromFolderPicker`,全局 settings DTO 暴露 `defaultOpenTarget` 和 `ghosttyOpenMode`。
 - 前端业务 API wrapper 应放在业务模块的 `api/` 目录,不要在组件里直接散落 generated command 调用。
 - 生成文件必须保留 `@purpose` 文件头,否则 `node scripts/check-docs.mjs` 会失败。

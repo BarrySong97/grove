@@ -10,11 +10,11 @@
 - `projects/list_worktree_projects.rs`:组合项目、命令和 workspace 列表给前端面板,继承项目列表的最新登记优先顺序。
 - `projects/update_project_settings.rs`:保存 Grove override 的 workspace root、命令和 archive policy。
 - `settings/get_app_settings.rs`:读取全局 app settings。
-- `settings/update_app_settings.rs`:保存全局 app settings,当前影响 Ghostty 打开 workspace 的 window/tab 行为。
+- `settings/update_app_settings.rs`:保存全局 app settings,当前影响默认打开目标以及 Ghostty 打开 workspace 的 window/tab 行为。
 - `workspaces/refresh_project.rs`:刷新真实 git worktree metadata,并把缺失的 active workspace 标记为 stale。
 - `workspaces/create_workspace.rs`:创建 git worktree、复制 ignored 文件并运行 setup command;失败时把已写入的 workspace operation status 标记为 failed,避免 UI 保持 setting-up。
 - `workspaces/archive_workspace.rs`:运行 archive command,按策略 hide 或 `git worktree remove`。
-- `workspaces/open_workspace.rs`:读取全局 settings 后调用 native opener 打开 Finder/editor/terminal。
+- `workspaces/open_workspace.rs`:读取全局 settings 后调用 native opener 打开 Finder/editor/terminal,其中 Ghostty 目标会应用全局 window/tab 设置。
 - `projects/mod.rs`:project use-case barrel。
 
 ## 约束

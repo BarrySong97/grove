@@ -60,6 +60,7 @@ export type AppErrorDto = {
 
 export type AppSettingsDto = {
   ghosttyOpenMode: GhosttyOpenModeDto
+  defaultOpenTarget: OpenWorkspaceTargetDto
 }
 
 export type ArchivePolicyChoiceDto = 'hide' | 'remove_worktree'
@@ -136,6 +137,7 @@ export type RefreshProjectInput = {
 
 export type UpdateAppSettingsInput = {
   ghosttyOpenMode: GhosttyOpenModeDto
+  defaultOpenTarget: OpenWorkspaceTargetDto
 }
 
 export type UpdateProjectSettingsInput = {

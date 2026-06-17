@@ -1,16 +1,20 @@
 /**
- * @purpose Renders the worktree context menu with flattened command and native-open actions.
- * @role    Floating menu for backend open/archive actions plus run-command placeholder.
- * @deps    React effect/ref, Worktrees contracts/domain commands, shared icons/ui
- * @gotcha  Menu position is clamped to viewport; run command is not a managed backend process yet.
+ * @purpose Renders the worktree action sheet with flattened command and native-open actions.
+ * @role    Bottom sheet for backend open/archive actions plus run-command placeholder.
+ * @deps    Worktrees contracts/domain commands, shared icons/ui
+ * @gotcha  Sheet keeps the old menu item layout on an opaque bottom-sheet surface; run command is not a managed backend process yet.
  */
-import { useEffect, useRef, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import type { CommandDef, Project, Worktree } from '../../../shared/contracts/worktrees'
-import { Archive, Copy, Editor, Finder, Gear, Terminal } from '../../../shared/icons'
+import { Archive, Copy, Gear } from '../../../shared/icons'
+import { BottomSheet } from '../../../shared/ui/BottomSheet'
 import { MenuItem, MenuSeparator } from '../../../shared/ui/MenuItem'
 import { COMMANDS } from '../domain/commands'
+import { OPEN_TARGET_OPTIONS, openTargetActionLabel } from '../domain/open-targets'
+import type { OpenWorkspaceTargetDto } from '../../../shared/bindings/commands'
+import { OpenTargetIcon } from './OpenTargetIcon'
 
-export type OpenWorkspaceTarget = 'finder' | 'zed' | 'cursor' | 'vs_code' | 'ghostty' | 'terminal'
+export type OpenWorkspaceTarget = OpenWorkspaceTargetDto
 
 export interface ContextState {
   x: number
@@ -36,59 +40,26 @@ export function ContextMenu({
   onOpenWorkspace,
   onEditCommands
 }: ContextMenuProps) {
-  const ref = useRef<HTMLDivElement>(null)
   const { worktree, project } = ctx
 
-  useEffect(() => {
-    const onDown = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) onClose()
-    }
-    document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
-  }, [onClose])
-
-  const left = Math.min(ctx.x, window.innerWidth - 244)
-  const top = Math.min(ctx.y, window.innerHeight - 388)
-
   return (
-    <div
-      ref={ref}
-      style={{ left, top }}
-      className="menu-surface fixed z-50 w-[230px] animate-panel-in rounded-[11px] border-[0.5px] p-1.5 font-sans text-[13px] text-[#1c1c1e] shadow-ctx"
+    <BottomSheet
+      ariaLabel={`${worktree.branch} actions`}
+      className="bottom-sheet-surface rounded-[11px] border-[0.5px] p-1.5 font-sans text-[13px] text-[#1c1c1e] shadow-ctx"
+      isOpen
+      onClose={onClose}
     >
       <MenuSectionTitle>{worktree.branch}</MenuSectionTitle>
 
       <MenuSectionTitle>Open</MenuSectionTitle>
-      <MenuItem
-        icon={<Finder />}
-        label="Reveal in Finder"
-        onClick={() => onOpenWorkspace(worktree, project, 'finder')}
-      />
-      <MenuItem
-        icon={<Editor />}
-        label="Open in Zed"
-        onClick={() => onOpenWorkspace(worktree, project, 'zed')}
-      />
-      <MenuItem
-        icon={<Editor />}
-        label="Open in Cursor"
-        onClick={() => onOpenWorkspace(worktree, project, 'cursor')}
-      />
-      <MenuItem
-        icon={<Editor />}
-        label="Open in VS Code"
-        onClick={() => onOpenWorkspace(worktree, project, 'vs_code')}
-      />
-      <MenuItem
-        icon={<Terminal />}
-        label="Open in Ghostty"
-        onClick={() => onOpenWorkspace(worktree, project, 'ghostty')}
-      />
-      <MenuItem
-        icon={<Terminal />}
-        label="Open in Terminal"
-        onClick={() => onOpenWorkspace(worktree, project, 'terminal')}
-      />
+      {OPEN_TARGET_OPTIONS.map((option) => (
+        <MenuItem
+          key={option.id}
+          icon={<OpenTargetIcon target={option.id} />}
+          label={openTargetActionLabel(option.id)}
+          onClick={() => onOpenWorkspace(worktree, project, option.id)}
+        />
+      ))}
 
       <MenuSeparator />
 
@@ -142,7 +113,7 @@ export function ContextMenu({
           }}
         />
       )}
-    </div>
+    </BottomSheet>
   )
 }
 
@@ -158,7 +129,7 @@ function CommandMenuItem({ command, onClick }: { command: CommandDef; onClick: (
   return (
     <div
       onClick={onClick}
-      className="group/menu-item flex h-9 items-center gap-2.5 rounded-[7px] px-2.5 hover:bg-accent hover:text-white"
+      className="group/menu-item flex h-9 cursor-pointer items-center gap-2.5 rounded-[7px] px-2.5 hover:bg-accent hover:text-white"
     >
       <span className="flex w-4 shrink-0 items-center justify-center">
         <span

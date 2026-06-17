@@ -1,6 +1,6 @@
 /**
  * @purpose Renders per-project persisted configuration controls with validated Hero UI fields.
- * @role    Settings subview for editing workspace root, commands, and archive policy.
+ * @role    Bottom sheet content for editing workspace root, commands, and archive policy.
  * @deps    Hero UI Form/Input/Button, native select, React Hook Form, Worktrees contracts/domain command catalog, shared icons/ui
  * @gotcha  Saves Grove overrides only; settings density comes from src/index.css tokens.
  */
@@ -11,7 +11,6 @@ import { Input } from '@heroui/react/input'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import type { Project } from '../../../shared/contracts/worktrees'
-import { ChevronLeft } from '../../../shared/icons'
 import { Divider } from '../../../shared/ui/Divider'
 import { Dot } from '../../../shared/ui/Dot'
 import { COMMAND_PLACEHOLDERS, COMMANDS } from '../domain/commands'
@@ -73,19 +72,7 @@ export function ProjectSettings({ project, onSave, onClose }: ProjectSettingsPro
 
   return (
     <Form className="p-0.5" onSubmit={handleSubmit(save)}>
-      <div className="flex items-center px-0.5 pb-1 pt-0.5">
-        <Button
-          type="button"
-          onClick={onClose}
-          size="sm"
-          variant="secondary"
-          className="grove-icon-scale grove-settings-back-button"
-        >
-          <ChevronLeft className="text-black/[0.34]" /> Projects
-        </Button>
-      </div>
-
-      <div className="px-2.5 pb-2.5 pt-0.5">
+      <div className="px-2.5 pb-2.5 pt-2">
         <div className="flex min-w-0 items-center gap-2">
           <Dot color={project.accent} className="h-2 w-2" />
           <span className="grove-settings-title min-w-0 flex-1 truncate">{project.name}</span>
@@ -161,7 +148,16 @@ export function ProjectSettings({ project, onSave, onClose }: ProjectSettingsPro
         </div>
       ))}
 
-      <div className="flex justify-end px-1.5 pb-1 pt-2.5">
+      <div className="flex justify-end gap-2 px-1.5 pb-1 pt-2.5">
+        <Button
+          className="h-auto rounded-[var(--settings-control-radius)] px-[14px] py-[6px] text-[length:var(--settings-label-size)] font-semibold"
+          onClick={onClose}
+          size="sm"
+          type="button"
+          variant="secondary"
+        >
+          关闭
+        </Button>
         <Button
           className="h-auto rounded-[var(--settings-control-radius)] bg-accent px-[16px] py-[6px] text-[length:var(--settings-label-size)] font-semibold text-white disabled:opacity-40"
           isDisabled={!isValid}
@@ -169,7 +165,7 @@ export function ProjectSettings({ project, onSave, onClose }: ProjectSettingsPro
           type="submit"
           variant="primary"
         >
-          Save
+          确认
         </Button>
       </div>
     </Form>

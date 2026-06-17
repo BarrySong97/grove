@@ -1,8 +1,8 @@
 /**
  * @purpose Composes the full Grove worktree panel UI.
- * @role    Feature root component; wires state hook, project sorting, settings views, toast, and context menu.
+ * @role    Feature root component; wires state hook, project sorting, settings sheets, toast, and context menu.
  * @deps    @dnd-kit/core/sortable, Hero UI Button, Worktrees contracts/state/API, shared UI/lib/icons
- * @gotcha  Panel shell transparency and settings views share the same glass surface constraints; docs/modules/worktrees/README.md
+ * @gotcha  Settings and action overlays use BottomSheet so the panel context stays visible; docs/modules/worktrees/README.md
  */
 import { Button } from '@heroui/react/button'
 import {
@@ -26,7 +26,7 @@ import { sortableMeasuring } from '../../../shared/lib/sortable'
 import { hexA } from '../../../shared/lib/color'
 import type { CSSVars } from '../../../shared/lib/styles'
 import { Spinner } from '../../../shared/icons'
-import { ScrollArea } from '../../../shared/ui/ScrollArea'
+import { BottomSheet } from '../../../shared/ui/BottomSheet'
 import { Toast } from '../../../shared/ui/Toast'
 import { ContextMenu } from './ContextMenu'
 import { GlobalSettings } from './GlobalSettings'
@@ -35,6 +35,7 @@ import { PanelHeader } from './PanelHeader'
 import { PanelShell } from './PanelShell'
 import { ProjectSection } from './ProjectSection'
 import { ProjectSettings } from './ProjectSettings'
+import { openTargetDisplayLabel } from '../domain/open-targets'
 
 export interface WorktreePanelProps {
   accent?: string
@@ -62,45 +63,6 @@ export function WorktreePanel({
   const handleProjectDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (over && active.id !== over.id) state.reorderProjects(String(active.id), String(over.id))
-  }
-
-  if (state.settingsProject) {
-    return (
-      <div
-        onContextMenu={(event) => event.preventDefault()}
-        style={panelStyle}
-        className="glass-surface relative flex h-screen w-screen origin-top animate-panel-in flex-col overflow-hidden rounded-[var(--window-radius)] border-[0.5px] p-1.5 font-sans text-[13.5px] text-[#1c1c1e] antialiased shadow-panel"
-      >
-        <ScrollArea>
-          <ProjectSettings
-            project={state.settingsProject}
-            onSave={state.saveProjectSettings}
-            onClose={() => state.setSettingsFor(null)}
-          />
-        </ScrollArea>
-      </div>
-    )
-  }
-
-  if (state.globalSettingsOpen) {
-    return (
-      <div
-        onContextMenu={(event) => event.preventDefault()}
-        style={panelStyle}
-        className="glass-surface relative flex h-screen w-screen origin-top animate-panel-in flex-col overflow-hidden rounded-[var(--window-radius)] border-[0.5px] p-1.5 font-sans text-[13.5px] text-[#1c1c1e] antialiased shadow-panel"
-      >
-        <ScrollArea>
-          <GlobalSettings
-            settings={state.appSettings}
-            saving={state.appSettingsSaving}
-            onGhosttyOpenModeChange={(openInTabs) =>
-              state.setGhosttyOpenMode(openInTabs ? 'tab' : 'window')
-            }
-            onClose={() => state.setGlobalSettingsOpen(false)}
-          />
-        </ScrollArea>
-      </div>
-    )
   }
 
   return (
@@ -135,6 +97,8 @@ export function WorktreePanel({
                 key={project.id}
                 project={project}
                 density={density}
+                defaultOpenLabel={`默认打开: ${openTargetDisplayLabel(state.appSettings.defaultOpenTarget)}`}
+                defaultOpenTarget={state.appSettings.defaultOpenTarget}
                 showCommit={showCommit}
                 isAdding={state.addingTo === project.id}
                 collapsed={state.collapsedProjectIds.has(project.id)}
@@ -156,6 +120,7 @@ export function WorktreePanel({
                 onContext={(event, worktree, item) =>
                   state.setCtx({ x: event.clientX, y: event.clientY, worktree, project: item })
                 }
+                onOpenWorkspace={state.openWorktree}
               />
             ))}
           </SortableContext>
@@ -187,6 +152,38 @@ export function WorktreePanel({
             state.setSettingsFor(project.id)
           }}
         />
+      )}
+
+      <BottomSheet
+        ariaLabel="Global settings"
+        className="bottom-sheet-surface rounded-[var(--window-radius)] border-[0.5px] p-1.5 font-sans text-[13.5px] text-[#1c1c1e] antialiased shadow-panel"
+        isOpen={state.globalSettingsOpen}
+        onClose={() => state.setGlobalSettingsOpen(false)}
+      >
+        <GlobalSettings
+          settings={state.appSettings}
+          saving={state.appSettingsSaving}
+          onDefaultOpenTargetChange={state.setDefaultOpenTarget}
+          onGhosttyOpenModeChange={(openInTabs) =>
+            state.setGhosttyOpenMode(openInTabs ? 'tab' : 'window')
+          }
+          onClose={() => state.setGlobalSettingsOpen(false)}
+        />
+      </BottomSheet>
+
+      {state.settingsProject && (
+        <BottomSheet
+          ariaLabel={`${state.settingsProject.name} settings`}
+          className="bottom-sheet-surface rounded-[var(--window-radius)] border-[0.5px] p-1.5 font-sans text-[13.5px] text-[#1c1c1e] antialiased shadow-panel"
+          isOpen
+          onClose={() => state.setSettingsFor(null)}
+        >
+          <ProjectSettings
+            project={state.settingsProject}
+            onSave={state.saveProjectSettings}
+            onClose={() => state.setSettingsFor(null)}
+          />
+        </BottomSheet>
       )}
     </PanelShell>
   )

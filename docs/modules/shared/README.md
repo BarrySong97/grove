@@ -8,7 +8,7 @@
 - `dto/workspaces.rs`:Workspace、lifecycle、operation 和 git state DTO。
 - `dto/operations.rs`:operation DTO。
 - `dto/conductor.rs`:Conductor import candidate DTO。
-- `dto/settings.rs`:全局 app settings DTO,当前包含 Ghostty 打开模式。
+- `dto/settings.rs`:全局 app settings DTO,当前包含默认打开目标和 Ghostty 打开模式。
 - `dto/errors.rs`:业务 command typed error。
 
 ## 约束
