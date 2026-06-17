@@ -7,10 +7,13 @@
 import {
   commands,
   type AppErrorDto,
+  type AppSettingsDto,
   type ArchivePolicyChoiceDto,
   type ConductorImportCandidateDto,
+  type CreateProjectInput,
   type OpenWorkspaceTargetDto,
   type ProjectDto,
+  type UpdateAppSettingsInput,
   type UpdateProjectSettingsInput,
   type WorkspaceDto,
   type WorktreeProjectDto
@@ -45,6 +48,18 @@ export async function importConductorProjects(
   return result.data
 }
 
+export async function createProject(input: CreateProjectInput): Promise<ProjectDto> {
+  const result = await commands.createProject(input)
+  if (result.status === 'error') throw new GroveCommandError(result.error)
+  return result.data
+}
+
+export async function addProjectFromFolderPicker(): Promise<ProjectDto | null> {
+  const result = await commands.addProjectFromFolderPicker()
+  if (result.status === 'error') throw new GroveCommandError(result.error)
+  return result.data
+}
+
 export async function listWorktreeProjects(): Promise<WorktreeProjectDto[]> {
   const result = await commands.listWorktreeProjects()
   if (result.status === 'error') throw new GroveCommandError(result.error)
@@ -62,6 +77,7 @@ function mapProject(item: WorktreeProjectDto): Project {
     name: item.project.name,
     path: item.project.rootPath,
     workspaceRoot: item.project.workspaceRoot,
+    defaultBranch: item.project.defaultBranch,
     accent: projectAccent(item.project.id),
     archivePolicy: item.project.archivePolicy,
     commands: item.commands,
@@ -81,6 +97,18 @@ export async function updateProjectSettings(
   input: UpdateProjectSettingsInput
 ): Promise<ProjectDto> {
   const result = await commands.updateProjectSettings(input)
+  if (result.status === 'error') throw new GroveCommandError(result.error)
+  return result.data
+}
+
+export async function getAppSettings(): Promise<AppSettingsDto> {
+  const result = await commands.getAppSettings()
+  if (result.status === 'error') throw new GroveCommandError(result.error)
+  return result.data
+}
+
+export async function updateAppSettings(input: UpdateAppSettingsInput): Promise<AppSettingsDto> {
+  const result = await commands.updateAppSettings(input)
   if (result.status === 'error') throw new GroveCommandError(result.error)
   return result.data
 }

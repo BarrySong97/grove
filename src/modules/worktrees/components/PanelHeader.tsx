@@ -1,19 +1,27 @@
 /**
- * @purpose Renders Grove panel header with counts and add-project affordance.
+ * @purpose Renders Grove panel header with counts and global actions.
  * @role    Header slot for PanelShell used by WorktreePanel.
- * @deps    shared icons/ui
- * @gotcha  Add project imports Conductor-compatible workspace roots through the state hook.
+ * @deps    Hero UI Button, shared icons/ui
+ * @gotcha  Add project/settings actions delegate persistence and native work to the state hook.
  */
-import { GroveIcon, Import } from '../../../shared/icons'
+import { Button } from '@heroui/react/button'
+import { Gear, GroveIcon, Import } from '../../../shared/icons'
 import { Divider } from '../../../shared/ui/Divider'
+import { IconButton } from '../../../shared/ui/IconButton'
 
 interface PanelHeaderProps {
   total: number
   projectCount: number
   onAddProject: () => void
+  onOpenSettings: () => void
 }
 
-export function PanelHeader({ total, projectCount, onAddProject }: PanelHeaderProps) {
+export function PanelHeader({
+  total,
+  projectCount,
+  onAddProject,
+  onOpenSettings
+}: PanelHeaderProps) {
   return (
     <>
       <div className="flex items-center gap-2.5 px-2.5 pb-2 pt-1.5">
@@ -24,14 +32,20 @@ export function PanelHeader({ total, projectCount, onAddProject }: PanelHeaderPr
         <span className="text-[11.5px] tabular-nums text-black/[0.34]">
           {total} worktrees · {projectCount} projects
         </span>
+        <IconButton title="Settings" size="project" onClick={onOpenSettings}>
+          <Gear />
+        </IconButton>
       </div>
       <div className="px-1 pb-1">
-        <button
-          onClick={onAddProject}
-          className="flex w-full items-center gap-[7px] rounded-lg px-2.5 py-[7px] text-[12.5px] text-black/50 transition-colors hover:bg-black/[0.038] hover:text-black/90"
+        <Button
+          onPress={onAddProject}
+          fullWidth
+          size="sm"
+          variant="ghost"
+          className="grove-icon-scale h-auto justify-start gap-[7px] rounded-lg px-2.5 py-[7px] text-[12.5px] text-black/50 transition-colors hover:bg-black/[0.038] hover:text-black/90"
         >
           <Import /> Add project…
-        </button>
+        </Button>
       </div>
       <Divider />
     </>

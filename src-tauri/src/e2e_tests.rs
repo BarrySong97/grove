@@ -11,14 +11,14 @@ use sqlx::sqlite::SqlitePoolOptions;
 
 use crate::shared::dto::conductor::ImportConductorProjectsInput;
 use crate::shared::dto::projects::{
-    ArchivePolicyDto, ProjectCommandsDto, UpdateProjectSettingsInput,
+    ArchivePolicyDto, CreateProjectInput, ProjectCommandsDto, UpdateProjectSettingsInput,
 };
 use crate::shared::dto::workspaces::{
     ArchivePolicyChoiceDto, ArchiveWorkspaceInput, CreateWorkspaceInput,
-    WorkspaceLifecycleStatusDto,
+    WorkspaceLifecycleStatusDto, WorkspaceOperationStatusDto,
 };
 use crate::use_cases::projects::{
-    import_conductor_projects, list_worktree_projects, update_project_settings,
+    create_project, import_conductor_projects, list_worktree_projects, update_project_settings,
 };
 use crate::use_cases::workspaces::{archive_workspace, create_workspace};
 
@@ -189,6 +189,138 @@ fn conductor_backend_flow_import_create_archive_and_reject_dirty_remove() {
         .await;
         assert!(result.is_err());
         assert!(dirty_path.exists());
+    });
+}
+
+#[test]
+fn manual_add_project_registers_selected_git_repo() {
+    tauri::async_runtime::block_on(async {
+        let fixture = Fixture::new("grove manual add project");
+        let db = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect("sqlite::memory:")
+            .await
+            .expect("in-memory sqlite should open");
+        sqlx::migrate!("./migrations")
+            .run(&db)
+            .await
+            .expect("migrations should run");
+
+        let older_repo_path = fixture.path("zeta repo");
+        create_repo(&older_repo_path);
+
+        create_project::run(
+            &db,
+            CreateProjectInput {
+                root_path: older_repo_path.to_string_lossy().to_string(),
+            },
+        )
+        .await
+        .expect("older manual project registration should succeed");
+
+        let repo_path = fixture.path("alpha repo");
+        create_repo(&repo_path);
+        let canonical_repo_path = repo_path
+            .canonicalize()
+            .expect("repo path should canonicalize");
+
+        let project = create_project::run(
+            &db,
+            CreateProjectInput {
+                root_path: repo_path.to_string_lossy().to_string(),
+            },
+        )
+        .await
+        .expect("manual project registration should succeed");
+
+        assert_eq!(project.name, "alpha repo");
+        assert_eq!(project.root_path, canonical_repo_path.to_string_lossy());
+        assert_eq!(project.default_branch, "main");
+        assert!(project.workspace_root.ends_with("alpha repo"));
+
+        let listed = list_worktree_projects::run(&db)
+            .await
+            .expect("registered projects should list");
+        assert_eq!(listed.len(), 2);
+        assert_eq!(listed[0].project.id, project.id);
+        assert_eq!(listed[0].project.name, "alpha repo");
+        assert_eq!(listed[1].project.name, "zeta repo");
+        assert_eq!(listed[0].commands.run, "pnpm dev");
+        assert!(listed[0].workspaces.is_empty());
+    });
+}
+
+#[test]
+fn failed_setup_marks_workspace_failed() {
+    tauri::async_runtime::block_on(async {
+        let fixture = Fixture::new("grove failed setup");
+        let db = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect("sqlite::memory:")
+            .await
+            .expect("in-memory sqlite should open");
+        sqlx::migrate!("./migrations")
+            .run(&db)
+            .await
+            .expect("migrations should run");
+
+        let repo_path = fixture.path("source repo");
+        create_repo(&repo_path);
+        let project = create_project::run(
+            &db,
+            CreateProjectInput {
+                root_path: repo_path.to_string_lossy().to_string(),
+            },
+        )
+        .await
+        .expect("manual project registration should succeed");
+
+        update_project_settings::run(
+            &db,
+            UpdateProjectSettingsInput {
+                project_id: project.id.clone(),
+                workspace_root: fixture
+                    .path("custom workspaces")
+                    .join("source repo")
+                    .to_string_lossy()
+                    .to_string(),
+                archive_policy: ArchivePolicyDto::Ask,
+                commands: ProjectCommandsDto {
+                    setup: "exit 7".into(),
+                    archive: String::new(),
+                    run: String::new(),
+                },
+            },
+        )
+        .await
+        .expect("settings should persist");
+
+        let result = create_workspace::run(
+            &db,
+            CreateWorkspaceInput {
+                project_id: project.id.clone(),
+                name: "broken setup".into(),
+                branch: "broken-setup".into(),
+                base_branch: "main".into(),
+                run_setup: true,
+            },
+            fixture.path("operation logs"),
+        )
+        .await;
+
+        assert!(result.is_err());
+        let listed = list_worktree_projects::run(&db)
+            .await
+            .expect("projects should list after failed setup");
+        let workspace = listed[0]
+            .workspaces
+            .iter()
+            .find(|workspace| workspace.name == "broken setup")
+            .expect("failed workspace row should remain visible");
+        assert!(matches!(
+            workspace.operation_status,
+            WorkspaceOperationStatusDto::Failed
+        ));
     });
 }
 

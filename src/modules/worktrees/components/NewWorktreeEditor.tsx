@@ -1,12 +1,15 @@
 /**
  * @purpose Renders the inline new-worktree editor.
  * @role    Focused form for branch name and base branch selection within a ProjectSection.
- * @deps    React state/effect/ref, Worktrees contracts/domain rules, shared icons
+ * @deps    Hero UI Form/Button/Input, native select, React Hook Form, Worktrees contracts/domain rules
  * @gotcha  Enter submits and Escape cancels locally; docs/modules/worktrees/README.md
  */
-import { useEffect, useRef, useState } from 'react'
+import { Button } from '@heroui/react/button'
+import { Form } from '@heroui/react/form'
+import { Input } from '@heroui/react/input'
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
 import type { Project } from '../../../shared/contracts/worktrees'
-import { Branch } from '../../../shared/icons'
 import { getCurrentWorktree } from '../domain/worktree-rules'
 
 interface NewWorktreeEditorProps {
@@ -15,68 +18,86 @@ interface NewWorktreeEditorProps {
   onCancel: () => void
 }
 
+interface NewWorktreeEditorValues {
+  name: string
+  base: string
+}
+
 export function NewWorktreeEditor({ project, onCreate, onCancel }: NewWorktreeEditorProps) {
-  const [name, setName] = useState('')
-  const [base, setBase] = useState(getCurrentWorktree(project).branch)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const baseBranches = [
+    project.defaultBranch,
+    ...project.worktrees.map((worktree) => worktree.branch)
+  ].filter((branch, index, branches) => branch && branches.indexOf(branch) === index)
+  const defaultBase = getCurrentWorktree(project)?.branch ?? project.defaultBranch
+  const { handleSubmit, register, setFocus, watch } = useForm<NewWorktreeEditorValues>({
+    defaultValues: { name: '', base: defaultBase },
+    mode: 'onChange'
+  })
+  const name = watch('name')
 
   useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
+    setFocus('name')
+  }, [setFocus])
 
-  const submit = () => {
-    const value = name.trim()
-    if (value) onCreate(project, value, base)
+  const submit = (values: NewWorktreeEditorValues) => {
+    const value = values.name.trim()
+    if (value) onCreate(project, value, values.base)
   }
 
   return (
-    <div
+    <Form
       onClick={(event) => event.stopPropagation()}
-      className="glass-surface-strong my-0.5 flex items-center gap-2.5 rounded-[9px] border-[0.5px] px-2.5 py-2 shadow-editor"
+      onSubmit={handleSubmit(submit)}
+      className="my-0.5 flex flex-col gap-1.5 rounded-[9px] border border-transparent bg-transparent px-2 py-1.5 shadow-editor"
     >
-      <span className="flex w-4 shrink-0 items-center justify-center text-accent">
-        <Branch />
-      </span>
-      <input
-        ref={inputRef}
-        value={name}
-        spellCheck={false}
-        autoComplete="off"
-        placeholder="feat/branch-name"
-        onChange={(event) => setName(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') submit()
-          if (event.key === 'Escape') onCancel()
-        }}
-        className="min-w-0 flex-1 bg-transparent font-mono text-[12.5px] text-[#1c1c1e] outline-none placeholder:text-black/[0.22]"
-      />
-      <span className="flex shrink-0 items-center gap-1 text-[11px] text-black/[0.34]">
-        from
-        <select
-          value={base}
-          onChange={(event) => setBase(event.target.value)}
-          className="max-w-[96px] rounded-md border-[0.5px] border-black/[0.16] bg-black/[0.02] px-1.5 py-[3px] font-mono text-[11px] text-[#1c1c1e] outline-none"
+      <div className="flex min-w-0 items-center gap-1.5">
+        <span className="flex shrink-0 items-center gap-1 text-[10.5px] text-black/[0.34]">
+          from
+          <select
+            {...register('base')}
+            className="grove-field-thin-focus h-[21px] max-w-[104px] appearance-auto rounded-md border-0 bg-white px-1.5 py-0 font-mono text-[10.5px] leading-none text-[#1c1c1e] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.08)] outline-none transition hover:bg-white focus:bg-white"
+          >
+            {baseBranches.map((branch) => (
+              <option key={branch} value={branch}>
+                {branch}
+              </option>
+            ))}
+          </select>
+        </span>
+        <Input
+          {...register('name', {
+            validate: (value) => value.trim().length > 0
+          })}
+          spellCheck={false}
+          autoComplete="off"
+          placeholder="feature-name"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') onCancel()
+          }}
+          className="grove-field-thin-focus min-w-0 flex-1 rounded-md bg-white px-2 py-[4px] font-mono text-[10.5px] text-[#1c1c1e] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.08)] transition placeholder:text-black/[0.34] hover:bg-white focus:bg-white"
+        />
+      </div>
+
+      <div className="flex justify-end gap-1 leading-none">
+        <Button
+          type="submit"
+          isDisabled={!name.trim()}
+          size="sm"
+          variant="primary"
+          className="h-auto min-w-0 rounded-md bg-accent px-2.5 py-[4px] text-[11px] font-semibold text-white disabled:opacity-40"
         >
-          {project.worktrees.map((worktree) => (
-            <option key={worktree.id} value={worktree.branch}>
-              {worktree.branch}
-            </option>
-          ))}
-        </select>
-      </span>
-      <button
-        onClick={onCancel}
-        className="shrink-0 rounded-[7px] px-2.5 py-1.5 text-[12px] font-medium text-black/50 transition-colors hover:bg-black/[0.05] hover:text-black/80"
-      >
-        Cancel
-      </button>
-      <button
-        onClick={submit}
-        disabled={!name.trim()}
-        className="shrink-0 rounded-[7px] bg-accent px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40"
-      >
-        Create
-      </button>
-    </div>
+          确认
+        </Button>
+        <Button
+          type="button"
+          onClick={onCancel}
+          size="sm"
+          variant="secondary"
+          className="h-auto min-w-0 rounded-md bg-transparent px-2.5 py-[4px] text-[11px] font-medium text-[#1c1c1e] hover:bg-black/[0.038] hover:text-[#1c1c1e]"
+        >
+          取消
+        </Button>
+      </div>
+    </Form>
   )
 }

@@ -1,8 +1,11 @@
-// @purpose Configures transparent webview/window surfaces for the tray panel.
-// @role    Platform adapter called during setup and before showing the panel.
-// @deps    tauri WebviewWindow, macOS objc2 appkit/foundation/webkit APIs
-// @gotcha  macOS branch uses unsafe Objective-C bridge and must be manually verified; docs/modules/tauri-runtime/README.md
+// @purpose Configures transparent webview/window surfaces and the Add project folder picker.
+// @role    Platform adapter called during setup, before showing the panel, and before native dialogs.
+// @deps    tauri WebviewWindow/AppHandle, tauri-plugin-dialog, macOS objc2 appkit/foundation/webkit APIs
+// @gotcha  macOS transparency uses unsafe Objective-C bridge and must be manually verified; docs/modules/tauri-runtime/README.md
+use std::path::PathBuf;
+
 use tauri::WebviewWindow;
+use tauri_plugin_dialog::DialogExt;
 
 #[cfg(target_os = "macos")]
 pub(crate) fn configure_transparent_panel(window: &WebviewWindow) {
@@ -27,6 +30,21 @@ pub(crate) fn configure_transparent_panel(window: &WebviewWindow) {
 
         let _: () = objc2::msg_send![view, setOpaque: false];
     });
+}
+
+pub(crate) fn pick_project_folder(app: &tauri::AppHandle) -> Option<PathBuf> {
+    app.dialog()
+        .file()
+        .set_title("Choose project folder")
+        .set_can_create_directories(false)
+        .blocking_pick_folder()
+        .and_then(|path| match path.into_path() {
+            Ok(path) => Some(path),
+            Err(error) => {
+                eprintln!("[grove] selected project folder path was invalid: {error}");
+                None
+            }
+        })
 }
 
 #[cfg(not(target_os = "macos"))]

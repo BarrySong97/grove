@@ -35,6 +35,12 @@ pub(crate) struct WorktreeProjectDto {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
+pub(crate) struct CreateProjectInput {
+    pub root_path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct UpdateProjectSettingsInput {
     pub project_id: String,
     pub workspace_root: String,

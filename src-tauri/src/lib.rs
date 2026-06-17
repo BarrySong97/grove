@@ -1,7 +1,7 @@
 // @purpose Builds and runs the Tauri application.
 // @role    Runtime composition layer for typed invoke handlers, database setup, tray, and window events.
 // @deps    tauri Builder/Manager/WindowEvent, tauri-specta, sqlx state, local runtime modules
-// @gotcha  Close/focus loss hides the panel instead of quitting; docs/modules/tauri-runtime/README.md
+// @gotcha  Focus loss hides the panel only outside native dialog flows; docs/modules/tauri-runtime/README.md
 mod app_state;
 mod commands;
 mod domain;
@@ -19,16 +19,24 @@ mod e2e_tests;
 
 use app_state::AppState;
 use specta_typescript::Typescript;
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 use tauri::{Manager, WindowEvent};
 
 fn command_builder() -> tauri_specta::Builder<tauri::Wry> {
     tauri_specta::Builder::<tauri::Wry>::new().commands(tauri_specta::collect_commands![
+        presentation::commands::projects::add_project_from_folder_picker,
         commands::hide_panel,
         commands::quit_app,
+        presentation::commands::projects::create_project,
         presentation::commands::projects::import_conductor_projects,
         presentation::commands::projects::list_projects,
         presentation::commands::projects::list_worktree_projects,
         presentation::commands::projects::update_project_settings,
+        presentation::commands::settings::get_app_settings,
+        presentation::commands::settings::update_app_settings,
         presentation::commands::workspaces::archive_workspace,
         presentation::commands::workspaces::create_workspace,
         presentation::commands::workspaces::open_workspace,
@@ -58,7 +66,14 @@ pub fn run() {
     #[cfg(debug_assertions)]
     export_typescript_bindings(&specta_builder);
 
+    let panel_had_focus = Arc::new(AtomicBool::new(false));
+    let native_dialog_open = Arc::new(AtomicBool::new(false));
+    let panel_focus_state = Arc::clone(&panel_had_focus);
+    let native_dialog_focus_state = Arc::clone(&native_dialog_open);
+    let native_dialog_app_state = Arc::clone(&native_dialog_open);
+
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(specta_builder.invoke_handler())
         .setup(|app| {
             #[cfg(target_os = "macos")]
@@ -68,7 +83,7 @@ pub fn run() {
                 &app.handle(),
             ))
             .map_err(|error| std::io::Error::other(error.to_string()))?;
-            app.manage(AppState { db });
+            app.manage(AppState::new(db, native_dialog_app_state));
 
             if let Some(window) = app.get_webview_window("main") {
                 window::configure_transparent_panel(&window);
@@ -77,13 +92,23 @@ pub fn run() {
             tray::setup(app)?;
             Ok(())
         })
-        .on_window_event(|window, event| match event {
+        .on_window_event(move |window, event| match event {
             WindowEvent::CloseRequested { api, .. } => {
                 let _ = window.hide();
                 api.prevent_close();
             }
+            WindowEvent::Focused(true) => {
+                panel_focus_state.store(true, Ordering::SeqCst);
+            }
             WindowEvent::Focused(false) => {
-                let _ = window.hide();
+                if native_dialog_focus_state.load(Ordering::SeqCst) {
+                    panel_focus_state.store(true, Ordering::SeqCst);
+                    return;
+                }
+
+                if panel_focus_state.swap(false, Ordering::SeqCst) {
+                    let _ = window.hide();
+                }
             }
             _ => {}
         })

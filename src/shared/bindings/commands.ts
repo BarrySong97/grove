@@ -11,8 +11,23 @@ import { invoke as __TAURI_INVOKE } from '@tauri-apps/api/core'
 
 /** Commands */
 export const commands = {
+  addProjectFromFolderPicker: () =>
+    typedError<
+      {
+        id: string
+        name: string
+        rootPath: string
+        workspaceRoot: string
+        defaultBranch: string
+        configSource: ConfigSourceDto
+        archivePolicy: ArchivePolicyDto
+      } | null,
+      AppErrorDto
+    >(__TAURI_INVOKE('add_project_from_folder_picker')),
   hidePanel: () => __TAURI_INVOKE<void>('hide_panel'),
   quitApp: () => __TAURI_INVOKE<void>('quit_app'),
+  createProject: (input: CreateProjectInput) =>
+    typedError<ProjectDto, AppErrorDto>(__TAURI_INVOKE('create_project', { input })),
   importConductorProjects: (input: ImportConductorProjectsInput) =>
     typedError<ConductorImportCandidateDto[], AppErrorDto>(
       __TAURI_INVOKE('import_conductor_projects', { input })
@@ -22,6 +37,9 @@ export const commands = {
     typedError<WorktreeProjectDto[], AppErrorDto>(__TAURI_INVOKE('list_worktree_projects')),
   updateProjectSettings: (input: UpdateProjectSettingsInput) =>
     typedError<ProjectDto, AppErrorDto>(__TAURI_INVOKE('update_project_settings', { input })),
+  getAppSettings: () => typedError<AppSettingsDto, AppErrorDto>(__TAURI_INVOKE('get_app_settings')),
+  updateAppSettings: (input: UpdateAppSettingsInput) =>
+    typedError<AppSettingsDto, AppErrorDto>(__TAURI_INVOKE('update_app_settings', { input })),
   archiveWorkspace: (input: ArchiveWorkspaceInput) =>
     typedError<WorkspaceDto, AppErrorDto>(__TAURI_INVOKE('archive_workspace', { input })),
   createWorkspace: (input: CreateWorkspaceInput) =>
@@ -38,6 +56,10 @@ export type AppErrorDto = {
   message: string
   details: string | null
   recoverable: boolean
+}
+
+export type AppSettingsDto = {
+  ghosttyOpenMode: GhosttyOpenModeDto
 }
 
 export type ArchivePolicyChoiceDto = 'hide' | 'remove_worktree'
@@ -61,6 +83,10 @@ export type ConductorImportCandidateDto = {
 
 export type ConfigSourceDto = 'conductor_settings' | 'conductor_json' | 'grove_override' | 'none'
 
+export type CreateProjectInput = {
+  rootPath: string
+}
+
 export type CreateWorkspaceInput = {
   projectId: string
   name: string
@@ -68,6 +94,8 @@ export type CreateWorkspaceInput = {
   baseBranch: string
   runSetup: boolean
 }
+
+export type GhosttyOpenModeDto = 'window' | 'tab'
 
 export type ImportConductorProjectsInput = {
   workspaceRoot: string | null
@@ -104,6 +132,10 @@ export type ProjectDto = {
 
 export type RefreshProjectInput = {
   projectId: string
+}
+
+export type UpdateAppSettingsInput = {
+  ghosttyOpenMode: GhosttyOpenModeDto
 }
 
 export type UpdateProjectSettingsInput = {

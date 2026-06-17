@@ -1,9 +1,10 @@
 /**
  * @purpose Renders one project group with collapsible worktree rows and project controls.
- * @role    Sortable project section inside WorktreePanel; owns local collapse/show-all UI state.
- * @deps    React state, motion, @dnd-kit, shared icons/ui, WorktreeRow, NewWorktreeEditor
- * @gotcha  VISIBLE_LIMIT controls collapsed preview; activeContextWorktreeId pins row actions; docs/modules/worktrees/README.md
+ * @role    Sortable project section inside WorktreePanel; renders persisted collapse state and local show-all state.
+ * @deps    Hero UI Button, React state, motion, @dnd-kit, shared icons/ui, WorktreeRow, NewWorktreeEditor
+ * @gotcha  Collapsed state is owned by the panel hook; VISIBLE_LIMIT only controls show-all preview; docs/modules/worktrees/README.md
  */
+import { Button } from '@heroui/react/button'
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import {
@@ -44,12 +45,14 @@ interface ProjectSectionProps {
   density: Density
   showCommit: boolean
   isAdding: boolean
+  collapsed: boolean
   activeContextWorktreeId: string | null
   isFirst: boolean
   isLast: boolean
   onAddWorktree: (projectId: string) => void
   onCancelAdd: () => void
   onCreateWorktree: (project: Project, name: string, base: string) => void
+  onCollapsedChange: (collapsed: boolean) => void
   onEditSettings: (projectId: string) => void
   onMove: (direction: 'up' | 'down' | 'top') => void
   onMoveWorktree: (worktreeId: string, direction: 'up' | 'down' | 'top') => void
@@ -62,19 +65,20 @@ export function ProjectSection({
   density,
   showCommit,
   isAdding,
+  collapsed,
   activeContextWorktreeId,
   isFirst,
   isLast,
   onAddWorktree,
   onCancelAdd,
   onCreateWorktree,
+  onCollapsedChange,
   onEditSettings,
   onMove,
   onMoveWorktree,
   onReorderWorktrees,
   onContext
 }: ProjectSectionProps) {
-  const [collapsed, setCollapsed] = useState(false)
   const [showAll, setShowAll] = useState(false)
   const hasOverflow = project.worktrees.length > VISIBLE_LIMIT
   const head = project.worktrees.slice(0, VISIBLE_LIMIT)
@@ -126,33 +130,32 @@ export function ProjectSection({
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={'group/proj relative' + (isDragging ? ' z-10 opacity-80' : '')}
     >
-      <div className="flex items-center gap-2 px-2.5 py-2">
-        <button
-          ref={setActivatorNodeRef}
-          type="button"
-          onClick={() => setCollapsed((value) => !value)}
-          className="flex min-w-0 flex-1 items-center gap-2 text-left active:cursor-grabbing"
-          {...attributes}
-          {...listeners}
-        >
-          <motion.span
-            className="flex w-3 shrink-0 items-center justify-center text-black/30"
-            animate={{ rotate: collapsed ? 0 : 90 }}
-            transition={collapseTransition}
+      <div className="px-2.5 py-2">
+        <div className="flex items-center gap-2">
+          <Button
+            ref={setActivatorNodeRef}
+            type="button"
+            onClick={() => onCollapsedChange(!collapsed)}
+            size="sm"
+            variant="ghost"
+            className="grove-icon-scale h-auto min-w-0 flex-1 justify-start gap-2 rounded-md p-0 text-left hover:bg-transparent active:cursor-grabbing"
+            {...attributes}
+            {...listeners}
           >
-            <ChevronRight />
-          </motion.span>
-          <Dot color={project.accent} />
-          <span className="whitespace-nowrap text-[12px] font-semibold tracking-[0.2px]">
-            {project.name}
-          </span>
-        </button>
+            <motion.span
+              className="flex w-3 shrink-0 items-center justify-center text-black/30"
+              animate={{ rotate: collapsed ? 0 : 90 }}
+              transition={collapseTransition}
+            >
+              <ChevronRight />
+            </motion.span>
+            <Dot color={project.accent} />
+            <span className="min-w-0 flex-1 truncate whitespace-nowrap text-[12px] font-semibold tracking-[0.2px]">
+              {project.name}
+            </span>
+          </Button>
 
-        <div className="relative flex shrink-0 items-center">
-          <span className="truncate font-mono text-[10.5px] text-black/[0.22] transition-opacity group-hover/proj:opacity-0">
-            {project.path}
-          </span>
-          <div className="absolute right-0 top-1/2 flex -translate-y-1/2 items-center gap-1 opacity-0 transition-opacity group-hover/proj:opacity-100">
+          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover/proj:opacity-100">
             {!isFirst && (
               <IconButton title="Move to top" size="project" onClick={() => onMove('top')}>
                 <ToTop />
@@ -180,13 +183,17 @@ export function ProjectSection({
               size="project"
               tone="accent"
               onClick={() => {
-                setCollapsed(false)
+                onCollapsedChange(false)
                 onAddWorktree(project.id)
               }}
             >
               <Plus />
             </IconButton>
           </div>
+        </div>
+
+        <div className="truncate pt-[5px] font-mono text-[10.5px] leading-none text-black/55">
+          {project.path}
         </div>
       </div>
 

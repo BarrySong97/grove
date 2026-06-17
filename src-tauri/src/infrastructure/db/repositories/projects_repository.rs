@@ -1,7 +1,7 @@
 // @purpose Reads and writes Grove project records in SQLite.
 // @role    Persistence adapter used by project use cases.
 // @deps    sqlx, Project DTOs, shared errors
-// @gotcha  Project rows cache Grove registration state, not live git state.
+// @gotcha  Project lists are newest registration first; rows cache Grove state, not live git state.
 use sqlx::{FromRow, SqlitePool};
 
 use crate::shared::dto::errors::AppResult;
@@ -31,7 +31,7 @@ pub(crate) async fn list_projects(pool: &SqlitePool) -> AppResult<Vec<ProjectDto
         r#"
         SELECT id, name, root_path, workspace_root, default_branch, config_source, archive_policy
         FROM projects
-        ORDER BY name COLLATE NOCASE ASC
+        ORDER BY created_at DESC, rowid DESC, name COLLATE NOCASE ASC
         "#,
     )
     .fetch_all(pool)

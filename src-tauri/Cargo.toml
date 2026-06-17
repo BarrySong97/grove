@@ -20,6 +20,7 @@ specta = { version = "=2.0.0-rc.25", features = ["derive"] }
 specta-typescript = "0.0.12"
 sqlx = { version = "0.8", features = ["macros", "migrate", "runtime-tokio-rustls", "sqlite"] }
 tauri = { version = "2", features = ["macos-private-api", "specta", "tray-icon"] }
+tauri-plugin-dialog = "2"
 tauri-specta = { version = "2.0.0-rc.25", features = ["typescript"] }
 thiserror = "2"
 toml = "0.9"

@@ -31,6 +31,7 @@ export interface Project {
   name: string
   path: string
   workspaceRoot: string
+  defaultBranch: string
   accent: string
   archivePolicy: 'ask' | 'hide' | 'remove_worktree'
   commands: ProjectCommands

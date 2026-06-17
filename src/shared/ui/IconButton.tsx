@@ -1,10 +1,11 @@
 /**
  * @purpose Defines fixed-size icon-only buttons for project and row actions.
  * @role    Reusable UI primitive consumed by worktree components.
- * @deps    React MouseEvent/ReactNode
+ * @deps    Hero UI Button, React button props/ReactNode
  * @gotcha  Always provide title text for icon-only controls; docs/modules/ui/README.md
  */
-import type { MouseEvent, ReactNode } from 'react'
+import { Button } from '@heroui/react/button'
+import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from 'react'
 
 type IconButtonSize = 'project' | 'row'
 type IconButtonTone = 'ghost' | 'accent' | 'danger'
@@ -13,9 +14,11 @@ interface IconButtonProps {
   title: string
   children: ReactNode
   className?: string
+  isDisabled?: boolean
   size?: IconButtonSize
   tone?: IconButtonTone
-  onClick?: (event: MouseEvent<HTMLButtonElement>) => void
+  type?: ButtonHTMLAttributes<HTMLButtonElement>['type']
+  onClick?: (event: MouseEvent) => void
 }
 
 const sizeClasses: Record<IconButtonSize, string> = {
@@ -33,17 +36,27 @@ export function IconButton({
   title,
   children,
   className = '',
+  isDisabled = false,
   size = 'row',
   tone = 'ghost',
+  type = 'button',
   onClick
 }: IconButtonProps) {
+  const titleProps = { title }
+
   return (
-    <button
-      title={title}
+    <Button
+      {...titleProps}
+      aria-label={title}
+      type={type}
       onClick={onClick}
-      className={`flex items-center justify-center text-black/50 transition-colors ${sizeClasses[size]} ${toneClasses[tone]} ${className}`}
+      isDisabled={isDisabled}
+      isIconOnly
+      size="sm"
+      variant="ghost"
+      className={`grove-icon-scale min-w-0 p-0 text-black/50 transition-colors ${sizeClasses[size]} ${toneClasses[tone]} ${className}`}
     >
       {children}
-    </button>
+    </Button>
   )
 }

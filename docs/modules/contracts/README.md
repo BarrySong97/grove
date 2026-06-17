@@ -4,7 +4,7 @@
 `src/shared/contracts/` 放前端和未来后端都能安全导入的共享契约,包括 DTO 类型、输入输出形状、枚举和轻量校验常量。
 
 ## 文件
-- `worktrees/worktree.contract.ts`:Worktree、Project、ProjectCommands、archive policy、workspace root、CommandDef 和 Density 等 Grove 面板契约。
+- `worktrees/worktree.contract.ts`:Worktree、Project、ProjectCommands、archive policy、workspace root、default branch、CommandDef 和 Density 等 Grove 面板契约。
 - `worktrees/index.ts`:Worktrees 契约 barrel。
 
 ## 约束

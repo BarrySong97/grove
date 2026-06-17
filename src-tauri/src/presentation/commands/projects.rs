@@ -1,16 +1,78 @@
 // @purpose Defines project-related Tauri business commands.
 // @role    Thin presentation adapter from Tauri invoke to project use cases.
-// @deps    tauri AppHandle/Manager, app state, project DTOs, shared command errors
+// @deps    tauri AppHandle/Manager, native window picker, app state, project DTOs, shared command errors
 // @gotcha  Keep workflow logic in use_cases/projects; docs/modules/tauri-runtime/README.md
 use tauri::Manager;
 
 use crate::app_state::AppState;
 use crate::shared::dto::conductor::{ConductorImportCandidateDto, ImportConductorProjectsInput};
 use crate::shared::dto::errors::{AppErrorDto, CommandResult};
-use crate::shared::dto::projects::{ProjectDto, UpdateProjectSettingsInput, WorktreeProjectDto};
-use crate::use_cases::projects::{
-    import_conductor_projects, list_projects, list_worktree_projects, update_project_settings,
+use crate::shared::dto::projects::{
+    CreateProjectInput, ProjectDto, UpdateProjectSettingsInput, WorktreeProjectDto,
 };
+use crate::use_cases::projects::{
+    create_project, import_conductor_projects, list_projects, list_worktree_projects,
+    update_project_settings,
+};
+use crate::window;
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn create_project(
+    app: tauri::AppHandle,
+    input: CreateProjectInput,
+) -> CommandResult<ProjectDto> {
+    let state = app.state::<AppState>();
+    create_project::run(&state.db, input)
+        .await
+        .map_err(AppErrorDto::from)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn add_project_from_folder_picker(
+    app: tauri::AppHandle,
+) -> CommandResult<Option<ProjectDto>> {
+    let selected_root_path = {
+        let state = app.state::<AppState>();
+        let _dialog_guard = state.native_dialog_guard();
+        let selected = window::pick_project_folder(&app);
+
+        if let Some(panel) = app.get_webview_window("main") {
+            let _ = panel.set_focus();
+        }
+
+        selected
+    };
+
+    let Some(root_path) = selected_root_path else {
+        eprintln!("[grove] add project folder picker cancelled");
+        return Ok(None);
+    };
+    eprintln!(
+        "[grove] add project folder picker selected {}",
+        root_path.display()
+    );
+
+    let state = app.state::<AppState>();
+    match create_project::run(
+        &state.db,
+        CreateProjectInput {
+            root_path: root_path.to_string_lossy().to_string(),
+        },
+    )
+    .await
+    {
+        Ok(project) => {
+            eprintln!("[grove] add project registered {}", project.root_path);
+            Ok(Some(project))
+        }
+        Err(error) => {
+            eprintln!("[grove] add project failed: {error}");
+            Err(AppErrorDto::from(error))
+        }
+    }
+}
 
 #[tauri::command]
 #[specta::specta]

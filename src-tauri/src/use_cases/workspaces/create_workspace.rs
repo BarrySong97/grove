@@ -1,7 +1,7 @@
 // @purpose Creates a new git worktree workspace and optionally runs setup.
 // @role    Workspace use case for create -> copy files -> setup -> refresh.
 // @deps    project/workspace/operation repositories, git/filesystem/process adapters, workspace DTOs
-// @gotcha  First implementation uses local refs only and does not run git fetch.
+// @gotcha  Failed create/setup attempts mark persisted workspace rows failed so the UI does not keep spinning.
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -73,6 +73,9 @@ pub(crate) async fn run(
             Ok(workspace)
         }
         Err(error) => {
+            let workspace_id = stable_id(&workspace_path.to_string_lossy());
+            let _ =
+                workspaces_repository::update_operation_status(pool, &workspace_id, "failed").await;
             operations_repository::finish_operation(
                 pool,
                 &operation_id,

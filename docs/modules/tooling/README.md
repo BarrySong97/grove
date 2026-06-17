@@ -24,8 +24,17 @@
 - `node scripts/check-docs.mjs --hook` 是 Stop hook 专用模式:成功只输出 `{}`,失败只输出 `{"decision":"block","reason":"..."}`,不能打印普通日志或 `hookSpecificOutput`。
 - `scripts/hooks/pre-commit` 跑 `node scripts/check-docs.mjs`、`pnpm format:check`、`pnpm lint` 和 `pnpm build`。
 
+## 依赖与前端组件库
+- 项目使用 `pnpm@10.14.0`;新增依赖后必须提交 `package.json` 和 `pnpm-lock.yaml`。
+- 如果本地 `node_modules` 来自用户全局 pnpm store,安装依赖时可能需要显式使用现有 store-dir,避免 pnpm 试图切换到项目内 `.pnpm-store`。
+- Hero UI v3 依赖 Tailwind CSS v4 和 React 19;升级这些依赖前要先验证 `@heroui/react`、`@heroui/styles` 的 peer dependency。
+- Hero UI styles 不走老版 provider 配置,当前在 `src/index.css` 中按需 import base、component css、theme、utilities 和 variants。
+- Hero UI 的 popover/select 动画依赖 `tw-animate-css`;移除或重排样式入口后,必须跑 `pnpm build` 捕获 Tailwind unknown utility 报错。
+- 引入 Hero UI 后 `pnpm build` 可能出现 chunk size warning;这是包体提示,不是构建失败,但继续扩大组件库使用面时要评估 code splitting 或 Rollup `manualChunks`。
+
 ## 约束
 - 改 Vite 端口、host 或 strictPort 前,确认 Tauri dev 配置和 [运行手册](../../run.md) 同步。
 - 改 `check-docs.config.json` 时,同步 [AI 文件头规范](../../topics/ai-file-headers.md)。
 - 改 `.oxfmtrc.json`、Oxlint/Oxfmt 脚本或 hook 范围时,同步本文件、[运行手册](../../run.md) 和 [测试策略](../../testing.md)。
+- 改 `package.json`、前端组件库、Tailwind 或全局 CSS 时,至少跑 `pnpm build`、`pnpm lint`、`pnpm format:check` 和 `node scripts/check-docs.mjs`。
 - hooks 是协作护栏,不是安全边界;关键规则仍要能通过测试、lint 或 pre-commit 复现。

@@ -5,15 +5,16 @@
 
 ## 文件
 - `db/connection.rs`:打开 app data 目录下的 SQLite 数据库并运行 migration。
-- `db/repositories/projects_repository.rs`:读写 Grove project、命令和 archive policy 持久化记录。
+- `db/repositories/projects_repository.rs`:读写 Grove project、命令和 archive policy 持久化记录;项目列表按最新登记优先返回。
 - `db/repositories/workspaces_repository.rs`:写入导入/刷新得到的 workspace 记录、git state 和 lifecycle/operation 状态。
 - `db/repositories/operations_repository.rs`:记录 create/archive 等长操作状态、退出码和日志路径。
+- `db/repositories/settings_repository.rs`:读写全局 app settings,当前包含 Ghostty 打开模式。
 - `git/worktree_repository.rs`:运行并解析 `git worktree list --porcelain`,并封装 `git worktree add/remove`。
 - `git/status_repository.rs`:读取 dirty/ahead/behind/latest commit 的 git snapshot。
 - `conductor/config_repository.rs`:读取 `.conductor/settings*.toml`、user settings 和 legacy `conductor.json` 的 scripts/files-to-copy 配置。
 - `filesystem/file_copy.rs`:按 `.worktreeinclude`、`file_include_globs` 或默认 `.env*` 复制 gitignored 文件。
 - `process/command_runner.rs`:在 workspace 目录运行 setup/archive command 并写日志。
-- `native/opener.rs`:打开 Finder、Zed、Cursor、VS Code、Ghostty 和 macOS Terminal。
+- `native/opener.rs`:打开 Finder、Zed、Cursor、VS Code、Ghostty 和 macOS Terminal;Cursor/VS Code 通过 `--new-window <path>` 打开目标目录,Ghostty window 模式通过 `--working-directory=<path>` 设置启动目录,tab 模式通过 macOS folder-open 路径交给 Ghostty 在当前实例中打开。
 
 ## 约束
 - infrastructure 可以依赖 DTO 和 domain 规则,但 domain/use-case 之外的层不能把 workflow 塞进 repository。

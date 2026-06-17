@@ -1,70 +1,34 @@
 /**
- * @purpose Defines navigation and ordering SVG icon components.
+ * @purpose Defines navigation and ordering icon components backed by lucide-react.
  * @role    Shared icon set for collapse, back, up/down, and move-to-top controls.
- * @deps    React SVG props pattern
- * @gotcha  Keep icons legible at 16px and 22px button sizes; docs/modules/icons/README.md
+ * @deps    lucide-react
+ * @gotcha  Keep semantic export names stable for consumers; docs/modules/icons/README.md
  */
-import type { SVGProps } from 'react'
+import {
+  ArrowUpToLine,
+  ChevronDown as LucideChevronDown,
+  ChevronLeft as LucideChevronLeft,
+  ChevronRight as LucideChevronRight,
+  ChevronUp as LucideChevronUp,
+  type LucideProps
+} from 'lucide-react'
 
-type IconProps = SVGProps<SVGSVGElement>
-
-export const ChevronRight = (props: IconProps) => (
-  <svg viewBox="0 0 16 16" width="13" height="13" fill="none" {...props}>
-    <path
-      d="M6 3.5 10.5 8 6 12.5"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
+export const ChevronRight = (props: LucideProps) => (
+  <LucideChevronRight size={13} strokeWidth={2.2} {...props} />
 )
 
-export const ChevronLeft = (props: IconProps) => (
-  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" {...props}>
-    <path
-      d="M10 3.5 5.5 8 10 12.5"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
+export const ChevronLeft = (props: LucideProps) => (
+  <LucideChevronLeft size={14} strokeWidth={2.2} {...props} />
 )
 
-export const ChevronUp = (props: IconProps) => (
-  <svg viewBox="0 0 16 16" width="13" height="13" fill="none" {...props}>
-    <path
-      d="M3.5 10 8 5.5 12.5 10"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
+export const ChevronUp = (props: LucideProps) => (
+  <LucideChevronUp size={13} strokeWidth={2.2} {...props} />
 )
 
-export const ChevronDown = (props: IconProps) => (
-  <svg viewBox="0 0 16 16" width="13" height="13" fill="none" {...props}>
-    <path
-      d="M3.5 6 8 10.5 12.5 6"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
+export const ChevronDown = (props: LucideProps) => (
+  <LucideChevronDown size={13} strokeWidth={2.2} {...props} />
 )
 
-export const ToTop = (props: IconProps) => (
-  <svg viewBox="0 0 16 16" width="13" height="13" fill="none" {...props}>
-    <path d="M3.5 3.4h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    <path
-      d="M8 13V6.4M5 9.4 8 6.3l3 3.1"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
+export const ToTop = (props: LucideProps) => (
+  <ArrowUpToLine size={13} strokeWidth={2.2} {...props} />
 )
