@@ -172,6 +172,14 @@ function WorktreeSubtitle({
     )
   }
 
+  if (worktree.status === 'failed') {
+    return (
+      <span className="truncate text-[11px] font-medium text-red-500">
+        Failed · open actions for log or retry
+      </span>
+    )
+  }
+
   if (showCommit) {
     return (
       <span className="truncate text-[11px] text-black/[0.34]">

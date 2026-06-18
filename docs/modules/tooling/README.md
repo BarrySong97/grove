@@ -5,6 +5,7 @@
 
 ## 文件
 - `vite.config.ts`:Vite 配置,启用 React 与 Tailwind 插件,固定 dev server 为 `127.0.0.1:1420`。
+- `vitest.config.ts`:Vitest 配置,使用 React plugin 和 jsdom 环境跑前端单元测试。
 - `src/vite-env.d.ts`:Vite client ambient 类型声明。
 - `package.json`:脚本、依赖和 pnpm packageManager 声明。
 - `.oxfmtrc.json`:Oxfmt 配置入口,排除 docs / Tauri Rust 壳等非前端格式化范围。
@@ -18,6 +19,7 @@
 - `pnpm dev` 只跑 Vite 前端,用于快速 UI 验证。
 - `pnpm tauri:dev` 跑完整桌面壳,需要 Vite 端口契约不变。
 - `pnpm build` 先 `tsc --noEmit`,再 `vite build`。
+- `pnpm test` 使用 Vitest 跑 `src/**/*.test.{ts,tsx}` 前端单元测试。
 - `pnpm lint` 使用 Oxlint 扫描项目 JS/TS/TSX 文件,提交前作为兜底。
 - `pnpm format` 使用 Oxfmt 写回前端源码、配置和 hook 支持的文本文件;`pnpm format:check` 只检查不写入。
 - `scripts/hooks/format-lint.mjs` 在 Write/Edit 后对单文件跑 Oxfmt,并对 JS/TS 文件追加 Oxlint。
@@ -36,5 +38,5 @@
 - 改 Vite 端口、host 或 strictPort 前,确认 Tauri dev 配置和 [运行手册](../../run.md) 同步。
 - 改 `check-docs.config.json` 时,同步 [AI 文件头规范](../../topics/ai-file-headers.md)。
 - 改 `.oxfmtrc.json`、Oxlint/Oxfmt 脚本或 hook 范围时,同步本文件、[运行手册](../../run.md) 和 [测试策略](../../testing.md)。
-- 改 `package.json`、前端组件库、Tailwind 或全局 CSS 时,至少跑 `pnpm build`、`pnpm lint`、`pnpm format:check` 和 `node scripts/check-docs.mjs`。
+- 改 `package.json`、前端组件库、Tailwind、测试配置或全局 CSS 时,至少跑 `pnpm test`、`pnpm build`、`pnpm lint`、`pnpm format:check` 和 `node scripts/check-docs.mjs`。
 - hooks 是协作护栏,不是安全边界;关键规则仍要能通过测试、lint 或 pre-commit 复现。

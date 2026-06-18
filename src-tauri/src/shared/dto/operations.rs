@@ -1,7 +1,7 @@
-// @purpose Defines operation DTOs for long-running Grove backend actions.
-// @role    Type-safe command boundary for create/setup/archive/open operation status.
+// @purpose Defines operation DTOs for Grove backend actions, logs, and retry surfaces.
+// @role    Type-safe command boundary for workflow status and operation log access.
 // @deps    serde, specta
-// @gotcha  Long command logs live on disk; DTOs expose only log paths and summaries.
+// @gotcha  Long command logs live on disk; frontend reads them through backend commands.
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
@@ -21,8 +21,7 @@ pub(crate) struct OperationDto {
     pub error_message: Option<String>,
 }
 
-#[allow(dead_code)]
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum OperationKindDto {
     Import,
@@ -30,17 +29,37 @@ pub(crate) enum OperationKindDto {
     Create,
     Setup,
     Archive,
+    RemoveProject,
     OpenEditor,
     OpenTerminal,
     RevealFinder,
 }
 
-#[allow(dead_code)]
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum OperationStatusDto {
     Queued,
     Running,
     Succeeded,
     Failed,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct OperationTargetInput {
+    pub project_id: Option<String>,
+    pub workspace_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ReadOperationLogInput {
+    pub operation_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct OperationLogDto {
+    pub operation_id: String,
+    pub content: String,
 }

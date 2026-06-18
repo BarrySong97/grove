@@ -2,16 +2,19 @@
 // @role    Thin presentation adapter from Tauri invoke to project use cases.
 // @deps    tauri AppHandle/Manager, native window picker, app state, project DTOs, shared command errors
 // @gotcha  Keep workflow logic in use_cases/projects; docs/modules/tauri-runtime/README.md
+use std::path::PathBuf;
+
 use tauri::Manager;
 
 use crate::app_state::AppState;
 use crate::shared::dto::conductor::{ConductorImportCandidateDto, ImportConductorProjectsInput};
-use crate::shared::dto::errors::{AppErrorDto, CommandResult};
+use crate::shared::dto::errors::{AppError, AppErrorDto, CommandResult};
 use crate::shared::dto::projects::{
-    CreateProjectInput, ProjectDto, UpdateProjectSettingsInput, WorktreeProjectDto,
+    CreateProjectInput, ProjectDto, RemoveProjectInput, UpdateProjectSettingsInput,
+    WorktreeProjectDto,
 };
 use crate::use_cases::projects::{
-    create_project, import_conductor_projects, list_projects, list_worktree_projects,
+    create_project, import_conductor_projects, list_projects, list_worktree_projects, remove_project,
     update_project_settings,
 };
 use crate::window;
@@ -116,4 +119,27 @@ pub(crate) async fn update_project_settings(
     update_project_settings::run(&state.db, input)
         .await
         .map_err(AppErrorDto::from)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn remove_project(
+    app: tauri::AppHandle,
+    input: RemoveProjectInput,
+) -> CommandResult<()> {
+    let state = app.state::<AppState>();
+    let log_root = log_root(&app).map_err(AppErrorDto::from)?;
+    remove_project::run(&state.db, input, log_root)
+        .await
+        .map_err(AppErrorDto::from)
+}
+
+fn log_root(app: &tauri::AppHandle) -> Result<PathBuf, AppError> {
+    Ok(app
+        .path()
+        .app_log_dir()
+        .map_err(|source| AppError::Internal {
+            message: format!("Unable to resolve app log directory: {source}"),
+        })?
+        .join("operations"))
 }

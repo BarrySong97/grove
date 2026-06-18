@@ -1,10 +1,10 @@
 /**
- * @purpose Defines browser-safe Worktree, Project, command, and density contracts.
+ * @purpose Defines browser-safe Worktree, Project, setup/archive command, and density contracts.
  * @role    Shared contract layer imported by frontend UI, domain rules, and use cases.
  * @deps    TypeScript only
- * @gotcha  Prototype statuses are not a complete backend task model; docs/modules/worktrees/README.md
+ * @gotcha  Display statuses are mapped from Rust lifecycle/operation DTOs; backend remains source of truth.
  */
-export type WorktreeStatus = 'ready' | 'setting-up' | 'archiving'
+export type WorktreeStatus = 'ready' | 'setting-up' | 'archiving' | 'failed'
 
 export interface Worktree {
   id: string
@@ -21,7 +21,6 @@ export interface Worktree {
 }
 
 export interface ProjectCommands {
-  run: string
   setup: string
   archive: string
 }
@@ -33,7 +32,7 @@ export interface Project {
   workspaceRoot: string
   defaultBranch: string
   accent: string
-  archivePolicy: 'ask' | 'hide' | 'remove_worktree'
+  archivePolicy: 'use_global' | 'ask' | 'hide' | 'remove_worktree'
   commands: ProjectCommands
   worktrees: Worktree[]
 }

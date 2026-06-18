@@ -26,6 +26,11 @@ pub(crate) async fn run(
     log_root: PathBuf,
 ) -> AppResult<WorkspaceDto> {
     let project = projects_repository::get_project(pool, &input.project_id).await?;
+    if operations_repository::has_running_project_remove_operation(pool, &project.id).await? {
+        return Err(AppError::OperationConflict {
+            message: "Another operation is already running for this project.".into(),
+        });
+    }
     validate_workspace_name(&input.name)?;
     validate_branch_name(&input.branch)?;
 
@@ -128,6 +133,7 @@ async fn create_workspace_steps(
         git_state: None,
     };
     workspaces_repository::upsert_workspace(pool, &workspace).await?;
+    operations_repository::attach_workspace(pool, operation_id, &workspace.id).await?;
 
     if input.run_setup {
         let commands = projects_repository::get_project_commands(pool, &project.id).await?;

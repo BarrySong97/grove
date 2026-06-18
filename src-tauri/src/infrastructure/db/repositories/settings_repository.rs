@@ -1,17 +1,27 @@
 // @purpose Persists application-wide Grove settings in SQLite.
-// @role    Settings repository consumed by app settings and workspace open use cases.
+// @role    Settings repository consumed by app settings, archive, remove, and open use cases.
 // @deps    sqlx SQLite pool, settings DTOs, shared errors
-// @gotcha  Defaults must preserve existing app behavior for upgraded users.
+// @gotcha  Defaults must preserve existing app behavior and avoid destructive removal surprises.
 use sqlx::SqlitePool;
 
 use crate::shared::dto::errors::{AppError, AppResult};
-use crate::shared::dto::settings::{AppSettingsDto, GhosttyOpenModeDto};
+use crate::shared::dto::projects::ArchivePolicyDto;
+use crate::shared::dto::settings::{
+    AppSettingsDto, GhosttyOpenModeDto, RemoveProjectBehaviorDto,
+};
 use crate::shared::dto::workspaces::OpenWorkspaceTargetDto;
 
 const GHOSTTY_OPEN_MODE_KEY: &str = "ghostty_open_mode";
 const DEFAULT_OPEN_TARGET_KEY: &str = "default_open_target";
+const DEFAULT_ARCHIVE_POLICY_KEY: &str = "default_archive_policy";
+const REMOVE_PROJECT_BEHAVIOR_KEY: &str = "remove_project_behavior";
 const GHOSTTY_OPEN_MODE_WINDOW: &str = "window";
 const GHOSTTY_OPEN_MODE_TAB: &str = "tab";
+const ARCHIVE_POLICY_ASK: &str = "ask";
+const ARCHIVE_POLICY_HIDE: &str = "hide";
+const ARCHIVE_POLICY_REMOVE_WORKTREE: &str = "remove_worktree";
+const REMOVE_PROJECT_GROVE_ONLY: &str = "grove_only";
+const REMOVE_PROJECT_DELETE_WORKTREES: &str = "delete_worktrees";
 const OPEN_TARGET_FINDER: &str = "finder";
 const OPEN_TARGET_ZED: &str = "zed";
 const OPEN_TARGET_CURSOR: &str = "cursor";
@@ -36,10 +46,28 @@ pub(crate) async fn get_app_settings(pool: &SqlitePool) -> AppResult<AppSettings
             .map_or(Ok(OpenWorkspaceTargetDto::Cursor), |value| {
                 parse_open_target(&value)
             })?;
+    let default_archive_policy =
+        sqlx::query_scalar::<_, String>("SELECT value FROM app_settings WHERE key = ? LIMIT 1")
+            .bind(DEFAULT_ARCHIVE_POLICY_KEY)
+            .fetch_optional(pool)
+            .await?
+            .map_or(Ok(ArchivePolicyDto::Ask), |value| {
+                parse_archive_policy(&value)
+            })?;
+    let remove_project_behavior =
+        sqlx::query_scalar::<_, String>("SELECT value FROM app_settings WHERE key = ? LIMIT 1")
+            .bind(REMOVE_PROJECT_BEHAVIOR_KEY)
+            .fetch_optional(pool)
+            .await?
+            .map_or(Ok(RemoveProjectBehaviorDto::GroveOnly), |value| {
+                parse_remove_project_behavior(&value)
+            })?;
 
     Ok(AppSettingsDto {
         ghostty_open_mode,
         default_open_target,
+        default_archive_policy,
+        remove_project_behavior,
     })
 }
 
@@ -68,6 +96,32 @@ pub(crate) async fn update_app_settings(
     )
     .bind(DEFAULT_OPEN_TARGET_KEY)
     .bind(format_open_target(&settings.default_open_target))
+    .execute(pool)
+    .await?;
+
+    sqlx::query(
+        "INSERT INTO app_settings (key, value, updated_at)
+         VALUES (?, ?, CURRENT_TIMESTAMP)
+         ON CONFLICT(key) DO UPDATE SET
+           value = excluded.value,
+           updated_at = CURRENT_TIMESTAMP",
+    )
+    .bind(DEFAULT_ARCHIVE_POLICY_KEY)
+    .bind(format_archive_policy(&settings.default_archive_policy))
+    .execute(pool)
+    .await?;
+
+    sqlx::query(
+        "INSERT INTO app_settings (key, value, updated_at)
+         VALUES (?, ?, CURRENT_TIMESTAMP)
+         ON CONFLICT(key) DO UPDATE SET
+           value = excluded.value,
+           updated_at = CURRENT_TIMESTAMP",
+    )
+    .bind(REMOVE_PROJECT_BEHAVIOR_KEY)
+    .bind(format_remove_project_behavior(
+        &settings.remove_project_behavior,
+    ))
     .execute(pool)
     .await?;
 
@@ -116,6 +170,42 @@ fn format_open_target(value: &OpenWorkspaceTargetDto) -> &'static str {
     }
 }
 
+fn parse_archive_policy(value: &str) -> AppResult<ArchivePolicyDto> {
+    match value {
+        ARCHIVE_POLICY_ASK => Ok(ArchivePolicyDto::Ask),
+        ARCHIVE_POLICY_HIDE => Ok(ArchivePolicyDto::Hide),
+        ARCHIVE_POLICY_REMOVE_WORKTREE => Ok(ArchivePolicyDto::RemoveWorktree),
+        _ => Err(AppError::Internal {
+            message: format!("Unknown default archive policy: {value}"),
+        }),
+    }
+}
+
+fn format_archive_policy(value: &ArchivePolicyDto) -> &'static str {
+    match value {
+        ArchivePolicyDto::UseGlobal | ArchivePolicyDto::Ask => ARCHIVE_POLICY_ASK,
+        ArchivePolicyDto::Hide => ARCHIVE_POLICY_HIDE,
+        ArchivePolicyDto::RemoveWorktree => ARCHIVE_POLICY_REMOVE_WORKTREE,
+    }
+}
+
+fn parse_remove_project_behavior(value: &str) -> AppResult<RemoveProjectBehaviorDto> {
+    match value {
+        REMOVE_PROJECT_GROVE_ONLY => Ok(RemoveProjectBehaviorDto::GroveOnly),
+        REMOVE_PROJECT_DELETE_WORKTREES => Ok(RemoveProjectBehaviorDto::DeleteWorktrees),
+        _ => Err(AppError::Internal {
+            message: format!("Unknown remove project behavior: {value}"),
+        }),
+    }
+}
+
+fn format_remove_project_behavior(value: &RemoveProjectBehaviorDto) -> &'static str {
+    match value {
+        RemoveProjectBehaviorDto::GroveOnly => REMOVE_PROJECT_GROVE_ONLY,
+        RemoveProjectBehaviorDto::DeleteWorktrees => REMOVE_PROJECT_DELETE_WORKTREES,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -141,6 +231,18 @@ mod tests {
         assert_eq!(
             parse_open_target("vs_code").expect("vs code should parse"),
             OpenWorkspaceTargetDto::VsCode
+        );
+    }
+
+    #[test]
+    fn parses_global_workflow_settings() {
+        assert_eq!(
+            parse_archive_policy("remove_worktree").expect("policy should parse"),
+            ArchivePolicyDto::RemoveWorktree
+        );
+        assert_eq!(
+            parse_remove_project_behavior("delete_worktrees").expect("behavior should parse"),
+            RemoveProjectBehaviorDto::DeleteWorktrees
         );
     }
 }

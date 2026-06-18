@@ -24,6 +24,8 @@ pub(crate) enum AppError {
     WorkspaceExists { message: String },
     #[error("workspace has local changes: {message}")]
     WorkspaceDirty { message: String },
+    #[error("operation already running: {message}")]
+    OperationConflict { message: String },
     #[error("command failed: {message}")]
     CommandFailed { message: String },
     #[error("native open failed: {message}")]
@@ -88,6 +90,12 @@ impl From<AppError> for AppErrorDto {
             },
             AppError::WorkspaceDirty { message } => Self {
                 code: "workspace_dirty".into(),
+                message,
+                details: None,
+                recoverable: true,
+            },
+            AppError::OperationConflict { message } => Self {
+                code: "operation_conflict".into(),
                 message,
                 details: None,
                 recoverable: true,

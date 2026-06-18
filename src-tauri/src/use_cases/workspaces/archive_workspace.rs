@@ -8,7 +8,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use sqlx::SqlitePool;
 
 use crate::infrastructure::db::repositories::{
-    operations_repository, projects_repository, workspaces_repository,
+    operations_repository, projects_repository, settings_repository, workspaces_repository,
 };
 use crate::infrastructure::git::{status_repository, worktree_repository};
 use crate::infrastructure::process::command_runner;
@@ -23,6 +23,13 @@ pub(crate) async fn run(
 ) -> AppResult<WorkspaceDto> {
     let workspace = workspaces_repository::get_workspace(pool, &input.workspace_id).await?;
     let project = projects_repository::get_project(pool, &workspace.project_id).await?;
+    if operations_repository::has_running_project_remove_operation(pool, &project.id).await?
+        || operations_repository::has_running_workspace_operation(pool, &workspace.id).await?
+    {
+        return Err(AppError::OperationConflict {
+            message: "Another operation is already running for this workspace.".into(),
+        });
+    }
     let operation_id = operation_id("archive");
     operations_repository::start_operation(
         pool,
@@ -87,6 +94,7 @@ async fn archive_steps(
     operation_log_path: &mut Option<String>,
 ) -> AppResult<WorkspaceDto> {
     let workspace_path = Path::new(&workspace.path);
+    let policy = resolve_policy(pool, project, input).await?;
     let commands = projects_repository::get_project_commands(pool, &project.id).await?;
     if !commands.archive.trim().is_empty() {
         let log_path = log_root.join(format!("{operation_id}-archive.log"));
@@ -104,14 +112,15 @@ async fn archive_steps(
     }
 
     if input.remember_policy {
-        let policy = match input.policy {
-            ArchivePolicyChoiceDto::Hide => ArchivePolicyDto::Hide,
-            ArchivePolicyChoiceDto::RemoveWorktree => ArchivePolicyDto::RemoveWorktree,
+        let policy = match &input.policy {
+            Some(ArchivePolicyChoiceDto::Hide) => ArchivePolicyDto::Hide,
+            Some(ArchivePolicyChoiceDto::RemoveWorktree) => ArchivePolicyDto::RemoveWorktree,
+            None => ArchivePolicyDto::UseGlobal,
         };
         projects_repository::set_archive_policy(pool, &project.id, &policy).await?;
     }
 
-    if matches!(input.policy, ArchivePolicyChoiceDto::RemoveWorktree) {
+    if matches!(policy, ArchivePolicyChoiceDto::RemoveWorktree) {
         if status_repository::is_dirty(workspace_path)? {
             return Err(AppError::WorkspaceDirty {
                 message: "Workspace has local changes; remove_worktree is not allowed.".into(),
@@ -122,6 +131,30 @@ async fn archive_steps(
 
     workspaces_repository::hide_workspace(pool, &workspace.id).await?;
     workspaces_repository::get_workspace(pool, &workspace.id).await
+}
+
+async fn resolve_policy(
+    pool: &SqlitePool,
+    project: &crate::shared::dto::projects::ProjectDto,
+    input: &ArchiveWorkspaceInput,
+) -> AppResult<ArchivePolicyChoiceDto> {
+    if let Some(policy) = &input.policy {
+        return Ok(policy.clone());
+    }
+
+    let policy = match project.archive_policy {
+        ArchivePolicyDto::UseGlobal => settings_repository::get_app_settings(pool)
+            .await?
+            .default_archive_policy,
+        ref policy => policy.clone(),
+    };
+    match policy {
+        ArchivePolicyDto::Hide => Ok(ArchivePolicyChoiceDto::Hide),
+        ArchivePolicyDto::RemoveWorktree => Ok(ArchivePolicyChoiceDto::RemoveWorktree),
+        ArchivePolicyDto::Ask | ArchivePolicyDto::UseGlobal => Err(AppError::InvalidRepo {
+            message: "Archive choice is required for this workspace.".into(),
+        }),
+    }
 }
 
 fn operation_id(prefix: &str) -> String {

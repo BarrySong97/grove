@@ -79,7 +79,7 @@ export function WorktreePanel({
       footer={<PanelFooter onQuit={onQuit} />}
     >
       {state.projects.length === 0 ? (
-        <EmptyProjectList onAddProject={state.addProject} />
+        <EmptyProjectList onAddProject={state.addProject} onImport={state.importFromConductor} />
       ) : (
         <DndContext
           sensors={sensors}
@@ -144,8 +144,9 @@ export function WorktreePanel({
         <ContextMenu
           ctx={state.ctx}
           onClose={() => state.setCtx(null)}
-          onRunCommand={state.runCommand}
           onArchive={state.archiveWorktree}
+          onRetry={state.retryWorktree}
+          onViewLog={state.viewWorktreeLog}
           onOpenWorkspace={state.openWorktree}
           onEditCommands={(project) => {
             state.setCtx(null)
@@ -163,13 +164,75 @@ export function WorktreePanel({
         <GlobalSettings
           settings={state.appSettings}
           saving={state.appSettingsSaving}
+          onDefaultArchivePolicyChange={state.setDefaultArchivePolicy}
           onDefaultOpenTargetChange={state.setDefaultOpenTarget}
           onGhosttyOpenModeChange={(openInTabs) =>
             state.setGhosttyOpenMode(openInTabs ? 'tab' : 'window')
           }
+          onRemoveProjectBehaviorChange={state.setRemoveProjectBehavior}
           onClose={() => state.setGlobalSettingsOpen(false)}
         />
       </BottomSheet>
+
+      {state.archivePrompt && (
+        <BottomSheet
+          ariaLabel="Archive workspace"
+          className="bottom-sheet-surface rounded-[var(--window-radius)] border-[0.5px] p-2 font-sans text-[13.5px] text-[#1c1c1e] antialiased shadow-panel"
+          isOpen
+          onClose={() => state.setArchivePrompt(null)}
+        >
+          <ArchiveChoice
+            projectName={state.archivePrompt.project.name}
+            worktreeBranch={state.archivePrompt.worktree.branch}
+            onHide={() =>
+              state.archiveWorktreeWithPolicy(
+                state.archivePrompt!.worktree,
+                state.archivePrompt!.project,
+                'hide'
+              )
+            }
+            onRemove={() =>
+              state.archiveWorktreeWithPolicy(
+                state.archivePrompt!.worktree,
+                state.archivePrompt!.project,
+                'remove_worktree'
+              )
+            }
+            onCancel={() => state.setArchivePrompt(null)}
+          />
+        </BottomSheet>
+      )}
+
+      {state.removeProjectPrompt && (
+        <BottomSheet
+          ariaLabel="Remove project"
+          className="bottom-sheet-surface rounded-[var(--window-radius)] border-[0.5px] p-2 font-sans text-[13.5px] text-[#1c1c1e] antialiased shadow-panel"
+          isOpen
+          onClose={() => state.setRemoveProjectPrompt(null)}
+        >
+          <RemoveProjectChoice
+            behavior={state.appSettings.removeProjectBehavior}
+            project={state.removeProjectPrompt.project}
+            onCancel={() => state.setRemoveProjectPrompt(null)}
+            onConfirm={() => state.confirmRemoveProject(state.removeProjectPrompt!.project)}
+          />
+        </BottomSheet>
+      )}
+
+      {state.logViewer && (
+        <BottomSheet
+          ariaLabel="Operation log"
+          className="bottom-sheet-surface rounded-[var(--window-radius)] border-[0.5px] p-2 font-sans text-[13.5px] text-[#1c1c1e] antialiased shadow-panel"
+          isOpen
+          onClose={() => state.setLogViewer(null)}
+        >
+          <LogViewer
+            title={state.logViewer.title}
+            content={state.logViewer.content}
+            onClose={() => state.setLogViewer(null)}
+          />
+        </BottomSheet>
+      )}
 
       {state.settingsProject && (
         <BottomSheet
@@ -180,6 +243,7 @@ export function WorktreePanel({
         >
           <ProjectSettings
             project={state.settingsProject}
+            onRemoveProject={state.requestRemoveProject}
             onSave={state.saveProjectSettings}
             onClose={() => state.setSettingsFor(null)}
           />
@@ -189,21 +253,180 @@ export function WorktreePanel({
   )
 }
 
-function EmptyProjectList({ onAddProject }: { onAddProject: () => void }) {
+function EmptyProjectList({
+  onAddProject,
+  onImport
+}: {
+  onAddProject: () => void
+  onImport: () => void
+}) {
   return (
     <div className="flex min-h-full items-center justify-center px-6 py-10 text-center">
-      <p className="text-[13px] leading-5 text-black/45">
-        No projects.{' '}
-        <Button
-          onPress={onAddProject}
-          size="sm"
-          variant="ghost"
-          className="inline h-auto min-w-0 bg-transparent p-0 align-baseline font-medium text-accent underline underline-offset-2 outline-none transition-colors hover:bg-transparent hover:text-[#1c1c1e] focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+      <div className="space-y-2 text-[13px] leading-5 text-black/45">
+        <p>
+          <Button
+            onPress={onImport}
+            size="sm"
+            variant="ghost"
+            className="inline h-auto min-w-0 bg-transparent p-0 align-baseline font-medium text-accent underline underline-offset-2 outline-none transition-colors hover:bg-transparent hover:text-[#1c1c1e] focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          >
+            Import from Conductor
+          </Button>{' '}
+          or{' '}
+          <Button
+            onPress={onAddProject}
+            size="sm"
+            variant="ghost"
+            className="inline h-auto min-w-0 bg-transparent p-0 align-baseline font-medium text-accent underline underline-offset-2 outline-none transition-colors hover:bg-transparent hover:text-[#1c1c1e] focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          >
+            Add Project
+          </Button>
+        </p>
+        <a
+          href="https://example.com/grove-worktrees"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-block font-medium text-black/45 underline underline-offset-2 transition-colors hover:text-[#1c1c1e]"
         >
-          Add a project
+          How it works
+        </a>
+      </div>
+    </div>
+  )
+}
+
+function ArchiveChoice({
+  projectName,
+  worktreeBranch,
+  onHide,
+  onRemove,
+  onCancel
+}: {
+  projectName: string
+  worktreeBranch: string
+  onHide: () => void
+  onRemove: () => void
+  onCancel: () => void
+}) {
+  return (
+    <div className="space-y-3 p-1">
+      <div className="px-1">
+        <span className="grove-settings-title block">Archive workspace</span>
+        <span className="grove-settings-subtitle">
+          {projectName}/{worktreeBranch}
+        </span>
+      </div>
+      <div className="flex flex-col gap-1">
+        <Button
+          className="h-auto justify-start rounded-[var(--settings-control-radius)] px-3 py-2 text-left text-[length:var(--settings-label-size)] font-semibold"
+          onPress={onHide}
+          size="sm"
+          type="button"
+          variant="secondary"
+        >
+          Hide in Grove only
         </Button>
-        .
-      </p>
+        <Button
+          className="h-auto justify-start rounded-[var(--settings-control-radius)] px-3 py-2 text-left text-[length:var(--settings-label-size)] font-semibold text-red-600"
+          onPress={onRemove}
+          size="sm"
+          type="button"
+          variant="secondary"
+        >
+          Delete git worktree directory when safe
+        </Button>
+      </div>
+      <div className="flex justify-end">
+        <Button
+          className="h-auto rounded-[var(--settings-control-radius)] px-[14px] py-[6px] text-[length:var(--settings-label-size)] font-semibold"
+          onPress={onCancel}
+          size="sm"
+          type="button"
+          variant="secondary"
+        >
+          关闭
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function RemoveProjectChoice({
+  behavior,
+  project,
+  onCancel,
+  onConfirm
+}: {
+  behavior: 'grove_only' | 'delete_worktrees'
+  project: Project
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  return (
+    <div className="space-y-3 p-1">
+      <div className="px-1">
+        <span className="grove-settings-title block">Remove project</span>
+        <span className="grove-settings-subtitle">{project.name}</span>
+      </div>
+      <div className="rounded-lg bg-black/[0.035] px-3 py-2 text-[12px] leading-5 text-black/55">
+        Grove will remove this project registration. The main repository directory is never deleted.
+        {behavior === 'delete_worktrees'
+          ? ' Clean managed worktree directories will also be archived and removed.'
+          : ' Worktree directories will be left untouched.'}
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button
+          className="h-auto rounded-[var(--settings-control-radius)] px-[14px] py-[6px] text-[length:var(--settings-label-size)] font-semibold"
+          onPress={onCancel}
+          size="sm"
+          type="button"
+          variant="secondary"
+        >
+          关闭
+        </Button>
+        <Button
+          className="h-auto rounded-[var(--settings-control-radius)] px-[14px] py-[6px] text-[length:var(--settings-label-size)] font-semibold text-red-600"
+          onPress={onConfirm}
+          size="sm"
+          type="button"
+          variant="secondary"
+        >
+          Remove Project
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function LogViewer({
+  title,
+  content,
+  onClose
+}: {
+  title: string
+  content: string
+  onClose: () => void
+}) {
+  return (
+    <div className="space-y-3 p-1">
+      <div className="px-1">
+        <span className="grove-settings-title block">Operation log</span>
+        <span className="grove-settings-subtitle">{title}</span>
+      </div>
+      <pre className="max-h-[360px] overflow-auto rounded-lg bg-black/[0.04] p-2 font-mono text-[10.5px] leading-4 text-black/70">
+        {content || 'No log output.'}
+      </pre>
+      <div className="flex justify-end">
+        <Button
+          className="h-auto rounded-[var(--settings-control-radius)] px-[14px] py-[6px] text-[length:var(--settings-label-size)] font-semibold"
+          onPress={onClose}
+          size="sm"
+          type="button"
+          variant="secondary"
+        >
+          关闭
+        </Button>
+      </div>
     </div>
   )
 }

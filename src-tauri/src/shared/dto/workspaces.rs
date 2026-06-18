@@ -73,8 +73,14 @@ pub(crate) struct CreateWorkspaceInput {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ArchiveWorkspaceInput {
     pub workspace_id: String,
-    pub policy: ArchivePolicyChoiceDto,
+    pub policy: Option<ArchivePolicyChoiceDto>,
     pub remember_policy: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RetryWorkspaceOperationInput {
+    pub workspace_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]

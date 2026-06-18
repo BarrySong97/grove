@@ -30,17 +30,21 @@ fn command_builder() -> tauri_specta::Builder<tauri::Wry> {
         presentation::commands::projects::add_project_from_folder_picker,
         commands::hide_panel,
         commands::quit_app,
+        presentation::commands::operations::get_latest_operation,
+        presentation::commands::operations::read_operation_log,
         presentation::commands::projects::create_project,
         presentation::commands::projects::import_conductor_projects,
         presentation::commands::projects::list_projects,
         presentation::commands::projects::list_worktree_projects,
+        presentation::commands::projects::remove_project,
         presentation::commands::projects::update_project_settings,
         presentation::commands::settings::get_app_settings,
         presentation::commands::settings::update_app_settings,
         presentation::commands::workspaces::archive_workspace,
         presentation::commands::workspaces::create_workspace,
         presentation::commands::workspaces::open_workspace,
-        presentation::commands::workspaces::refresh_project
+        presentation::commands::workspaces::refresh_project,
+        presentation::commands::workspaces::retry_workspace_operation
     ])
 }
 

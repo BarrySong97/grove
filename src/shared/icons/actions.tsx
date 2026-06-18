@@ -7,14 +7,17 @@
 import {
   Archive as LucideArchive,
   Copy as LucideCopy,
+  FileText,
   Folder as LucideFolder,
   Import as LucideImport,
   LogOut,
   MoreHorizontal,
   Play as LucidePlay,
+  RotateCcw,
   Settings,
   SquareCode,
   Terminal as LucideTerminal,
+  Trash2,
   type LucideProps
 } from 'lucide-react'
 
@@ -41,3 +44,9 @@ export const Copy = (props: LucideProps) => <LucideCopy size={14} strokeWidth={2
 export const Import = (props: LucideProps) => <LucideImport size={14} strokeWidth={2} {...props} />
 
 export const Quit = (props: LucideProps) => <LogOut size={14} strokeWidth={2} {...props} />
+
+export const Retry = (props: LucideProps) => <RotateCcw size={14} strokeWidth={2} {...props} />
+
+export const Log = (props: LucideProps) => <FileText size={14} strokeWidth={2} {...props} />
+
+export const Trash = (props: LucideProps) => <Trash2 size={14} strokeWidth={2} {...props} />

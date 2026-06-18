@@ -11,7 +11,9 @@ export function isWorktreeBusy(worktree: Worktree) {
 }
 
 export function getBusyLabel(worktree: Worktree) {
-  return worktree.status === 'setting-up' ? 'Running setup…' : 'Archiving…'
+  if (worktree.status === 'setting-up') return 'Running setup…'
+  if (worktree.status === 'archiving') return 'Archiving…'
+  return 'Failed'
 }
 
 export function hasWorktreeStatus(worktree: Worktree) {

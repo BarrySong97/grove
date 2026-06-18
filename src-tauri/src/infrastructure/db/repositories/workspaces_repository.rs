@@ -1,5 +1,5 @@
-// @purpose Reads and writes Grove workspace records in SQLite.
-// @role    Persistence adapter used by import and refresh use cases.
+// @purpose Reads, writes, and removes Grove workspace records in SQLite.
+// @role    Persistence adapter used by import, refresh, archive, and project removal use cases.
 // @deps    sqlx, workspace DTOs, shared errors
 // @gotcha  Workspace rows cache Grove state; git status refresh owns live metadata.
 use sqlx::{FromRow, QueryBuilder, Sqlite, SqlitePool};
@@ -83,6 +83,29 @@ pub(crate) async fn list_project_workspaces(
         LEFT JOIN workspace_git_state g ON g.workspace_id = w.id
         WHERE w.project_id = ?1
         ORDER BY w.name COLLATE NOCASE ASC
+        "#,
+    )
+    .bind(project_id)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows.into_iter().map(WorkspaceRow::into_dto).collect())
+}
+
+pub(crate) async fn list_active_project_workspaces(
+    pool: &SqlitePool,
+    project_id: &str,
+) -> AppResult<Vec<WorkspaceDto>> {
+    let rows = sqlx::query_as::<_, WorkspaceRow>(
+        r#"
+        SELECT
+            w.id, w.project_id, w.name, w.branch, w.base_branch, w.path,
+            w.lifecycle_status, w.operation_status, w.hidden_at, w.stale_at,
+            g.ahead, g.behind, g.dirty, g.last_commit_message, g.captured_at
+        FROM workspaces w
+        LEFT JOIN workspace_git_state g ON g.workspace_id = w.id
+        WHERE w.project_id = ?1 AND w.lifecycle_status = 'active'
+        ORDER BY w.path COLLATE NOCASE ASC
         "#,
     )
     .bind(project_id)

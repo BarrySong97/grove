@@ -1,7 +1,7 @@
 // @purpose Defines project DTOs returned by Grove business commands.
-// @role    Type-safe command boundary for registered repositories.
+// @role    Type-safe command boundary for registered repositories and project removal.
 // @deps    serde, specta
-// @gotcha  DTO fields mirror API contracts, not raw SQLite rows.
+// @gotcha  Archive policy can defer to global settings; DTOs mirror API contracts, not raw SQLite rows.
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
@@ -20,7 +20,6 @@ pub(crate) struct ProjectDto {
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ProjectCommandsDto {
-    pub run: String,
     pub setup: String,
     pub archive: String,
 }
@@ -49,6 +48,12 @@ pub(crate) struct UpdateProjectSettingsInput {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RemoveProjectInput {
+    pub project_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum ConfigSourceDto {
     ConductorSettings,
@@ -57,9 +62,10 @@ pub(crate) enum ConfigSourceDto {
     None,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum ArchivePolicyDto {
+    UseGlobal,
     Ask,
     Hide,
     RemoveWorktree,

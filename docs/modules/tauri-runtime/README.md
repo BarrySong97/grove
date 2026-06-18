@@ -10,8 +10,8 @@
 - `commands.rs`:运行壳命令,当前是 `hide_panel` 与 `quit_app`。
 - `app_state.rs`:Tauri managed state,保存 SQLite pool 和 native dialog lifecycle guard。
 - `shared/dto/`:Rust command DTO 和 typed error,由 `specta` 导出到 TypeScript。
-- `presentation/commands/`:业务 Tauri command handler,保持薄封装。
-- `use_cases/`:业务 workflow,例如项目列表、Conductor 导入、项目设置、创建/归档/open workspace。
+- `presentation/commands/`:业务 Tauri command handler,保持薄封装,包括 projects/workspaces/settings/operations。
+- `use_cases/`:业务 workflow,例如项目列表、Conductor 导入、项目设置、创建/归档/retry/remove/open workspace。
 - `infrastructure/db/`:SQLite 连接、migration 和 repository。
 - `migrations/`:SQLite schema migration。
 - `tray.rs`:tray icon、menu 和显示/隐藏 panel 的交互。
@@ -36,6 +36,7 @@
 
 ## 数据边界
 - SQLite 只保存 Grove 项目登记、用户选择、全局 app settings、workspace lifecycle/operation 状态和 operation log metadata。
+- Mutating command 必须在 Rust use case/repository 层检查 operation lock;前端 disabled 状态不能作为安全边界。
 - Git 状态、Conductor 配置和文件系统状态以真实来源为准,后续 refresh/import use case 负责同步。
 - 前端业务代码优先通过生成的 [Bindings 模块](../bindings/) 调用 Rust command,不要手写业务 `invoke(...)` 字符串。
 - Add project 文件夹选择在 Rust runtime 侧调用 `tauri-plugin-dialog`,返回 git repo 根目录后再交给项目 use case 登记;前端不直接调用 dialog plugin,也不临时切换 Dock 或 app activation policy。

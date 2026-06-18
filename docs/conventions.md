@@ -32,7 +32,7 @@
 
 ## React 与状态
 - 状态变更保持不可变更新,沿用当前 `setProjects(current => ...)` 风格。
-- Worktree 的 create/archive/setup 仍是模拟状态机;接入真实后端前不要引入持久化假设。
+- Worktree 的 create/setup/archive/remove project 是 Rust 后端 workflow;前端只持有排序、展开、toast 和 sheet 等 UI 状态,不能伪造 git 或持久化结果。
 - 拖拽排序统一使用 `@dnd-kit`,程序化排序动画复用 `src/shared/lib/sortable.ts`。
 - 交互按钮优先复用 `IconButton`,菜单项复用 `MenuItem`。
 

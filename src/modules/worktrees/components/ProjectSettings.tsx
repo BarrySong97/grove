@@ -1,6 +1,6 @@
 /**
- * @purpose Renders per-project persisted configuration controls with validated Hero UI fields.
- * @role    Bottom sheet content for editing workspace root, commands, and archive policy.
+ * @purpose Renders per-project configuration controls and remove-project entry point.
+ * @role    Bottom sheet content for editing workspace root, setup/archive commands, and archive override.
  * @deps    Hero UI Form/Input/Button, native select, React Hook Form, Worktrees contracts/domain command catalog, shared icons/ui
  * @gotcha  Saves Grove overrides only; settings density comes from src/index.css tokens.
  */
@@ -26,6 +26,7 @@ interface ProjectSettingsProps {
     }
   ) => void
   onClose: () => void
+  onRemoveProject: (project: Project) => void
 }
 
 interface ProjectSettingsValues {
@@ -35,9 +36,10 @@ interface ProjectSettingsValues {
 }
 
 const archivePolicies: Array<{ id: Project['archivePolicy']; label: string }> = [
-  { id: 'ask', label: 'Ask' },
-  { id: 'hide', label: 'Hide' },
-  { id: 'remove_worktree', label: 'Remove worktree' }
+  { id: 'use_global', label: 'Use global default' },
+  { id: 'ask', label: 'Ask every time' },
+  { id: 'hide', label: 'Hide in Grove only' },
+  { id: 'remove_worktree', label: 'Delete worktree when safe' }
 ]
 
 function getProjectSettingsValues(project: Project): ProjectSettingsValues {
@@ -48,7 +50,12 @@ function getProjectSettingsValues(project: Project): ProjectSettingsValues {
   }
 }
 
-export function ProjectSettings({ project, onSave, onClose }: ProjectSettingsProps) {
+export function ProjectSettings({
+  project,
+  onSave,
+  onClose,
+  onRemoveProject
+}: ProjectSettingsProps) {
   const {
     formState: { errors, isValid },
     handleSubmit,
@@ -92,6 +99,7 @@ export function ProjectSettings({ project, onSave, onClose }: ProjectSettingsPro
               validate: (value) => value.trim().length > 0 || 'Workspace root is required'
             })}
             aria-invalid={Boolean(errors.workspaceRoot)}
+            aria-label="Workspace root"
             autoComplete="off"
             className="grove-field-thin-focus grove-settings-field min-w-0 flex-1 font-mono placeholder:text-black/[0.34]"
             data-invalid={Boolean(errors.workspaceRoot)}
@@ -109,6 +117,7 @@ export function ProjectSettings({ project, onSave, onClose }: ProjectSettingsPro
           <span className="grove-settings-label">Archive</span>
           <select
             {...register('archivePolicy')}
+            aria-label="Archive"
             className="grove-field-thin-focus grove-settings-field min-w-0 flex-1 appearance-auto border-0 font-medium"
           >
             {archivePolicies.map((policy) => (
@@ -147,6 +156,28 @@ export function ProjectSettings({ project, onSave, onClose }: ProjectSettingsPro
           <div className="grove-settings-help">{command.desc}.</div>
         </div>
       ))}
+
+      <Divider />
+
+      <div className="grove-settings-section-title">Danger Zone</div>
+
+      <div className="grove-settings-row">
+        <div className="grove-settings-row-inner">
+          <span className="grove-settings-label">Remove project</span>
+          <Button
+            className="h-auto rounded-[var(--settings-control-radius)] px-[12px] py-[5px] text-[length:var(--settings-label-size)] font-semibold text-red-600"
+            onClick={() => onRemoveProject(project)}
+            size="sm"
+            type="button"
+            variant="secondary"
+          >
+            Remove Project…
+          </Button>
+        </div>
+        <div className="grove-settings-help">
+          Removes Grove registration; the main repository directory is never deleted.
+        </div>
+      </div>
 
       <div className="flex justify-end gap-2 px-1.5 pb-1 pt-2.5">
         <Button

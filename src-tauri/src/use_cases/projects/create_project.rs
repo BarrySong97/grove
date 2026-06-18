@@ -31,7 +31,7 @@ pub(crate) async fn run(pool: &SqlitePool, input: CreateProjectInput) -> AppResu
             .or_else(|| worktrees.first().and_then(|entry| entry.branch.clone()))
             .unwrap_or_else(|| "main".into()),
         config_source: config.source.clone(),
-        archive_policy: ArchivePolicyDto::Ask,
+        archive_policy: ArchivePolicyDto::UseGlobal,
     };
 
     projects_repository::upsert_project(pool, &project).await?;

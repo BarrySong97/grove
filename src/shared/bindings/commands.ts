@@ -26,6 +26,24 @@ export const commands = {
     >(__TAURI_INVOKE('add_project_from_folder_picker')),
   hidePanel: () => __TAURI_INVOKE<void>('hide_panel'),
   quitApp: () => __TAURI_INVOKE<void>('quit_app'),
+  getLatestOperation: (input: OperationTargetInput) =>
+    typedError<
+      {
+        id: string
+        projectId: string
+        workspaceId: string | null
+        kind: OperationKindDto
+        status: OperationStatusDto
+        startedAt: string
+        finishedAt: string | null
+        exitCode: number | null
+        logPath: string | null
+        errorMessage: string | null
+      } | null,
+      AppErrorDto
+    >(__TAURI_INVOKE('get_latest_operation', { input })),
+  readOperationLog: (input: ReadOperationLogInput) =>
+    typedError<OperationLogDto, AppErrorDto>(__TAURI_INVOKE('read_operation_log', { input })),
   createProject: (input: CreateProjectInput) =>
     typedError<ProjectDto, AppErrorDto>(__TAURI_INVOKE('create_project', { input })),
   importConductorProjects: (input: ImportConductorProjectsInput) =>
@@ -35,6 +53,8 @@ export const commands = {
   listProjects: () => typedError<ProjectDto[], AppErrorDto>(__TAURI_INVOKE('list_projects')),
   listWorktreeProjects: () =>
     typedError<WorktreeProjectDto[], AppErrorDto>(__TAURI_INVOKE('list_worktree_projects')),
+  removeProject: (input: RemoveProjectInput) =>
+    typedError<null, AppErrorDto>(__TAURI_INVOKE('remove_project', { input })),
   updateProjectSettings: (input: UpdateProjectSettingsInput) =>
     typedError<ProjectDto, AppErrorDto>(__TAURI_INVOKE('update_project_settings', { input })),
   getAppSettings: () => typedError<AppSettingsDto, AppErrorDto>(__TAURI_INVOKE('get_app_settings')),
@@ -47,7 +67,9 @@ export const commands = {
   openWorkspace: (input: OpenWorkspaceInput) =>
     typedError<WorkspaceDto, AppErrorDto>(__TAURI_INVOKE('open_workspace', { input })),
   refreshProject: (input: RefreshProjectInput) =>
-    typedError<WorkspaceDto[], AppErrorDto>(__TAURI_INVOKE('refresh_project', { input }))
+    typedError<WorkspaceDto[], AppErrorDto>(__TAURI_INVOKE('refresh_project', { input })),
+  retryWorkspaceOperation: (input: RetryWorkspaceOperationInput) =>
+    typedError<WorkspaceDto, AppErrorDto>(__TAURI_INVOKE('retry_workspace_operation', { input }))
 }
 
 /* Types */
@@ -61,15 +83,17 @@ export type AppErrorDto = {
 export type AppSettingsDto = {
   ghosttyOpenMode: GhosttyOpenModeDto
   defaultOpenTarget: OpenWorkspaceTargetDto
+  defaultArchivePolicy: ArchivePolicyDto
+  removeProjectBehavior: RemoveProjectBehaviorDto
 }
 
 export type ArchivePolicyChoiceDto = 'hide' | 'remove_worktree'
 
-export type ArchivePolicyDto = 'ask' | 'hide' | 'remove_worktree'
+export type ArchivePolicyDto = 'use_global' | 'ask' | 'hide' | 'remove_worktree'
 
 export type ArchiveWorkspaceInput = {
   workspaceId: string
-  policy: ArchivePolicyChoiceDto
+  policy: ArchivePolicyChoiceDto | null
   rememberPolicy: boolean
 }
 
@@ -115,8 +139,43 @@ export type OpenWorkspaceTargetDto =
   | 'ghostty'
   | 'terminal'
 
+export type OperationDto = {
+  id: string
+  projectId: string
+  workspaceId: string | null
+  kind: OperationKindDto
+  status: OperationStatusDto
+  startedAt: string
+  finishedAt: string | null
+  exitCode: number | null
+  logPath: string | null
+  errorMessage: string | null
+}
+
+export type OperationKindDto =
+  | 'import'
+  | 'refresh'
+  | 'create'
+  | 'setup'
+  | 'archive'
+  | 'remove_project'
+  | 'open_editor'
+  | 'open_terminal'
+  | 'reveal_finder'
+
+export type OperationLogDto = {
+  operationId: string
+  content: string
+}
+
+export type OperationStatusDto = 'queued' | 'running' | 'succeeded' | 'failed'
+
+export type OperationTargetInput = {
+  projectId: string | null
+  workspaceId: string | null
+}
+
 export type ProjectCommandsDto = {
-  run: string
   setup: string
   archive: string
 }
@@ -131,13 +190,29 @@ export type ProjectDto = {
   archivePolicy: ArchivePolicyDto
 }
 
+export type ReadOperationLogInput = {
+  operationId: string
+}
+
 export type RefreshProjectInput = {
   projectId: string
+}
+
+export type RemoveProjectBehaviorDto = 'grove_only' | 'delete_worktrees'
+
+export type RemoveProjectInput = {
+  projectId: string
+}
+
+export type RetryWorkspaceOperationInput = {
+  workspaceId: string
 }
 
 export type UpdateAppSettingsInput = {
   ghosttyOpenMode: GhosttyOpenModeDto
   defaultOpenTarget: OpenWorkspaceTargetDto
+  defaultArchivePolicy: ArchivePolicyDto
+  removeProjectBehavior: RemoveProjectBehaviorDto
 }
 
 export type UpdateProjectSettingsInput = {

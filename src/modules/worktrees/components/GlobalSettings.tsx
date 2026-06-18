@@ -1,12 +1,17 @@
 /**
  * @purpose Renders application-wide Grove settings controls.
- * @role    Bottom sheet content for backend-owned native behavior preferences.
+ * @role    Bottom sheet content for backend-owned native, archive, and remove preferences.
  * @deps    Hero UI Button/Switch, generated settings DTOs, shared icons/ui
  * @gotcha  Settings are persisted through Rust commands; density comes from src/index.css tokens.
  */
 import { Button } from '@heroui/react/button'
 import { Switch } from '@heroui/react/switch'
-import type { AppSettingsDto, OpenWorkspaceTargetDto } from '../../../shared/bindings/commands'
+import type {
+  AppSettingsDto,
+  ArchivePolicyDto,
+  OpenWorkspaceTargetDto,
+  RemoveProjectBehaviorDto
+} from '../../../shared/bindings/commands'
 import { Divider } from '../../../shared/ui/Divider'
 import { OPEN_TARGET_OPTIONS } from '../domain/open-targets'
 import { OpenTargetIcon } from './OpenTargetIcon'
@@ -15,7 +20,9 @@ interface GlobalSettingsProps {
   settings: AppSettingsDto
   saving: boolean
   onDefaultOpenTargetChange: (target: OpenWorkspaceTargetDto) => void
+  onDefaultArchivePolicyChange: (policy: ArchivePolicyDto) => void
   onGhosttyOpenModeChange: (openInTabs: boolean) => void
+  onRemoveProjectBehaviorChange: (behavior: RemoveProjectBehaviorDto) => void
   onClose: () => void
 }
 
@@ -23,7 +30,9 @@ export function GlobalSettings({
   settings,
   saving,
   onDefaultOpenTargetChange,
+  onDefaultArchivePolicyChange,
   onGhosttyOpenModeChange,
+  onRemoveProjectBehaviorChange,
   onClose
 }: GlobalSettingsProps) {
   const openInTabs = settings.ghosttyOpenMode === 'tab'
@@ -57,6 +66,50 @@ export function GlobalSettings({
               </option>
             ))}
           </select>
+        </div>
+      </div>
+
+      <Divider />
+
+      <div className="grove-settings-section-title">Workflows</div>
+
+      <div className="grove-settings-row">
+        <div className="grove-settings-row-inner">
+          <span className="grove-settings-label">Archive</span>
+          <select
+            aria-label="Default archive workspace behavior"
+            className="grove-field-thin-focus grove-settings-field min-w-0 flex-1 appearance-auto border-0 font-medium"
+            disabled={saving}
+            value={settings.defaultArchivePolicy}
+            onChange={(event) =>
+              onDefaultArchivePolicyChange(event.target.value as ArchivePolicyDto)
+            }
+          >
+            <option value="ask">Ask every time</option>
+            <option value="hide">Hide in Grove only</option>
+            <option value="remove_worktree">Delete worktree when safe</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grove-settings-row">
+        <div className="grove-settings-row-inner">
+          <span className="grove-settings-label">Remove Project</span>
+          <select
+            aria-label="Remove project behavior"
+            className="grove-field-thin-focus grove-settings-field min-w-0 flex-1 appearance-auto border-0 font-medium"
+            disabled={saving}
+            value={settings.removeProjectBehavior}
+            onChange={(event) =>
+              onRemoveProjectBehaviorChange(event.target.value as RemoveProjectBehaviorDto)
+            }
+          >
+            <option value="grove_only">Only remove from Grove</option>
+            <option value="delete_worktrees">Also delete clean worktrees</option>
+          </select>
+        </div>
+        <div className="grove-settings-help">
+          Project removal never deletes the main repository directory.
         </div>
       </div>
 

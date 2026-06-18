@@ -1,7 +1,7 @@
-// @purpose Reads and writes Grove project records in SQLite.
-// @role    Persistence adapter used by project use cases.
+// @purpose Reads, writes, and removes Grove project records in SQLite.
+// @role    Persistence adapter used by project use cases and destructive project removal.
 // @deps    sqlx, Project DTOs, shared errors
-// @gotcha  Project lists are newest registration first; rows cache Grove state, not live git state.
+// @gotcha  Project lists are newest registration first; run command rows are ignored legacy data.
 use sqlx::{FromRow, SqlitePool};
 
 use crate::shared::dto::errors::AppResult;
@@ -152,14 +152,12 @@ pub(crate) async fn get_project_commands(
     .await?;
 
     let mut commands = ProjectCommandsDto {
-        run: String::new(),
         setup: String::new(),
         archive: String::new(),
     };
 
     for row in rows {
         match row.kind.as_str() {
-            "run" => commands.run = row.command,
             "setup" => commands.setup = row.command,
             "archive" => commands.archive = row.command,
             _ => {}
@@ -167,6 +165,15 @@ pub(crate) async fn get_project_commands(
     }
 
     Ok(commands)
+}
+
+pub(crate) async fn delete_project(pool: &SqlitePool, project_id: &str) -> AppResult<()> {
+    sqlx::query("DELETE FROM projects WHERE id = ?1")
+        .bind(project_id)
+        .execute(pool)
+        .await?;
+
+    Ok(())
 }
 
 pub(crate) async fn set_archive_policy(
@@ -214,9 +221,11 @@ fn parse_config_source(value: &str) -> ConfigSourceDto {
 
 fn parse_archive_policy(value: &str) -> ArchivePolicyDto {
     match value {
+        "use_global" => ArchivePolicyDto::UseGlobal,
         "hide" => ArchivePolicyDto::Hide,
         "remove_worktree" => ArchivePolicyDto::RemoveWorktree,
-        _ => ArchivePolicyDto::Ask,
+        "ask" => ArchivePolicyDto::Ask,
+        _ => ArchivePolicyDto::UseGlobal,
     }
 }
 
@@ -231,6 +240,7 @@ fn format_config_source(value: &ConfigSourceDto) -> &'static str {
 
 fn format_archive_policy(value: &ArchivePolicyDto) -> &'static str {
     match value {
+        ArchivePolicyDto::UseGlobal => "use_global",
         ArchivePolicyDto::Ask => "ask",
         ArchivePolicyDto::Hide => "hide",
         ArchivePolicyDto::RemoveWorktree => "remove_worktree",

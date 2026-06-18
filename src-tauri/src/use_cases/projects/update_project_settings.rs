@@ -40,14 +40,6 @@ pub(crate) async fn run(
         "grove_override",
     )
     .await?;
-    projects_repository::upsert_project_command(
-        pool,
-        &input.project_id,
-        "run",
-        &input.commands.run,
-        "grove_override",
-    )
-    .await?;
 
     projects_repository::get_project(pool, &input.project_id).await
 }

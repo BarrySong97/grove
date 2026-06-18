@@ -11,8 +11,10 @@ import {
   type ArchivePolicyChoiceDto,
   type ConductorImportCandidateDto,
   type CreateProjectInput,
+  type OperationDto,
   type OpenWorkspaceTargetDto,
   type ProjectDto,
+  type RemoveProjectInput,
   type UpdateAppSettingsInput,
   type UpdateProjectSettingsInput,
   type WorkspaceDto,
@@ -101,6 +103,29 @@ export async function updateProjectSettings(
   return result.data
 }
 
+export async function removeProject(input: RemoveProjectInput): Promise<void> {
+  const result = await commands.removeProject(input)
+  if (result.status === 'error') throw new GroveCommandError(result.error)
+}
+
+export async function getLatestOperation(input: {
+  projectId?: string | null
+  workspaceId?: string | null
+}): Promise<OperationDto | null> {
+  const result = await commands.getLatestOperation({
+    projectId: input.projectId ?? null,
+    workspaceId: input.workspaceId ?? null
+  })
+  if (result.status === 'error') throw new GroveCommandError(result.error)
+  return result.data
+}
+
+export async function readOperationLog(operationId: string): Promise<string> {
+  const result = await commands.readOperationLog({ operationId })
+  if (result.status === 'error') throw new GroveCommandError(result.error)
+  return result.data.content
+}
+
 export async function getAppSettings(): Promise<AppSettingsDto> {
   const result = await commands.getAppSettings()
   if (result.status === 'error') throw new GroveCommandError(result.error)
@@ -127,10 +152,16 @@ export async function createWorkspace(input: {
 
 export async function archiveWorkspace(input: {
   workspaceId: string
-  policy: ArchivePolicyChoiceDto
+  policy: ArchivePolicyChoiceDto | null
   rememberPolicy: boolean
 }): Promise<WorkspaceDto> {
   const result = await commands.archiveWorkspace(input)
+  if (result.status === 'error') throw new GroveCommandError(result.error)
+  return result.data
+}
+
+export async function retryWorkspaceOperation(workspaceId: string): Promise<WorkspaceDto> {
+  const result = await commands.retryWorkspaceOperation({ workspaceId })
   if (result.status === 'error') throw new GroveCommandError(result.error)
   return result.data
 }
@@ -165,6 +196,7 @@ function mapOperationStatus(
 ): WorktreeStatus {
   if (status === 'archiving') return 'archiving'
   if (status === 'creating' || status === 'setting_up') return 'setting-up'
+  if (status === 'failed') return 'failed'
   return 'ready'
 }
 

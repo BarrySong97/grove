@@ -11,14 +11,16 @@ use sqlx::sqlite::SqlitePoolOptions;
 
 use crate::shared::dto::conductor::ImportConductorProjectsInput;
 use crate::shared::dto::projects::{
-    ArchivePolicyDto, CreateProjectInput, ProjectCommandsDto, UpdateProjectSettingsInput,
+    ArchivePolicyDto, CreateProjectInput, ProjectCommandsDto, RemoveProjectInput,
+    UpdateProjectSettingsInput,
 };
 use crate::shared::dto::workspaces::{
     ArchivePolicyChoiceDto, ArchiveWorkspaceInput, CreateWorkspaceInput,
     WorkspaceLifecycleStatusDto, WorkspaceOperationStatusDto,
 };
 use crate::use_cases::projects::{
-    create_project, import_conductor_projects, list_worktree_projects, update_project_settings,
+    create_project, import_conductor_projects, list_worktree_projects, remove_project,
+    update_project_settings,
 };
 use crate::use_cases::workspaces::{archive_workspace, create_workspace};
 
@@ -85,7 +87,6 @@ fn conductor_backend_flow_import_create_archive_and_reject_dirty_remove() {
                     setup: "printf 'setup:%s|%s' \"$CONDUCTOR_WORKSPACE_NAME\" \"$CONDUCTOR_DEFAULT_BRANCH\""
                         .into(),
                     archive: "printf 'archive:%s' \"$CONDUCTOR_WORKSPACE_NAME\"".into(),
-                    run: "pnpm dev".into(),
                 },
             },
         )
@@ -118,7 +119,7 @@ fn conductor_backend_flow_import_create_archive_and_reject_dirty_remove() {
             &db,
             ArchiveWorkspaceInput {
                 workspace_id: created.id.clone(),
-                policy: ArchivePolicyChoiceDto::Hide,
+                policy: Some(ArchivePolicyChoiceDto::Hide),
                 remember_policy: true,
             },
             log_root.clone(),
@@ -153,7 +154,7 @@ fn conductor_backend_flow_import_create_archive_and_reject_dirty_remove() {
             &db,
             ArchiveWorkspaceInput {
                 workspace_id: removable.id,
-                policy: ArchivePolicyChoiceDto::RemoveWorktree,
+                policy: Some(ArchivePolicyChoiceDto::RemoveWorktree),
                 remember_policy: false,
             },
             log_root.clone(),
@@ -181,7 +182,7 @@ fn conductor_backend_flow_import_create_archive_and_reject_dirty_remove() {
             &db,
             ArchiveWorkspaceInput {
                 workspace_id: dirty.id,
-                policy: ArchivePolicyChoiceDto::RemoveWorktree,
+                policy: Some(ArchivePolicyChoiceDto::RemoveWorktree),
                 remember_policy: false,
             },
             fixture.path("dirty operation logs"),
@@ -245,7 +246,7 @@ fn manual_add_project_registers_selected_git_repo() {
         assert_eq!(listed[0].project.id, project.id);
         assert_eq!(listed[0].project.name, "alpha repo");
         assert_eq!(listed[1].project.name, "zeta repo");
-        assert_eq!(listed[0].commands.run, "pnpm dev");
+        assert_eq!(listed[0].commands.setup, "");
         assert!(listed[0].workspaces.is_empty());
     });
 }
@@ -288,7 +289,6 @@ fn failed_setup_marks_workspace_failed() {
                 commands: ProjectCommandsDto {
                     setup: "exit 7".into(),
                     archive: String::new(),
-                    run: String::new(),
                 },
             },
         )
@@ -324,6 +324,224 @@ fn failed_setup_marks_workspace_failed() {
     });
 }
 
+#[test]
+fn remove_project_grove_only_keeps_worktree_directories() {
+    tauri::async_runtime::block_on(async {
+        let fixture = Fixture::new("grove remove project only");
+        let db = migrated_db().await;
+        let repo_path = fixture.path("source repo");
+        create_repo(&repo_path);
+        let project = create_project::run(
+            &db,
+            CreateProjectInput {
+                root_path: repo_path.to_string_lossy().to_string(),
+            },
+        )
+        .await
+        .expect("project should register");
+        let workspace_root = fixture.path("workspaces").join("source repo");
+        set_project_settings(
+            &db,
+            &project.id,
+            &workspace_root,
+            ProjectCommandsDto {
+                setup: String::new(),
+                archive: "printf archive".into(),
+            },
+        )
+        .await;
+        let workspace = create_workspace::run(
+            &db,
+            CreateWorkspaceInput {
+                project_id: project.id.clone(),
+                name: "keep workspace".into(),
+                branch: "feature/keep".into(),
+                base_branch: "main".into(),
+                run_setup: false,
+            },
+            fixture.path("logs"),
+        )
+        .await
+        .expect("workspace should create");
+        let workspace_path = PathBuf::from(&workspace.path);
+        set_remove_project_behavior(&db, "grove_only").await;
+
+        remove_project::run(
+            &db,
+            RemoveProjectInput {
+                project_id: project.id.clone(),
+            },
+            fixture.path("remove logs"),
+        )
+        .await
+        .expect("project should be removed from Grove only");
+
+        assert!(workspace_path.exists());
+        assert!(repo_path.exists());
+        assert!(list_worktree_projects::run(&db)
+            .await
+            .expect("projects should list")
+            .is_empty());
+    });
+}
+
+#[test]
+fn remove_project_deletes_multiple_clean_managed_worktrees() {
+    tauri::async_runtime::block_on(async {
+        let fixture = Fixture::new("grove remove project worktrees");
+        let db = migrated_db().await;
+        let repo_path = fixture.path("source repo");
+        create_repo(&repo_path);
+        let project = create_project::run(
+            &db,
+            CreateProjectInput {
+                root_path: repo_path.to_string_lossy().to_string(),
+            },
+        )
+        .await
+        .expect("project should register");
+        let workspace_root = fixture.path("workspaces").join("source repo");
+        set_project_settings(
+            &db,
+            &project.id,
+            &workspace_root,
+            ProjectCommandsDto {
+                setup: String::new(),
+                archive: "printf 'archive:%s\\n' \"$CONDUCTOR_WORKSPACE_NAME\"".into(),
+            },
+        )
+        .await;
+
+        let first = create_workspace::run(
+            &db,
+            CreateWorkspaceInput {
+                project_id: project.id.clone(),
+                name: "alpha workspace".into(),
+                branch: "feature/alpha".into(),
+                base_branch: "main".into(),
+                run_setup: false,
+            },
+            fixture.path("logs"),
+        )
+        .await
+        .expect("first workspace should create");
+        let second = create_workspace::run(
+            &db,
+            CreateWorkspaceInput {
+                project_id: project.id.clone(),
+                name: "beta workspace".into(),
+                branch: "feature/beta".into(),
+                base_branch: "main".into(),
+                run_setup: false,
+            },
+            fixture.path("logs"),
+        )
+        .await
+        .expect("second workspace should create");
+        let first_path = PathBuf::from(&first.path);
+        let second_path = PathBuf::from(&second.path);
+        set_remove_project_behavior(&db, "delete_worktrees").await;
+
+        remove_project::run(
+            &db,
+            RemoveProjectInput {
+                project_id: project.id.clone(),
+            },
+            fixture.path("remove logs"),
+        )
+        .await
+        .expect("clean managed worktrees should be removed");
+
+        assert!(!first_path.exists());
+        assert!(!second_path.exists());
+        assert!(repo_path.exists());
+        assert!(list_worktree_projects::run(&db)
+            .await
+            .expect("projects should list")
+            .is_empty());
+    });
+}
+
+#[test]
+fn remove_project_dirty_workspace_blocks_all_deletion() {
+    tauri::async_runtime::block_on(async {
+        let fixture = Fixture::new("grove remove project dirty");
+        let db = migrated_db().await;
+        let repo_path = fixture.path("source repo");
+        create_repo(&repo_path);
+        let project = create_project::run(
+            &db,
+            CreateProjectInput {
+                root_path: repo_path.to_string_lossy().to_string(),
+            },
+        )
+        .await
+        .expect("project should register");
+        let workspace_root = fixture.path("workspaces").join("source repo");
+        set_project_settings(
+            &db,
+            &project.id,
+            &workspace_root,
+            ProjectCommandsDto {
+                setup: String::new(),
+                archive: "exit 99".into(),
+            },
+        )
+        .await;
+
+        let clean = create_workspace::run(
+            &db,
+            CreateWorkspaceInput {
+                project_id: project.id.clone(),
+                name: "clean workspace".into(),
+                branch: "feature/clean".into(),
+                base_branch: "main".into(),
+                run_setup: false,
+            },
+            fixture.path("logs"),
+        )
+        .await
+        .expect("clean workspace should create");
+        let dirty = create_workspace::run(
+            &db,
+            CreateWorkspaceInput {
+                project_id: project.id.clone(),
+                name: "dirty workspace".into(),
+                branch: "feature/dirty-remove".into(),
+                base_branch: "main".into(),
+                run_setup: false,
+            },
+            fixture.path("logs"),
+        )
+        .await
+        .expect("dirty workspace should create");
+        let clean_path = PathBuf::from(&clean.path);
+        let dirty_path = PathBuf::from(&dirty.path);
+        fs::write(dirty_path.join("README.md"), "dirty").expect("tracked file should change");
+        set_remove_project_behavior(&db, "delete_worktrees").await;
+
+        let result = remove_project::run(
+            &db,
+            RemoveProjectInput {
+                project_id: project.id.clone(),
+            },
+            fixture.path("remove logs"),
+        )
+        .await;
+
+        assert!(result.is_err());
+        assert!(clean_path.exists());
+        assert!(dirty_path.exists());
+        assert_eq!(
+            list_worktree_projects::run(&db)
+                .await
+                .expect("project should remain")
+                .len(),
+            1
+        );
+    });
+}
+
 async fn latest_operation_log(db: &sqlx::SqlitePool, kind: &str) -> PathBuf {
     let (log_path,): (String,) = sqlx::query_as(
         r#"
@@ -339,6 +557,52 @@ async fn latest_operation_log(db: &sqlx::SqlitePool, kind: &str) -> PathBuf {
     .await
     .expect("operation log row should exist");
     PathBuf::from(log_path)
+}
+
+async fn migrated_db() -> sqlx::SqlitePool {
+    let db = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect("sqlite::memory:")
+        .await
+        .expect("in-memory sqlite should open");
+    sqlx::migrate!("./migrations")
+        .run(&db)
+        .await
+        .expect("migrations should run");
+    db
+}
+
+async fn set_project_settings(
+    db: &sqlx::SqlitePool,
+    project_id: &str,
+    workspace_root: &Path,
+    commands: ProjectCommandsDto,
+) {
+    update_project_settings::run(
+        db,
+        UpdateProjectSettingsInput {
+            project_id: project_id.to_string(),
+            workspace_root: workspace_root.to_string_lossy().to_string(),
+            archive_policy: ArchivePolicyDto::UseGlobal,
+            commands,
+        },
+    )
+    .await
+    .expect("settings should persist");
+}
+
+async fn set_remove_project_behavior(db: &sqlx::SqlitePool, behavior: &str) {
+    sqlx::query(
+        r#"
+        INSERT INTO app_settings (key, value)
+        VALUES ('remove_project_behavior', ?1)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value
+        "#,
+    )
+    .bind(behavior)
+    .execute(db)
+    .await
+    .expect("remove project behavior should persist");
 }
 
 fn create_repo(repo_path: &Path) {

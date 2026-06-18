@@ -4,11 +4,11 @@
 `src-tauri/src/shared/` 放 Rust 后端跨层共享类型,当前主要是 command DTO 和 typed error。
 
 ## 文件
-- `dto/projects.rs`:Project、create/update input、config source、archive policy DTO。
-- `dto/workspaces.rs`:Workspace、lifecycle、operation 和 git state DTO。
-- `dto/operations.rs`:operation DTO。
+- `dto/projects.rs`:Project、create/update/remove input、config source、archive policy DTO。
+- `dto/workspaces.rs`:Workspace、lifecycle、operation、retry input 和 git state DTO。
+- `dto/operations.rs`:operation、operation target 和 log DTO。
 - `dto/conductor.rs`:Conductor import candidate DTO。
-- `dto/settings.rs`:全局 app settings DTO,当前包含默认打开目标和 Ghostty 打开模式。
+- `dto/settings.rs`:全局 app settings DTO,当前包含默认打开目标、Ghostty 打开模式、默认 archive 策略和 remove project 行为。
 - `dto/errors.rs`:业务 command typed error。
 
 ## 约束

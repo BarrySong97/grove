@@ -139,7 +139,7 @@ fn build_project(
         workspace_root: repo_workspace_root.to_string_lossy().to_string(),
         default_branch,
         config_source: ConfigSourceDto::None,
-        archive_policy: ArchivePolicyDto::Ask,
+        archive_policy: ArchivePolicyDto::UseGlobal,
     })
 }
 

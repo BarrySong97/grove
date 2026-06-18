@@ -5,24 +5,34 @@
  * @gotcha  Add project/global settings delegate to Rust; collapsed project ids stay in localStorage.
  */
 import { useEffect, useRef, useState } from 'react'
-import type { CommandDef, Project, Worktree } from '../../../shared/contracts/worktrees'
+import type { Project, Worktree } from '../../../shared/contracts/worktrees'
 import {
   addProjectFromFolderPicker,
   archiveWorkspace,
   createWorkspace,
+  getLatestOperation,
   getAppSettings,
   importConductorProjects,
   loadWorktreePanelProjects,
   openWorkspace,
+  readOperationLog,
+  removeProject,
+  retryWorkspaceOperation,
   updateAppSettings,
   updateProjectSettings
 } from '../api/groveCommands'
-import type { AppSettingsDto, GhosttyOpenModeDto } from '../../../shared/bindings/commands'
-import type { OpenWorkspaceTargetDto } from '../../../shared/bindings/commands'
+import type {
+  AppSettingsDto,
+  ArchivePolicyChoiceDto,
+  ArchivePolicyDto,
+  GhosttyOpenModeDto
+} from '../../../shared/bindings/commands'
+import type {
+  OpenWorkspaceTargetDto,
+  RemoveProjectBehaviorDto
+} from '../../../shared/bindings/commands'
 import type { ContextState } from '../components/ContextMenu'
 import {
-  getCommandCompletePatch,
-  getCommandStartPatch,
   moveProject as moveProjectUseCase,
   moveWorktree as moveWorktreeUseCase,
   patchWorktree as patchWorktreeUseCase,
@@ -34,12 +44,25 @@ import {
 const COLLAPSED_PROJECT_IDS_KEY = 'grove.worktrees.collapsedProjectIds'
 const DEFAULT_APP_SETTINGS: AppSettingsDto = {
   defaultOpenTarget: 'cursor',
-  ghosttyOpenMode: 'window'
+  ghosttyOpenMode: 'window',
+  defaultArchivePolicy: 'ask',
+  removeProjectBehavior: 'grove_only'
 }
 type ToastTone = 'notice' | 'progress' | 'error'
 interface ToastState {
   message: string
   tone: ToastTone
+}
+interface ArchivePromptState {
+  project: Project
+  worktree: Worktree
+}
+interface RemoveProjectPromptState {
+  project: Project
+}
+interface LogViewerState {
+  title: string
+  content: string
 }
 
 export function useWorktreePanelState(initialProjects: Project[] = []) {
@@ -53,6 +76,11 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
   const [appSettingsSaving, setAppSettingsSaving] = useState(false)
   const [ctx, setCtx] = useState<ContextState | null>(null)
   const [toast, setToast] = useState<ToastState | null>(null)
+  const [archivePrompt, setArchivePrompt] = useState<ArchivePromptState | null>(null)
+  const [removeProjectPrompt, setRemoveProjectPrompt] = useState<RemoveProjectPromptState | null>(
+    null
+  )
+  const [logViewer, setLogViewer] = useState<LogViewerState | null>(null)
   const timers = useRef<number[]>([])
 
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
@@ -173,21 +201,26 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
 
   const archiveWorktree = (worktree: Worktree, project: Project) => {
     setCtx(null)
-    const policy =
-      project.archivePolicy === 'ask'
-        ? window.confirm(
-            'Remove this git worktree directory after archive succeeds? Cancel keeps it hidden in Grove only.'
-          )
-          ? 'remove_worktree'
-          : 'hide'
-        : project.archivePolicy
+    const effectivePolicy = getEffectiveArchivePolicy(project, appSettings)
+    if (effectivePolicy === 'ask') {
+      setArchivePrompt({ worktree, project })
+      return
+    }
+    void archiveWorktreeWithPolicy(worktree, project, null)
+  }
 
+  const archiveWorktreeWithPolicy = (
+    worktree: Worktree,
+    project: Project,
+    policy: ArchivePolicyChoiceDto | null
+  ) => {
+    setArchivePrompt(null)
     showToast(`Archive · ${project.name}/${worktree.branch}`, 'progress')
     patchWorktree(project.id, worktree.id, { status: 'archiving' })
     void archiveWorkspace({
       workspaceId: worktree.id,
       policy,
-      rememberPolicy: project.archivePolicy === 'ask'
+      rememberPolicy: false
     })
       .then(() => reloadProjects())
       .then(() => clearToast())
@@ -197,17 +230,6 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
         const detail = describeError(error, fallback)
         showToast(detail === fallback ? fallback : `${fallback}: ${detail}`, 'error')
       })
-  }
-
-  const runCommand = (command: CommandDef, worktree: Worktree, project: Project) => {
-    showToast(`${command.name} · ${project.name}/${worktree.branch}`, 'progress')
-    const startPatch = getCommandStartPatch(command)
-    if (startPatch) patchWorktree(project.id, worktree.id, startPatch)
-    after(1900, () => {
-      const completePatch = getCommandCompletePatch(command)
-      if (completePatch) patchWorktree(project.id, worktree.id, completePatch)
-      clearToast()
-    })
   }
 
   const addProject = () => {
@@ -225,10 +247,13 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
   const importFromConductor = () => {
     showToast('Importing Conductor workspaces', 'progress')
     void importConductorProjects()
-      .then(() => loadWorktreePanelProjects())
+      .then((candidates) => {
+        if (candidates.length === 0) showToast('No Conductor workspaces found')
+        return loadWorktreePanelProjects()
+      })
       .then((nextProjects) => {
         setProjects(nextProjects)
-        clearToast()
+        if (nextProjects.length > 0) clearToast()
       })
       .catch((error: unknown) =>
         showToast(describeError(error, 'Import from Conductor failed'), 'error')
@@ -260,12 +285,38 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
       )
   }
 
+  const requestRemoveProject = (project: Project) => {
+    setRemoveProjectPrompt({ project })
+  }
+
+  const confirmRemoveProject = (project: Project) => {
+    showToast(`Remove project · ${project.name}`, 'progress')
+    void removeProject({ projectId: project.id })
+      .then(() => reloadProjects())
+      .then(() => {
+        setRemoveProjectPrompt(null)
+        setSettingsFor(null)
+        clearToast()
+      })
+      .catch((error: unknown) => {
+        showToast(describeError(error, `Remove project failed · ${project.name}`), 'error')
+      })
+  }
+
   const setGhosttyOpenMode = (mode: GhosttyOpenModeDto) => {
     saveAppSettings({ ...appSettings, ghosttyOpenMode: mode })
   }
 
   const setDefaultOpenTarget = (target: OpenWorkspaceTargetDto) => {
     saveAppSettings({ ...appSettings, defaultOpenTarget: target })
+  }
+
+  const setDefaultArchivePolicy = (policy: ArchivePolicyDto) => {
+    saveAppSettings({ ...appSettings, defaultArchivePolicy: policy })
+  }
+
+  const setRemoveProjectBehavior = (behavior: RemoveProjectBehaviorDto) => {
+    saveAppSettings({ ...appSettings, removeProjectBehavior: behavior })
   }
 
   const saveAppSettings = (next: AppSettingsDto) => {
@@ -291,38 +342,83 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
     )
   }
 
+  const viewWorktreeLog = (worktree: Worktree, project: Project) => {
+    void getLatestOperation({ workspaceId: worktree.id })
+      .then((operation) => {
+        if (!operation) throw new Error('No operation log is available for this workspace')
+        return readOperationLog(operation.id)
+      })
+      .then((content) => {
+        setLogViewer({ title: `${project.name}/${worktree.branch}`, content })
+      })
+      .catch((error: unknown) =>
+        showToast(describeError(error, 'Unable to read operation log'), 'error')
+      )
+  }
+
+  const retryWorktree = (worktree: Worktree, project: Project) => {
+    showToast(`Retry · ${project.name}/${worktree.branch}`, 'progress')
+    void retryWorkspaceOperation(worktree.id)
+      .then(() => reloadProjects())
+      .then(() => clearToast())
+      .catch((error: unknown) =>
+        showToast(
+          describeError(error, `Retry failed · ${project.name}/${worktree.branch}`),
+          'error'
+        )
+      )
+  }
+
   return {
     addingTo,
     addProject,
     appSettings,
     appSettingsSaving,
+    archivePrompt,
     archiveWorktree,
+    archiveWorktreeWithPolicy,
     collapsedProjectIds,
+    confirmRemoveProject,
     createWorktree,
     ctx,
     flash,
     importFromConductor,
     globalSettingsOpen,
+    logViewer,
     moveProject,
     moveWorktree,
     openWorktree,
     projects,
+    removeProjectPrompt,
     reorderProjects,
     reorderWorktrees,
-    runCommand,
+    requestRemoveProject,
+    retryWorktree,
     setAddingTo,
+    setArchivePrompt,
     setProjectCollapsed,
     setCtx,
     setDefaultOpenTarget,
+    setDefaultArchivePolicy,
     setGhosttyOpenMode,
+    setRemoveProjectBehavior,
     setGlobalSettingsOpen,
+    setLogViewer,
+    setRemoveProjectPrompt,
     setSettingsFor,
     saveProjectSettings,
     settingsProject,
     switchTo,
     toast,
-    total
+    total,
+    viewWorktreeLog
   }
+}
+
+function getEffectiveArchivePolicy(project: Project, settings: AppSettingsDto) {
+  return project.archivePolicy === 'use_global'
+    ? settings.defaultArchivePolicy
+    : project.archivePolicy
 }
 
 function readCollapsedProjectIds() {

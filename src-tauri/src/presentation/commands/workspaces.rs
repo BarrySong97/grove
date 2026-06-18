@@ -10,10 +10,10 @@ use crate::app_state::AppState;
 use crate::shared::dto::errors::{AppError, AppErrorDto, CommandResult};
 use crate::shared::dto::workspaces::{
     ArchiveWorkspaceInput, CreateWorkspaceInput, OpenWorkspaceInput, RefreshProjectInput,
-    WorkspaceDto,
+    RetryWorkspaceOperationInput, WorkspaceDto,
 };
 use crate::use_cases::workspaces::{
-    archive_workspace, create_workspace, open_workspace, refresh_project,
+    archive_workspace, create_workspace, open_workspace, refresh_project, retry_workspace_operation,
 };
 
 #[tauri::command]
@@ -62,6 +62,19 @@ pub(crate) async fn open_workspace(
 ) -> CommandResult<WorkspaceDto> {
     let state = app.state::<AppState>();
     open_workspace::run(&state.db, input)
+        .await
+        .map_err(AppErrorDto::from)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn retry_workspace_operation(
+    app: tauri::AppHandle,
+    input: RetryWorkspaceOperationInput,
+) -> CommandResult<WorkspaceDto> {
+    let state = app.state::<AppState>();
+    let log_root = log_root(&app).map_err(AppErrorDto::from)?;
+    retry_workspace_operation::run(&state.db, input, log_root)
         .await
         .map_err(AppErrorDto::from)
 }
