@@ -150,21 +150,34 @@ fn build_workspaces(
 ) -> Vec<WorkspaceDto> {
     worktrees
         .iter()
-        .filter(|entry| entry.path.starts_with(repo_workspace_root))
+        .filter(|entry| {
+            !entry.prunable
+                && (entry.path == Path::new(&project.root_path)
+                    || entry.path.starts_with(repo_workspace_root))
+        })
         .map(|entry| {
-            let name = entry
-                .path
-                .file_name()
-                .and_then(|value| value.to_str())
-                .unwrap_or("workspace")
-                .to_string();
+            let is_root = entry.path == Path::new(&project.root_path);
+            let name = if is_root {
+                project.name.clone()
+            } else {
+                entry
+                    .path
+                    .file_name()
+                    .and_then(|value| value.to_str())
+                    .unwrap_or("workspace")
+                    .to_string()
+            };
             let branch = entry.branch.clone().unwrap_or_else(|| name.clone());
             WorkspaceDto {
-                id: stable_id(&entry.path.to_string_lossy()),
+                id: workspace_id(&entry.path, is_root),
                 project_id: project.id.clone(),
                 name,
                 branch,
-                base_branch: Some(project.default_branch.clone()),
+                base_branch: if is_root {
+                    None
+                } else {
+                    Some(project.default_branch.clone())
+                },
                 path: entry.path.to_string_lossy().to_string(),
                 lifecycle_status: WorkspaceLifecycleStatusDto::Active,
                 operation_status: WorkspaceOperationStatusDto::Idle,
@@ -174,6 +187,14 @@ fn build_workspaces(
             }
         })
         .collect()
+}
+
+fn workspace_id(path: &Path, is_root: bool) -> String {
+    if is_root {
+        stable_id(&format!("root-workspace:{}", path.to_string_lossy()))
+    } else {
+        stable_id(&path.to_string_lossy())
+    }
 }
 
 async fn persist_commands(

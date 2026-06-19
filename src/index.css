@@ -181,67 +181,6 @@ body {
     var(--bottom-sheet-surface);
 }
 
-.grove-settings-title {
-  font-size: var(--settings-title-size);
-  font-weight: 600;
-  letter-spacing: -0.1px;
-}
-
-.grove-settings-subtitle {
-  display: block;
-  padding-top: 5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--settings-meta-size);
-  line-height: 1;
-  color: rgba(0, 0, 0, 0.55);
-}
-
-.grove-settings-section-title {
-  padding: 7px 10px 3px;
-  font-size: var(--settings-meta-size);
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: rgba(0, 0, 0, 0.34);
-}
-
-.grove-settings-row {
-  padding: 4px 10px;
-}
-
-.grove-settings-row-inner {
-  display: flex;
-  align-items: center;
-  gap: var(--settings-row-gap);
-}
-
-.grove-settings-label {
-  width: var(--settings-label-width);
-  flex-shrink: 0;
-  font-size: var(--settings-label-size);
-  font-weight: 600;
-  color: #1c1c1e;
-}
-
-.grove-settings-command-label {
-  display: flex;
-  width: var(--settings-command-label-width);
-  flex-shrink: 0;
-  align-items: center;
-  gap: 7px;
-  font-size: var(--settings-label-size);
-  font-weight: 600;
-  color: #1c1c1e;
-}
-
-.grove-settings-row-title {
-  font-size: var(--settings-label-size);
-  font-weight: 600;
-  color: #1c1c1e;
-}
-
 .grove-settings-field {
   border-radius: var(--settings-control-radius);
   background: rgba(0, 0, 0, 0.04);
@@ -267,22 +206,6 @@ body {
 .grove-settings-field[data-focus-visible="true"] {
   background: var(--glass-surface-strong);
   backdrop-filter: blur(24px);
-}
-
-.grove-settings-help {
-  padding-top: 3px;
-  padding-left: calc(var(--settings-command-label-width) + var(--settings-row-gap));
-  font-size: var(--settings-meta-size);
-  line-height: 1.3;
-  color: rgba(0, 0, 0, 0.22);
-}
-
-.grove-settings-error {
-  padding-top: 3px;
-  padding-left: calc(var(--settings-label-width) + var(--settings-row-gap));
-  font-size: var(--settings-meta-size);
-  line-height: 1.3;
-  color: #dc2626;
 }
 
 .grove-field-thin-focus:focus,

@@ -1,173 +1,163 @@
 /**
  * @purpose Renders application-wide Grove settings controls.
- * @role    Bottom sheet content for backend-owned native, archive, and remove preferences.
- * @deps    Hero UI Button/Switch, generated settings DTOs, shared icons/ui
+ * @role    Bottom sheet content for persisted language, open, archive, and remove preferences.
+ * @deps    react-i18next, generated settings DTOs, shared i18n/icons, local settings kit
  * @gotcha  Settings are persisted through Rust commands; density comes from src/index.css tokens.
  */
-import { Button } from '@heroui/react/button'
-import { Switch } from '@heroui/react/switch'
+import { useTranslation } from 'react-i18next'
 import type {
+  AppLanguageDto,
   AppSettingsDto,
   ArchivePolicyDto,
   OpenWorkspaceTargetDto,
   RemoveProjectBehaviorDto
 } from '../../../shared/bindings/commands'
-import { Divider } from '../../../shared/ui/Divider'
+import { LANGUAGE_OPTIONS } from '../../../shared/i18n/language'
 import { OPEN_TARGET_OPTIONS } from '../domain/open-targets'
 import { OpenTargetIcon } from './OpenTargetIcon'
+import { SettingsButton } from './settings/SettingsButton'
+import { SettingsFooter } from './settings/SettingsFooter'
+import { SettingsHeader } from './settings/SettingsHeader'
+import { SettingsRow } from './settings/SettingsRow'
+import { SettingsSection } from './settings/SettingsSection'
+import { SettingsSelect } from './settings/SettingsSelect'
+import { SettingsSheet } from './settings/SettingsSheet'
+import { SettingsSwitchRow } from './settings/SettingsSwitchRow'
 
 interface GlobalSettingsProps {
   settings: AppSettingsDto
   saving: boolean
-  onDefaultOpenTargetChange: (target: OpenWorkspaceTargetDto) => void
+  onHoverQuickOpenTargetsChange: (targets: OpenWorkspaceTargetDto[]) => void
   onDefaultArchivePolicyChange: (policy: ArchivePolicyDto) => void
   onGhosttyOpenModeChange: (openInTabs: boolean) => void
+  onLanguageChange: (language: AppLanguageDto) => void
   onRemoveProjectBehaviorChange: (behavior: RemoveProjectBehaviorDto) => void
   onClose: () => void
+}
+
+function toggleQuickOpenTarget(
+  targets: OpenWorkspaceTargetDto[],
+  target: OpenWorkspaceTargetDto
+): OpenWorkspaceTargetDto[] {
+  return targets.includes(target)
+    ? targets.filter((value) => value !== target)
+    : [...targets, target]
 }
 
 export function GlobalSettings({
   settings,
   saving,
-  onDefaultOpenTargetChange,
+  onHoverQuickOpenTargetsChange,
   onDefaultArchivePolicyChange,
   onGhosttyOpenModeChange,
+  onLanguageChange,
   onRemoveProjectBehaviorChange,
   onClose
 }: GlobalSettingsProps) {
-  const openInTabs = settings.ghosttyOpenMode === 'tab'
+  const { t } = useTranslation()
 
   return (
-    <div className="p-0.5">
-      <div className="px-2.5 pb-2.5 pt-2">
-        <span className="grove-settings-title block">Settings</span>
-        <span className="grove-settings-subtitle">Application preferences</span>
-      </div>
+    <SettingsSheet>
+      <SettingsHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
 
-      <Divider />
-
-      <div className="grove-settings-section-title">Open</div>
-
-      <div className="grove-settings-row">
-        <div className="grove-settings-row-inner">
-          <span className="grove-settings-label">默认打开</span>
-          <select
-            aria-label="Default open target"
-            className="grove-field-thin-focus grove-settings-field min-w-0 flex-1 appearance-auto border-0 font-medium"
+      <SettingsSection title={t('settings.sections.general')}>
+        <SettingsRow label={t('settings.language.label')}>
+          <SettingsSelect
+            ariaLabel={t('settings.language.ariaLabel')}
             disabled={saving}
-            value={settings.defaultOpenTarget}
-            onChange={(event) =>
-              onDefaultOpenTargetChange(event.target.value as OpenWorkspaceTargetDto)
-            }
-          >
-            {OPEN_TARGET_OPTIONS.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+            value={settings.language}
+            onChange={onLanguageChange}
+            options={LANGUAGE_OPTIONS.map((option) => ({
+              value: option.id,
+              label: t(option.labelKey)
+            }))}
+          />
+        </SettingsRow>
+      </SettingsSection>
 
-      <Divider />
+      <SettingsSection title={t('settings.sections.open')}>
+        <SettingsRow
+          align="start"
+          label={t('settings.hoverQuickOpen.label')}
+          help={t('settings.hoverQuickOpen.help')}
+        >
+          <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+            {OPEN_TARGET_OPTIONS.map((option) => {
+              const selected = settings.hoverQuickOpenTargets.includes(option.id)
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-label={option.label}
+                  aria-pressed={selected}
+                  disabled={saving}
+                  onClick={() =>
+                    onHoverQuickOpenTargetsChange(
+                      toggleQuickOpenTarget(settings.hoverQuickOpenTargets, option.id)
+                    )
+                  }
+                  className={`grove-icon-scale flex items-center gap-1.5 rounded-[var(--settings-control-radius)] px-2 py-[5px] text-[length:var(--settings-label-size)] font-medium transition-colors ${
+                    selected
+                      ? 'bg-[var(--accent-soft)] text-[#1c1c1e] shadow-[inset_0_0_0_1px_var(--accent)]'
+                      : 'bg-black/[0.04] text-black/55 hover:bg-black/[0.06]'
+                  } ${saving ? 'opacity-55' : ''}`}
+                >
+                  <OpenTargetIcon target={option.id} />
+                  {option.label}
+                </button>
+              )
+            })}
+          </div>
+        </SettingsRow>
+      </SettingsSection>
 
-      <div className="grove-settings-section-title">Workflows</div>
-
-      <div className="grove-settings-row">
-        <div className="grove-settings-row-inner">
-          <span className="grove-settings-label">Archive</span>
-          <select
-            aria-label="Default archive workspace behavior"
-            className="grove-field-thin-focus grove-settings-field min-w-0 flex-1 appearance-auto border-0 font-medium"
+      <SettingsSection title={t('settings.sections.workflows')}>
+        <SettingsRow label={t('settings.archive.label')}>
+          <SettingsSelect
+            ariaLabel={t('settings.archive.ariaLabel')}
             disabled={saving}
             value={settings.defaultArchivePolicy}
-            onChange={(event) =>
-              onDefaultArchivePolicyChange(event.target.value as ArchivePolicyDto)
-            }
-          >
-            <option value="ask">Ask every time</option>
-            <option value="hide">Hide in Grove only</option>
-            <option value="remove_worktree">Delete worktree when safe</option>
-          </select>
-        </div>
-      </div>
+            onChange={onDefaultArchivePolicyChange}
+            options={[
+              { value: 'ask', label: t('settings.archive.ask') },
+              { value: 'hide', label: t('settings.archive.hide') },
+              { value: 'remove_worktree', label: t('settings.archive.removeWorktree') }
+            ]}
+          />
+        </SettingsRow>
 
-      <div className="grove-settings-row">
-        <div className="grove-settings-row-inner">
-          <span className="grove-settings-label">Remove Project</span>
-          <select
-            aria-label="Remove project behavior"
-            className="grove-field-thin-focus grove-settings-field min-w-0 flex-1 appearance-auto border-0 font-medium"
+        <SettingsRow
+          label={t('settings.removeProject.label')}
+          help={t('settings.removeProject.help')}
+        >
+          <SettingsSelect
+            ariaLabel={t('settings.removeProject.ariaLabel')}
             disabled={saving}
             value={settings.removeProjectBehavior}
-            onChange={(event) =>
-              onRemoveProjectBehaviorChange(event.target.value as RemoveProjectBehaviorDto)
-            }
-          >
-            <option value="grove_only">Only remove from Grove</option>
-            <option value="delete_worktrees">Also delete clean worktrees</option>
-          </select>
-        </div>
-        <div className="grove-settings-help">
-          Project removal never deletes the main repository directory.
-        </div>
-      </div>
+            onChange={onRemoveProjectBehaviorChange}
+            options={[
+              { value: 'grove_only', label: t('settings.removeProject.groveOnly') },
+              { value: 'delete_worktrees', label: t('settings.removeProject.deleteWorktrees') }
+            ]}
+          />
+        </SettingsRow>
+      </SettingsSection>
 
-      <Divider />
-
-      <div className="grove-settings-section-title">Ghostty</div>
-
-      <div className="grove-settings-row">
-        <Switch
-          aria-label="Open Ghostty workspaces in tabs"
-          className="group flex w-full items-center justify-between gap-3 rounded-lg px-0 py-1"
-          isDisabled={saving}
-          isSelected={openInTabs}
+      <SettingsSection title={t('settings.sections.ghostty')}>
+        <SettingsSwitchRow
+          ariaLabel={t('settings.ghostty.tabsAriaLabel')}
+          icon={<OpenTargetIcon target="ghostty" />}
+          title={t('settings.ghostty.tabsTitle')}
+          help={t('settings.ghostty.tabsHelp')}
+          isSelected={settings.ghosttyOpenMode === 'tab'}
+          disabled={saving}
           onChange={onGhosttyOpenModeChange}
-          size="sm"
-        >
-          {({ isSelected }) => (
-            <>
-              <span className="flex min-w-0 items-center gap-2.5">
-                <span className="grove-icon-scale flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-black/[0.04] text-black/45 shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.08)]">
-                  <OpenTargetIcon target="ghostty" />
-                </span>
-                <span className="min-w-0">
-                  <span className="grove-settings-row-title block truncate">
-                    Open workspaces in tabs
-                  </span>
-                  <span className="block truncate pt-[3px] text-[length:var(--settings-meta-size)] leading-[1.25] text-black/[0.34]">
-                    Use the current Ghostty window when possible
-                  </span>
-                </span>
-              </span>
-              <Switch.Control
-                className={`relative flex h-[18px] w-[32px] shrink-0 items-center rounded-full p-[2px] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.12)] transition-colors ${
-                  isSelected ? 'bg-accent' : 'bg-black/[0.14]'
-                } ${saving ? 'opacity-55' : ''}`}
-              >
-                <Switch.Thumb
-                  className={`block h-[14px] w-[14px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.22)] transition-transform ${
-                    isSelected ? 'translate-x-[14px]' : 'translate-x-0'
-                  }`}
-                />
-              </Switch.Control>
-            </>
-          )}
-        </Switch>
-      </div>
+        />
+      </SettingsSection>
 
-      <div className="flex justify-end px-1.5 pb-1 pt-2.5">
-        <Button
-          className="h-auto rounded-[var(--settings-control-radius)] px-[14px] py-[6px] text-[length:var(--settings-label-size)] font-semibold"
-          onClick={onClose}
-          size="sm"
-          type="button"
-          variant="secondary"
-        >
-          关闭
-        </Button>
-      </div>
-    </div>
+      <SettingsFooter>
+        <SettingsButton onPress={onClose}>{t('common.close')}</SettingsButton>
+      </SettingsFooter>
+    </SettingsSheet>
   )
 }

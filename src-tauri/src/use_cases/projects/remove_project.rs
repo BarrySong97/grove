@@ -90,49 +90,140 @@ async fn remove_managed_worktrees(
     project: &crate::shared::dto::projects::ProjectDto,
     log_path: &Path,
 ) -> AppResult<()> {
-    let workspaces = workspaces_repository::list_active_project_workspaces(pool, &project.id).await?;
-    preflight_clean_workspaces(&workspaces)?;
+    let workspaces = workspaces_repository::list_active_project_workspaces(pool, &project.id)
+        .await?
+        .into_iter()
+        .filter(|workspace| !is_repo_root_workspace(project, workspace))
+        .collect::<Vec<_>>();
+    preflight_clean_workspaces(project, &workspaces)?;
 
     let commands = projects_repository::get_project_commands(pool, &project.id).await?;
     for workspace in &workspaces {
+        if workspace_needs_cleanup(project, Path::new(&workspace.path))? {
+            append_log(
+                log_path,
+                format!(
+                    "Skipping missing or damaged managed worktree and removing Grove record: {}\n",
+                    workspace.path
+                )
+                .as_bytes(),
+            );
+            let _ = worktree_repository::prune_worktrees(Path::new(&project.root_path));
+            workspaces_repository::hide_workspace(pool, &workspace.id).await?;
+            continue;
+        }
         append_log(
             log_path,
             format!("Removing managed worktree: {}\n", workspace.path).as_bytes(),
         );
         if !commands.archive.trim().is_empty() {
             let scratch_log = log_path.with_extension(format!("{}.log", workspace.id));
-            let result = command_runner::run_workspace_command(
+            let result = match command_runner::run_workspace_command(
                 &commands.archive,
                 Path::new(&workspace.path),
                 Path::new(&project.root_path),
                 &workspace.name,
                 &project.default_branch,
                 &scratch_log,
-            )?;
+            ) {
+                Ok(result) => result,
+                Err(error) => {
+                    if workspace_needs_cleanup(project, Path::new(&workspace.path)).unwrap_or(false)
+                    {
+                        append_log(
+                            log_path,
+                            format!(
+                                "Workspace disappeared during archive command; removing Grove record: {}\n",
+                                workspace.path
+                            )
+                            .as_bytes(),
+                        );
+                        let _ = worktree_repository::prune_worktrees(Path::new(&project.root_path));
+                        workspaces_repository::hide_workspace(pool, &workspace.id).await?;
+                        continue;
+                    }
+                    return Err(error);
+                }
+            };
             append_log_file(log_path, Path::new(&result.log_path));
         }
-        worktree_repository::remove_worktree(
+        if let Err(error) = worktree_repository::remove_worktree(
             Path::new(&project.root_path),
             Path::new(&workspace.path),
-        )?;
+        ) {
+            if workspace_needs_cleanup(project, Path::new(&workspace.path)).unwrap_or(false) {
+                append_log(
+                    log_path,
+                    format!(
+                        "Workspace was already gone during git removal; removing Grove record: {}\n",
+                        workspace.path
+                    )
+                    .as_bytes(),
+                );
+                let _ = worktree_repository::prune_worktrees(Path::new(&project.root_path));
+                workspaces_repository::hide_workspace(pool, &workspace.id).await?;
+                continue;
+            }
+            return Err(error);
+        }
         workspaces_repository::hide_workspace(pool, &workspace.id).await?;
     }
 
     projects_repository::delete_project(pool, &project.id).await
 }
 
-fn preflight_clean_workspaces(workspaces: &[WorkspaceDto]) -> AppResult<()> {
+fn preflight_clean_workspaces(
+    project: &crate::shared::dto::projects::ProjectDto,
+    workspaces: &[WorkspaceDto],
+) -> AppResult<()> {
     for workspace in workspaces {
-        if status_repository::is_dirty(Path::new(&workspace.path))? {
-            return Err(AppError::WorkspaceDirty {
-                message: format!(
-                    "Workspace has local changes; remove project is blocked: {}",
-                    workspace.path
-                ),
-            });
+        match status_repository::is_dirty(Path::new(&workspace.path)) {
+            Ok(true) => {
+                return Err(AppError::WorkspaceDirty {
+                    message: format!(
+                        "Workspace has local changes; remove project is blocked: {}",
+                        workspace.path
+                    ),
+                });
+            }
+            Ok(false) => {}
+            Err(error) => {
+                if workspace_needs_cleanup(project, Path::new(&workspace.path)).unwrap_or(false) {
+                    continue;
+                }
+                return Err(error);
+            }
         }
     }
     Ok(())
+}
+
+fn workspace_needs_cleanup(
+    project: &crate::shared::dto::projects::ProjectDto,
+    workspace_path: &Path,
+) -> AppResult<bool> {
+    if !workspace_path.is_dir() {
+        return Ok(true);
+    }
+
+    let worktrees = worktree_repository::list_worktrees(Path::new(&project.root_path))?;
+    Ok(!worktrees
+        .iter()
+        .any(|entry| !entry.prunable && paths_equal(&entry.path, workspace_path)))
+}
+
+fn is_repo_root_workspace(
+    project: &crate::shared::dto::projects::ProjectDto,
+    workspace: &WorkspaceDto,
+) -> bool {
+    paths_equal(Path::new(&project.root_path), Path::new(&workspace.path))
+}
+
+fn paths_equal(left: &Path, right: &Path) -> bool {
+    match (left.canonicalize(), right.canonicalize()) {
+        (Ok(left), Ok(right)) => left == right,
+        _ => left == right,
+    }
 }
 
 fn append_log(path: &Path, content: &[u8]) {

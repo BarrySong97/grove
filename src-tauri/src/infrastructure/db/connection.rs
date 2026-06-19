@@ -1,7 +1,7 @@
 // @purpose Opens and migrates the Grove SQLite database.
 // @role    Database connection factory called during Tauri setup.
 // @deps    sqlx SQLite, tauri path resolver, shared error DTO
-// @gotcha  Database lives under the app data directory and must be created before commands run.
+// @gotcha  Dev/release data separation is handled by different Tauri identifiers, not by file name.
 use std::fs;
 
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};

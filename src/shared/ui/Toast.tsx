@@ -1,18 +1,27 @@
 /**
  * @purpose Renders transient floating feedback inside the panel.
  * @role    Reusable feedback primitive for progress, error, and lightweight notices.
- * @deps    ReactNode
+ * @deps    ReactNode, shared Close icon
  * @gotcha  Fills the panel width so long backend errors do not overflow the transparent shell.
  */
 import type { ReactNode } from 'react'
+import { Close } from '../icons'
 
 interface ToastProps {
+  closeLabel?: string
   icon?: ReactNode
   tone?: 'notice' | 'progress' | 'error'
   children: ReactNode
+  onClose?: () => void
 }
 
-export function Toast({ icon, tone = 'notice', children }: ToastProps) {
+export function Toast({
+  closeLabel = 'Close',
+  icon,
+  tone = 'notice',
+  children,
+  onClose
+}: ToastProps) {
   const toneClass =
     tone === 'error'
       ? 'border-[#ff8a8a]/25 bg-[rgba(82,22,28,0.92)] text-white'
@@ -24,6 +33,16 @@ export function Toast({ icon, tone = 'notice', children }: ToastProps) {
     >
       {icon}
       <span className="min-w-0 flex-1 break-words leading-4">{children}</span>
+      {onClose && (
+        <button
+          aria-label={closeLabel}
+          className="grove-icon-scale -mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/45"
+          type="button"
+          onClick={onClose}
+        >
+          <Close />
+        </button>
+      )}
     </div>
   )
 }

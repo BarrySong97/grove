@@ -10,7 +10,7 @@
 - `ScrollArea.tsx`:隐藏原生滚动条的滚动容器。
 - `Divider.tsx`:细分隔线。
 - `Dot.tsx`:彩色状态点。
-- `Toast.tsx`:浮层短反馈,支持 notice/progress/error tone;progress 可带 spinner,error 占用 panel 内部宽度并允许长文案换行。
+- `Toast.tsx`:浮层短反馈,支持 notice/progress/error tone、close icon 和 panel 内换行;progress 可带 spinner,error 占用 panel 内部宽度并允许长文案换行。
 
 ## 约束
 - shared UI 不能依赖 `src/modules/*`。

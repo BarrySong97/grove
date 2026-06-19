@@ -17,8 +17,9 @@
 
 ## 命令关系
 - `pnpm dev` 只跑 Vite 前端,用于快速 UI 验证。
-- `pnpm tauri:dev` 跑完整桌面壳,需要 Vite 端口契约不变。
+- `pnpm tauri:dev` 跑完整桌面壳,并通过 `src-tauri/tauri.dev.conf.json` 使用 `com.seperate.grove.dev` / `Grove Dev`;需要 Vite 端口契约不变。
 - `pnpm build` 先 `tsc --noEmit`,再 `vite build`。
+- `pnpm packages` 构建 release 桌面包,退出正在运行的 `Grove`,重装 `/Applications/Grove.app` 并重新打开。
 - `pnpm test` 使用 Vitest 跑 `src/**/*.test.{ts,tsx}` 前端单元测试。
 - `pnpm lint` 使用 Oxlint 扫描项目 JS/TS/TSX 文件,提交前作为兜底。
 - `pnpm format` 使用 Oxfmt 写回前端源码、配置和 hook 支持的文本文件;`pnpm format:check` 只检查不写入。
@@ -31,11 +32,15 @@
 - 如果本地 `node_modules` 来自用户全局 pnpm store,安装依赖时可能需要显式使用现有 store-dir,避免 pnpm 试图切换到项目内 `.pnpm-store`。
 - Hero UI v3 依赖 Tailwind CSS v4 和 React 19;升级这些依赖前要先验证 `@heroui/react`、`@heroui/styles` 的 peer dependency。
 - Hero UI styles 不走老版 provider 配置,当前在 `src/index.css` 中按需 import base、component css、theme、utilities 和 variants。
+- 前端国际化使用 `i18next` 和 `react-i18next`,资源以内置 TypeScript module 放在 `src/shared/i18n/`,语言偏好由 Rust app settings 持久化。
+- TanStack Query 用于 Rust-backed project/workspace/settings 读写编排,默认 cache 立即 stale/回收,避免把前端缓存误当成 SQLite/git 权威状态。
+- Jotai 用于前端 UI preference atoms,当前通过 `atomWithStorage` 持久化面板折叠和排序偏好。
 - Hero UI 的 popover/select 动画依赖 `tw-animate-css`;移除或重排样式入口后,必须跑 `pnpm build` 捕获 Tailwind unknown utility 报错。
 - 引入 Hero UI 后 `pnpm build` 可能出现 chunk size warning;这是包体提示,不是构建失败,但继续扩大组件库使用面时要评估 code splitting 或 Rollup `manualChunks`。
 
 ## 约束
 - 改 Vite 端口、host 或 strictPort 前,确认 Tauri dev 配置和 [运行手册](../../run.md) 同步。
+- 改 `src-tauri/tauri.conf.json` 或 `src-tauri/tauri.dev.conf.json` 的 identifier/productName 时,同步 [运行手册](../../run.md),确保安装版和 dev app data 不共用。
 - 改 `check-docs.config.json` 时,同步 [AI 文件头规范](../../topics/ai-file-headers.md)。
 - 改 `.oxfmtrc.json`、Oxlint/Oxfmt 脚本或 hook 范围时,同步本文件、[运行手册](../../run.md) 和 [测试策略](../../testing.md)。
 - 改 `package.json`、前端组件库、Tailwind、测试配置或全局 CSS 时,至少跑 `pnpm test`、`pnpm build`、`pnpm lint`、`pnpm format:check` 和 `node scripts/check-docs.mjs`。

@@ -1,0 +1,29 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Grove Dev",
+  "identifier": "com.seperate.grove.dev",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Grove Dev",
+        "width": 326,
+        "height": 720,
+        "visible": false,
+        "skipTaskbar": true,
+        "decorations": false,
+        "transparent": true,
+        "resizable": false,
+        "alwaysOnTop": true,
+        "shadow": true,
+        "windowEffects": {
+          "effects": [
+            "popover"
+          ],
+          "state": "active",
+          "radius": 18
+        }
+      }
+    ]
+  }
+}

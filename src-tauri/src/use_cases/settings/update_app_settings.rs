@@ -13,8 +13,9 @@ pub(crate) async fn run(
     input: UpdateAppSettingsInput,
 ) -> AppResult<AppSettingsDto> {
     let settings = AppSettingsDto {
+        language: input.language,
         ghostty_open_mode: input.ghostty_open_mode,
-        default_open_target: input.default_open_target,
+        hover_quick_open_targets: input.hover_quick_open_targets,
         default_archive_policy: input.default_archive_policy,
         remove_project_behavior: input.remove_project_behavior,
     };

@@ -22,7 +22,7 @@ pnpm dev
 pnpm tauri:dev
 ```
 
-启动完整 Tauri tray app。macOS 下应用以 accessory activation policy 运行,通过菜单栏图标显示或隐藏面板。
+启动完整 Tauri tray app。dev 脚本会加载 `src-tauri/tauri.dev.conf.json`,使用 `Grove Dev` / `com.seperate.grove.dev`,因此 app data 目录和安装版 `Grove` / `com.seperate.grove` 分开。macOS 下应用以 accessory activation policy 运行,通过菜单栏图标显示或隐藏面板。
 
 ## 构建
 ```bash
@@ -35,7 +35,13 @@ pnpm build
 pnpm tauri:build
 ```
 
-构建桌面应用包。
+构建桌面应用包。release 使用正式 identifier `com.seperate.grove`。
+
+```bash
+pnpm packages
+```
+
+构建 release 包、退出正在运行的 `Grove`、把 `Grove.app` 重装到 `/Applications` 并重新打开。
 
 ## Lint 与格式化
 ```bash

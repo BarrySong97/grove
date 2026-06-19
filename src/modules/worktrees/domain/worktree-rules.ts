@@ -44,6 +44,7 @@ export function buildDraftWorktree({
     branch: name,
     base,
     current: false,
+    isDefault: false,
     ahead: 0,
     behind: 0,
     dirty: 0,

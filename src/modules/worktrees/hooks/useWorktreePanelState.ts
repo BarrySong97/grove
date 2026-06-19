@@ -1,10 +1,13 @@
 /**
- * @purpose Coordinates WorktreePanel React state, backend commands, and transient feedback.
- * @role    Frontend presentation hook connecting UI events, persisted UI preferences, and Worktrees API/use cases.
- * @deps    React state/effect/ref, Worktrees API/contracts/use-cases, ContextMenu types
- * @gotcha  Add project/global settings delegate to Rust; collapsed project ids stay in localStorage.
+ * @purpose Coordinates WorktreePanel React state, backend queries/mutations, and transient feedback.
+ * @role    Frontend presentation hook connecting UI events, persisted UI atoms, and Rust-backed query APIs.
+ * @deps    React state/effect/ref, TanStack Query, Jotai atoms, Worktrees API/contracts/use-cases
+ * @gotcha  Rust/SQLite/git remain authoritative; Jotai storage is only for UI preferences.
  */
-import { useEffect, useRef, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useAtom } from 'jotai'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Project, Worktree } from '../../../shared/contracts/worktrees'
 import {
   addProjectFromFolderPicker,
@@ -21,7 +24,9 @@ import {
   updateAppSettings,
   updateProjectSettings
 } from '../api/groveCommands'
+import { worktreeQueryKeys } from '../api/queryKeys'
 import type {
+  AppLanguageDto,
   AppSettingsDto,
   ArchivePolicyChoiceDto,
   ArchivePolicyDto,
@@ -32,6 +37,7 @@ import type {
   RemoveProjectBehaviorDto
 } from '../../../shared/bindings/commands'
 import type { ContextState } from '../components/ContextMenu'
+import { applyAppLanguage } from '../../../shared/i18n/language'
 import {
   moveProject as moveProjectUseCase,
   moveWorktree as moveWorktreeUseCase,
@@ -40,16 +46,25 @@ import {
   reorderWorktrees as reorderWorktreesUseCase,
   switchCurrentWorktree
 } from '../use-cases/worktree-panel-actions'
+import {
+  asStringArray,
+  asWorktreeOrderByProject,
+  collapsedProjectIdsAtom,
+  projectOrderAtom,
+  worktreeOrderByProjectAtom
+} from '../state/panelAtoms'
 
-const COLLAPSED_PROJECT_IDS_KEY = 'grove.worktrees.collapsedProjectIds'
+const TOAST_AUTO_DISMISS_MS = 5000
 const DEFAULT_APP_SETTINGS: AppSettingsDto = {
-  defaultOpenTarget: 'cursor',
+  language: 'system',
+  hoverQuickOpenTargets: ['cursor', 'terminal'],
   ghosttyOpenMode: 'window',
   defaultArchivePolicy: 'ask',
   removeProjectBehavior: 'grove_only'
 }
 type ToastTone = 'notice' | 'progress' | 'error'
 interface ToastState {
+  id: number
   message: string
   tone: ToastTone
 }
@@ -66,14 +81,44 @@ interface LogViewerState {
 }
 
 export function useWorktreePanelState(initialProjects: Project[] = []) {
-  const [projects, setProjects] = useState<Project[]>(initialProjects)
-  const [collapsedProjectIds, setCollapsedProjectIds] =
-    useState<Set<string>>(readCollapsedProjectIds)
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [rawCollapsedProjectIds, setRawCollapsedProjectIds] = useAtom(collapsedProjectIdsAtom)
+  const [rawProjectOrder, setRawProjectOrder] = useAtom(projectOrderAtom)
+  const [rawWorktreeOrderByProject, setRawWorktreeOrderByProject] = useAtom(
+    worktreeOrderByProjectAtom
+  )
+  const projectOrder = useMemo(() => asStringArray(rawProjectOrder), [rawProjectOrder])
+  const worktreeOrderByProject = useMemo(
+    () => asWorktreeOrderByProject(rawWorktreeOrderByProject),
+    [rawWorktreeOrderByProject]
+  )
+  const collapsedProjectIds = useMemo(
+    () => new Set(asStringArray(rawCollapsedProjectIds)),
+    [rawCollapsedProjectIds]
+  )
+  const hasInitialProjects = initialProjects.length > 0
+
+  const projectsQuery = useQuery({
+    queryKey: worktreeQueryKeys.projects,
+    queryFn: loadWorktreePanelProjects,
+    enabled: !hasInitialProjects,
+    initialData: hasInitialProjects ? initialProjects : undefined
+  })
+  const appSettingsQuery = useQuery({
+    queryKey: worktreeQueryKeys.appSettings,
+    queryFn: getAppSettings,
+    initialData: DEFAULT_APP_SETTINGS
+  })
+  const projects = useMemo(
+    () => applySortOrder(projectsQuery.data ?? [], projectOrder, worktreeOrderByProject),
+    [projectOrder, projectsQuery.data, worktreeOrderByProject]
+  )
+  const appSettings = appSettingsQuery.data ?? DEFAULT_APP_SETTINGS
+
   const [addingTo, setAddingTo] = useState<string | null>(null)
   const [settingsFor, setSettingsFor] = useState<string | null>(null)
   const [globalSettingsOpen, setGlobalSettingsOpen] = useState(false)
-  const [appSettings, setAppSettings] = useState<AppSettingsDto>(DEFAULT_APP_SETTINGS)
-  const [appSettingsSaving, setAppSettingsSaving] = useState(false)
   const [ctx, setCtx] = useState<ContextState | null>(null)
   const [toast, setToast] = useState<ToastState | null>(null)
   const [archivePrompt, setArchivePrompt] = useState<ArchivePromptState | null>(null)
@@ -82,116 +127,176 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
   )
   const [logViewer, setLogViewer] = useState<LogViewerState | null>(null)
   const timers = useRef<number[]>([])
-
-  useEffect(() => () => timers.current.forEach(clearTimeout), [])
-
-  useEffect(() => {
-    if (initialProjects.length > 0) return
-
-    let cancelled = false
-    void loadWorktreePanelProjects()
-      .then((nextProjects) => {
-        if (!cancelled) setProjects(nextProjects)
-      })
-      .catch(() => {
-        if (!cancelled) showToast('Unable to load Grove projects', 'error')
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [initialProjects.length])
-
-  useEffect(() => {
-    let cancelled = false
-    void getAppSettings()
-      .then((nextSettings) => {
-        if (!cancelled) setAppSettings(nextSettings)
-      })
-      .catch(() => {
-        if (!cancelled) showToast('Unable to load Grove settings', 'error')
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  const toastId = useRef(0)
+  const projectsLoadErrorShown = useRef(false)
+  const settingsLoadErrorShown = useRef(false)
 
   const after = (ms: number, fn: () => void) => {
     timers.current.push(window.setTimeout(fn, ms))
   }
+
+  const showToast = (message: string, tone: ToastTone = 'notice') => {
+    const id = toastId.current + 1
+    toastId.current = id
+    setToast({ id, message, tone })
+    if (tone !== 'progress') {
+      after(TOAST_AUTO_DISMISS_MS, () => {
+        setToast((current) => (current?.id === id ? null : current))
+      })
+    }
+  }
+
+  const clearToast = () => {
+    toastId.current += 1
+    setToast(null)
+  }
+
+  const describeError = (error: unknown, fallback: string) =>
+    error instanceof Error && error.message.trim() ? error.message : fallback
+
+  const reloadProjects = () =>
+    queryClient.fetchQuery({
+      queryKey: worktreeQueryKeys.projects,
+      queryFn: loadWorktreePanelProjects
+    })
+
+  const patchWorktree = (projectId: string, worktreeId: string, patch: Partial<Worktree>) =>
+    queryClient.setQueryData<Project[]>(worktreeQueryKeys.projects, (current) =>
+      current ? patchWorktreeUseCase(current, projectId, worktreeId, patch) : current
+    )
+
+  const createWorkspaceMutation = useMutation({
+    mutationFn: (input: Parameters<typeof createWorkspace>[0]) => createWorkspace(input)
+  })
+  const archiveWorkspaceMutation = useMutation({
+    mutationFn: (input: Parameters<typeof archiveWorkspace>[0]) => archiveWorkspace(input)
+  })
+  const addProjectMutation = useMutation({ mutationFn: addProjectFromFolderPicker })
+  const importConductorMutation = useMutation({ mutationFn: () => importConductorProjects() })
+  const removeProjectMutation = useMutation({
+    mutationFn: (input: Parameters<typeof removeProject>[0]) => removeProject(input)
+  })
+  const retryWorkspaceMutation = useMutation({
+    mutationFn: (workspaceId: string) => retryWorkspaceOperation(workspaceId)
+  })
+  const openWorkspaceMutation = useMutation({
+    mutationFn: ({ worktreeId, target }: { worktreeId: string; target: OpenWorkspaceTargetDto }) =>
+      openWorkspace(worktreeId, target)
+  })
+  const updateProjectSettingsMutation = useMutation({
+    mutationFn: (input: Parameters<typeof updateProjectSettings>[0]) => updateProjectSettings(input)
+  })
+  const updateAppSettingsMutation = useMutation({
+    mutationFn: (input: Parameters<typeof updateAppSettings>[0]) => updateAppSettings(input),
+    onMutate: async (nextSettings) => {
+      await queryClient.cancelQueries({ queryKey: worktreeQueryKeys.appSettings })
+      const previousSettings = queryClient.getQueryData<AppSettingsDto>(
+        worktreeQueryKeys.appSettings
+      )
+      queryClient.setQueryData(worktreeQueryKeys.appSettings, nextSettings)
+      applyAppLanguage(nextSettings.language)
+      return { previousSettings }
+    },
+    onSuccess: (savedSettings) => {
+      queryClient.setQueryData(worktreeQueryKeys.appSettings, savedSettings)
+      applyAppLanguage(savedSettings.language)
+    },
+    onError: (error, _nextSettings, context) => {
+      const previousSettings = context?.previousSettings ?? DEFAULT_APP_SETTINGS
+      queryClient.setQueryData(worktreeQueryKeys.appSettings, previousSettings)
+      applyAppLanguage(previousSettings.language)
+      showToast(describeError(error, t('toast.saveAppSettingsFailed')), 'error')
+    }
+  })
+
+  useEffect(() => () => timers.current.forEach(clearTimeout), [])
+
+  useEffect(() => {
+    applyAppLanguage(appSettings.language)
+  }, [appSettings.language])
+
+  useEffect(() => {
+    if (projectsQuery.isError && !projectsLoadErrorShown.current) {
+      projectsLoadErrorShown.current = true
+      showToast(t('toast.loadProjectsFailed'), 'error')
+    } else if (!projectsQuery.isError) {
+      projectsLoadErrorShown.current = false
+    }
+  }, [projectsQuery.isError, t])
+
+  useEffect(() => {
+    if (appSettingsQuery.isError && !settingsLoadErrorShown.current) {
+      settingsLoadErrorShown.current = true
+      showToast(t('toast.loadSettingsFailed'), 'error')
+    } else if (!appSettingsQuery.isError) {
+      settingsLoadErrorShown.current = false
+    }
+  }, [appSettingsQuery.isError, t])
 
   const total = projects.reduce((n, project) => n + project.worktrees.length, 0)
   const settingsProject = settingsFor
     ? projects.find((project) => project.id === settingsFor)
     : null
 
-  const patchWorktree = (projectId: string, worktreeId: string, patch: Partial<Worktree>) =>
-    setProjects((current) => patchWorktreeUseCase(current, projectId, worktreeId, patch))
-
-  const showToast = (message: string, tone: ToastTone = 'notice') => {
-    setToast({ message, tone })
-  }
-
-  const clearToast = () => setToast(null)
-
-  const flash = (message: string, ms = 1500) => {
+  const flash = (message: string) => {
     showToast(message)
-    after(ms, () => setToast(null))
   }
 
-  const describeError = (error: unknown, fallback: string) =>
-    error instanceof Error && error.message.trim() ? error.message : fallback
+  const reorderProjects = (activeId: string, overId: string) => {
+    const next = reorderProjectsUseCase(projects, activeId, overId)
+    setRawProjectOrder(next.map((project) => project.id))
+  }
 
-  const reorderProjects = (activeId: string, overId: string) =>
-    setProjects((current) => reorderProjectsUseCase(current, activeId, overId))
+  const moveProject = (projectId: string, direction: 'up' | 'down' | 'top') => {
+    const next = moveProjectUseCase(projects, projectId, direction)
+    setRawProjectOrder(next.map((project) => project.id))
+  }
 
-  const moveProject = (projectId: string, direction: 'up' | 'down' | 'top') =>
-    setProjects((current) => moveProjectUseCase(current, projectId, direction))
-
-  const moveWorktree = (projectId: string, worktreeId: string, direction: 'up' | 'down' | 'top') =>
-    setProjects((current) => moveWorktreeUseCase(current, projectId, worktreeId, direction))
+  const moveWorktree = (
+    projectId: string,
+    worktreeId: string,
+    direction: 'up' | 'down' | 'top'
+  ) => {
+    const next = moveWorktreeUseCase(projects, projectId, worktreeId, direction)
+    writeProjectWorktreeOrder(next, projectId, worktreeOrderByProject, setRawWorktreeOrderByProject)
+  }
 
   const setProjectCollapsed = (projectId: string, collapsed: boolean) => {
-    setCollapsedProjectIds((current) => {
-      const next = new Set(current)
-      if (collapsed) {
-        next.add(projectId)
-      } else {
-        next.delete(projectId)
-      }
-      if (setsEqual(current, next)) return current
-      writeCollapsedProjectIds(next)
-      return next
-    })
+    const next = new Set(collapsedProjectIds)
+    if (collapsed) {
+      next.add(projectId)
+    } else {
+      next.delete(projectId)
+    }
+    setRawCollapsedProjectIds([...next])
   }
 
-  const reorderWorktrees = (projectId: string, activeId: string, overId: string) =>
-    setProjects((current) => reorderWorktreesUseCase(current, projectId, activeId, overId))
+  const reorderWorktrees = (projectId: string, activeId: string, overId: string) => {
+    const next = reorderWorktreesUseCase(projects, projectId, activeId, overId)
+    writeProjectWorktreeOrder(next, projectId, worktreeOrderByProject, setRawWorktreeOrderByProject)
+  }
 
-  const switchTo = (worktree: Worktree, project: Project) =>
-    setProjects((current) => switchCurrentWorktree(current, worktree, project))
-
-  const reloadProjects = () =>
-    loadWorktreePanelProjects().then((nextProjects) => {
-      setProjects(nextProjects)
-      return nextProjects
-    })
+  const switchTo = (worktree: Worktree, project: Project) => {
+    queryClient.setQueryData<Project[]>(worktreeQueryKeys.projects, (current) =>
+      current ? switchCurrentWorktree(current, worktree, project) : current
+    )
+  }
 
   const createWorktree = (project: Project, name: string, base: string) => {
     setAddingTo(null)
-    showToast(`Create · ${project.name}/${name}`, 'progress')
-    void createWorkspace({
-      projectId: project.id,
-      name,
-      branch: name,
-      baseBranch: base,
-      runSetup: Boolean(project.commands.setup.trim())
-    })
+    showToast(t('toast.create', { project: project.name, name }), 'progress')
+    void createWorkspaceMutation
+      .mutateAsync({
+        projectId: project.id,
+        name,
+        branch: name,
+        baseBranch: base,
+        runSetup: Boolean(project.commands.setup.trim())
+      })
       .then(() => reloadProjects())
       .then(() => clearToast())
       .catch((error: unknown) => {
-        const fallback = `Create failed · ${project.name}/${name}`
+        const fallback = t('toast.createFailed', { project: project.name, name })
         const detail = describeError(error, fallback)
         void reloadProjects().finally(() => {
           showToast(detail === fallback ? fallback : `${fallback}: ${detail}`, 'error')
@@ -215,48 +320,55 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
     policy: ArchivePolicyChoiceDto | null
   ) => {
     setArchivePrompt(null)
-    showToast(`Archive · ${project.name}/${worktree.branch}`, 'progress')
+    showToast(t('toast.archive', { project: project.name, branch: worktree.branch }), 'progress')
     patchWorktree(project.id, worktree.id, { status: 'archiving' })
-    void archiveWorkspace({
-      workspaceId: worktree.id,
-      policy,
-      rememberPolicy: false
-    })
+    void archiveWorkspaceMutation
+      .mutateAsync({
+        workspaceId: worktree.id,
+        policy,
+        rememberPolicy: false
+      })
       .then(() => reloadProjects())
       .then(() => clearToast())
       .catch((error: unknown) => {
         patchWorktree(project.id, worktree.id, { status: 'ready' })
-        const fallback = `Archive failed · ${project.name}/${worktree.branch}`
+        const fallback = t('toast.archiveFailed', {
+          project: project.name,
+          branch: worktree.branch
+        })
         const detail = describeError(error, fallback)
         showToast(detail === fallback ? fallback : `${fallback}: ${detail}`, 'error')
       })
   }
 
   const addProject = () => {
-    void addProjectFromFolderPicker()
+    void addProjectMutation
+      .mutateAsync()
       .then((project) => {
         if (!project) return
-        showToast('Adding project', 'progress')
+        showToast(t('toast.addingProject'), 'progress')
         return reloadProjects().then(() => {
           clearToast()
         })
       })
-      .catch((error: unknown) => showToast(describeError(error, 'Add project failed'), 'error'))
+      .catch((error: unknown) =>
+        showToast(describeError(error, t('toast.addProjectFailed')), 'error')
+      )
   }
 
   const importFromConductor = () => {
-    showToast('Importing Conductor workspaces', 'progress')
-    void importConductorProjects()
+    showToast(t('toast.importingConductor'), 'progress')
+    void importConductorMutation
+      .mutateAsync()
       .then((candidates) => {
-        if (candidates.length === 0) showToast('No Conductor workspaces found')
-        return loadWorktreePanelProjects()
+        if (candidates.length === 0) showToast(t('toast.noConductorWorkspaces'))
+        return reloadProjects()
       })
       .then((nextProjects) => {
-        setProjects(nextProjects)
         if (nextProjects.length > 0) clearToast()
       })
       .catch((error: unknown) =>
-        showToast(describeError(error, 'Import from Conductor failed'), 'error')
+        showToast(describeError(error, t('toast.importConductorFailed')), 'error')
       )
   }
 
@@ -268,20 +380,21 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
       commands: Project['commands']
     }
   ) => {
-    showToast('Saving project settings', 'progress')
-    void updateProjectSettings({
-      projectId,
-      workspaceRoot: input.workspaceRoot,
-      archivePolicy: input.archivePolicy,
-      commands: input.commands
-    })
+    showToast(t('toast.saveProjectSettings'), 'progress')
+    void updateProjectSettingsMutation
+      .mutateAsync({
+        projectId,
+        workspaceRoot: input.workspaceRoot,
+        archivePolicy: input.archivePolicy,
+        commands: input.commands
+      })
       .then(() => reloadProjects())
       .then(() => {
         setSettingsFor(null)
         clearToast()
       })
       .catch((error: unknown) =>
-        showToast(describeError(error, 'Save project settings failed'), 'error')
+        showToast(describeError(error, t('toast.saveProjectSettingsFailed')), 'error')
       )
   }
 
@@ -290,8 +403,9 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
   }
 
   const confirmRemoveProject = (project: Project) => {
-    showToast(`Remove project · ${project.name}`, 'progress')
-    void removeProject({ projectId: project.id })
+    showToast(t('toast.removeProject', { project: project.name }), 'progress')
+    void removeProjectMutation
+      .mutateAsync({ projectId: project.id })
       .then(() => reloadProjects())
       .then(() => {
         setRemoveProjectPrompt(null)
@@ -299,7 +413,10 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
         clearToast()
       })
       .catch((error: unknown) => {
-        showToast(describeError(error, `Remove project failed · ${project.name}`), 'error')
+        showToast(
+          describeError(error, t('toast.removeProjectFailed', { project: project.name })),
+          'error'
+        )
       })
   }
 
@@ -307,8 +424,13 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
     saveAppSettings({ ...appSettings, ghosttyOpenMode: mode })
   }
 
-  const setDefaultOpenTarget = (target: OpenWorkspaceTargetDto) => {
-    saveAppSettings({ ...appSettings, defaultOpenTarget: target })
+  const setHoverQuickOpenTargets = (targets: OpenWorkspaceTargetDto[]) => {
+    saveAppSettings({ ...appSettings, hoverQuickOpenTargets: targets })
+  }
+
+  const setLanguage = (language: AppLanguageDto) => {
+    applyAppLanguage(language)
+    saveAppSettings({ ...appSettings, language })
   }
 
   const setDefaultArchivePolicy = (policy: ArchivePolicyDto) => {
@@ -320,50 +442,48 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
   }
 
   const saveAppSettings = (next: AppSettingsDto) => {
-    const previous = appSettings
-    setAppSettings(next)
-    setAppSettingsSaving(true)
-    void updateAppSettings(next)
-      .then((savedSettings) => {
-        setAppSettings(savedSettings)
-        setAppSettingsSaving(false)
-      })
-      .catch((error: unknown) => {
-        setAppSettings(previous)
-        setAppSettingsSaving(false)
-        showToast(describeError(error, 'Save app settings failed'), 'error')
-      })
+    updateAppSettingsMutation.mutate(next)
   }
 
   const openWorktree = (worktree: Worktree, project: Project, target: OpenWorkspaceTargetDto) => {
     setCtx(null)
-    void openWorkspace(worktree.id, target).catch((error: unknown) =>
-      showToast(describeError(error, `Open failed · ${project.name}/${worktree.branch}`), 'error')
-    )
+    void openWorkspaceMutation
+      .mutateAsync({ worktreeId: worktree.id, target })
+      .catch((error: unknown) =>
+        showToast(
+          describeError(
+            error,
+            t('toast.openFailed', { project: project.name, branch: worktree.branch })
+          ),
+          'error'
+        )
+      )
   }
 
   const viewWorktreeLog = (worktree: Worktree, project: Project) => {
     void getLatestOperation({ workspaceId: worktree.id })
       .then((operation) => {
-        if (!operation) throw new Error('No operation log is available for this workspace')
+        if (!operation) throw new Error(t('toast.noOperationLog'))
         return readOperationLog(operation.id)
       })
       .then((content) => {
         setLogViewer({ title: `${project.name}/${worktree.branch}`, content })
       })
-      .catch((error: unknown) =>
-        showToast(describeError(error, 'Unable to read operation log'), 'error')
-      )
+      .catch((error: unknown) => showToast(describeError(error, t('toast.readLogFailed')), 'error'))
   }
 
   const retryWorktree = (worktree: Worktree, project: Project) => {
-    showToast(`Retry · ${project.name}/${worktree.branch}`, 'progress')
-    void retryWorkspaceOperation(worktree.id)
+    showToast(t('toast.retry', { project: project.name, branch: worktree.branch }), 'progress')
+    void retryWorkspaceMutation
+      .mutateAsync(worktree.id)
       .then(() => reloadProjects())
       .then(() => clearToast())
       .catch((error: unknown) =>
         showToast(
-          describeError(error, `Retry failed · ${project.name}/${worktree.branch}`),
+          describeError(
+            error,
+            t('toast.retryFailed', { project: project.name, branch: worktree.branch })
+          ),
           'error'
         )
       )
@@ -373,10 +493,11 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
     addingTo,
     addProject,
     appSettings,
-    appSettingsSaving,
+    appSettingsSaving: updateAppSettingsMutation.isPending,
     archivePrompt,
     archiveWorktree,
     archiveWorktreeWithPolicy,
+    clearToast,
     collapsedProjectIds,
     confirmRemoveProject,
     createWorktree,
@@ -398,9 +519,10 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
     setArchivePrompt,
     setProjectCollapsed,
     setCtx,
-    setDefaultOpenTarget,
+    setHoverQuickOpenTargets,
     setDefaultArchivePolicy,
     setGhosttyOpenMode,
+    setLanguage,
     setRemoveProjectBehavior,
     setGlobalSettingsOpen,
     setLogViewer,
@@ -421,33 +543,40 @@ function getEffectiveArchivePolicy(project: Project, settings: AppSettingsDto) {
     : project.archivePolicy
 }
 
-function readCollapsedProjectIds() {
-  if (typeof window === 'undefined') return new Set<string>()
-
-  try {
-    const raw = window.localStorage.getItem(COLLAPSED_PROJECT_IDS_KEY)
-    const ids = raw ? JSON.parse(raw) : []
-    if (!Array.isArray(ids)) return new Set<string>()
-    return new Set(ids.filter((id): id is string => typeof id === 'string' && id.length > 0))
-  } catch {
-    return new Set<string>()
-  }
+function applySortOrder(
+  projects: Project[],
+  projectOrder: string[],
+  worktreeOrderByProject: Record<string, string[]>
+) {
+  return orderBySavedIds(projects, projectOrder, (project) => project.id).map((project) => ({
+    ...project,
+    worktrees: orderBySavedIds(
+      project.worktrees,
+      worktreeOrderByProject[project.id] ?? [],
+      (worktree) => worktree.id
+    )
+  }))
 }
 
-function writeCollapsedProjectIds(ids: Set<string>) {
-  if (typeof window === 'undefined') return
-
-  try {
-    window.localStorage.setItem(COLLAPSED_PROJECT_IDS_KEY, JSON.stringify([...ids]))
-  } catch {
-    // localStorage can be unavailable in restricted webview contexts; collapse state is non-critical UI state.
-  }
+function writeProjectWorktreeOrder(
+  projects: Project[],
+  projectId: string,
+  currentOrder: Record<string, string[]>,
+  setOrder: (value: Record<string, string[]>) => void
+) {
+  const project = projects.find((item) => item.id === projectId)
+  if (!project) return
+  setOrder({
+    ...currentOrder,
+    [projectId]: project.worktrees.map((worktree) => worktree.id)
+  })
 }
 
-function setsEqual(left: Set<string>, right: Set<string>) {
-  if (left.size !== right.size) return false
-  for (const value of left) {
-    if (!right.has(value)) return false
-  }
-  return true
+function orderBySavedIds<T>(items: T[], savedIds: string[], getId: (item: T) => string) {
+  if (savedIds.length === 0) return items
+  const byId = new Map(items.map((item) => [getId(item), item]))
+  const ordered = savedIds.map((id) => byId.get(id)).filter((item): item is T => Boolean(item))
+  const seen = new Set(savedIds)
+  const appended = items.filter((item) => !seen.has(getId(item)))
+  return [...ordered, ...appended]
 }

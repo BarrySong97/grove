@@ -10,6 +10,14 @@ use crate::shared::dto::workspaces::OpenWorkspaceTargetDto;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
+pub(crate) enum AppLanguageDto {
+    System,
+    ZhCn,
+    EnUs,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
+#[serde(rename_all = "snake_case")]
 pub(crate) enum GhosttyOpenModeDto {
     Window,
     Tab,
@@ -25,8 +33,9 @@ pub(crate) enum RemoveProjectBehaviorDto {
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct AppSettingsDto {
+    pub language: AppLanguageDto,
     pub ghostty_open_mode: GhosttyOpenModeDto,
-    pub default_open_target: OpenWorkspaceTargetDto,
+    pub hover_quick_open_targets: Vec<OpenWorkspaceTargetDto>,
     pub default_archive_policy: ArchivePolicyDto,
     pub remove_project_behavior: RemoveProjectBehaviorDto,
 }
@@ -34,8 +43,9 @@ pub(crate) struct AppSettingsDto {
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UpdateAppSettingsInput {
+    pub language: AppLanguageDto,
     pub ghostty_open_mode: GhosttyOpenModeDto,
-    pub default_open_target: OpenWorkspaceTargetDto,
+    pub hover_quick_open_targets: Vec<OpenWorkspaceTargetDto>,
     pub default_archive_policy: ArchivePolicyDto,
     pub remove_project_behavior: RemoveProjectBehaviorDto,
 }

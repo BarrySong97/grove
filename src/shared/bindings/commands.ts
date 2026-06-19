@@ -80,9 +80,12 @@ export type AppErrorDto = {
   recoverable: boolean
 }
 
+export type AppLanguageDto = 'system' | 'zh_cn' | 'en_us'
+
 export type AppSettingsDto = {
+  language: AppLanguageDto
   ghosttyOpenMode: GhosttyOpenModeDto
-  defaultOpenTarget: OpenWorkspaceTargetDto
+  hoverQuickOpenTargets: OpenWorkspaceTargetDto[]
   defaultArchivePolicy: ArchivePolicyDto
   removeProjectBehavior: RemoveProjectBehaviorDto
 }
@@ -209,8 +212,9 @@ export type RetryWorkspaceOperationInput = {
 }
 
 export type UpdateAppSettingsInput = {
+  language: AppLanguageDto
   ghosttyOpenMode: GhosttyOpenModeDto
-  defaultOpenTarget: OpenWorkspaceTargetDto
+  hoverQuickOpenTargets: OpenWorkspaceTargetDto[]
   defaultArchivePolicy: ArchivePolicyDto
   removeProjectBehavior: RemoveProjectBehaviorDto
 }

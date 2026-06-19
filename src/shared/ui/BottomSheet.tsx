@@ -11,6 +11,12 @@ interface BottomSheetProps {
   ariaLabel: string
   children: ReactNode
   className?: string
+  /**
+   * Elevates the overlay above other open sheets. Use for confirmation sheets
+   * that are launched from within another sheet (e.g. remove project, archive)
+   * so they surface in front instead of being obscured.
+   */
+  elevated?: boolean
   isOpen: boolean
   onClose: () => void
 }
@@ -19,6 +25,7 @@ export function BottomSheet({
   ariaLabel,
   children,
   className = '',
+  elevated = false,
   isOpen,
   onClose
 }: BottomSheetProps) {
@@ -36,7 +43,7 @@ export function BottomSheet({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-end bg-black/[0.04] px-1.5 pb-1.5"
+          className={`fixed inset-0 flex items-end bg-black/[0.04] px-1.5 pb-1.5 ${elevated ? 'z-[60]' : 'z-50'}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

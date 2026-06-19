@@ -14,8 +14,8 @@ use crate::shared::dto::projects::{
     WorktreeProjectDto,
 };
 use crate::use_cases::projects::{
-    create_project, import_conductor_projects, list_projects, list_worktree_projects, remove_project,
-    update_project_settings,
+    create_project, import_conductor_projects, list_projects, list_worktree_projects,
+    remove_project, update_project_settings,
 };
 use crate::window;
 

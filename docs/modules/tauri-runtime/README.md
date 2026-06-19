@@ -35,7 +35,7 @@
 7. 本文档和相关文件头。
 
 ## 数据边界
-- SQLite 只保存 Grove 项目登记、用户选择、全局 app settings、workspace lifecycle/operation 状态和 operation log metadata。
+- SQLite 只保存 Grove 项目登记、用户选择、全局 app settings 包括语言偏好、workspace lifecycle/operation 状态和 operation log metadata。
 - Mutating command 必须在 Rust use case/repository 层检查 operation lock;前端 disabled 状态不能作为安全边界。
 - Git 状态、Conductor 配置和文件系统状态以真实来源为准,后续 refresh/import use case 负责同步。
 - 前端业务代码优先通过生成的 [Bindings 模块](../bindings/) 调用 Rust command,不要手写业务 `invoke(...)` 字符串。

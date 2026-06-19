@@ -14,4 +14,5 @@
 - command handler 保持薄封装:读取 Tauri state、调用 use case、映射 typed error。
 - 新 command 必须加 `#[tauri::command]` 与 `#[specta::specta]`,并注册到 `src-tauri/src/lib.rs` 的 `collect_commands!`。
 - 不要在 presentation 层直接执行 git、SQL、文件复制或 native app 打开。
+- worktree root 保护、缺失 workspace cleanup、settings 持久化等业务行为必须留在 use case/repository 层,presentation 只传递参数和日志目录。
 - `add_project_from_folder_picker` 只负责持有 native dialog lifecycle guard、调用 runtime 文件夹选择器、输出用户选择/失败诊断日志,并把路径交给 `create_project` use case;项目登记、git 校验和 SQLite 写入仍必须留在 use case/repository 层。

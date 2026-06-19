@@ -45,9 +45,8 @@ pub(crate) async fn read_operation_log(
             message: "This operation does not have a log file.".into(),
         }));
     };
-    let content = fs::read_to_string(&log_path).map_err(|source| {
-        AppErrorDto::from(AppError::Filesystem(source))
-    })?;
+    let content = fs::read_to_string(&log_path)
+        .map_err(|source| AppErrorDto::from(AppError::Filesystem(source)))?;
     Ok(OperationLogDto {
         operation_id: operation.id,
         content,

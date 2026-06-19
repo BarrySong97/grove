@@ -36,6 +36,7 @@ pnpm tauri:dev
 - Escape 会隐藏面板。
 - 窗口失焦自动隐藏。
 - 右下 Quit 按钮会退出应用。
+- Footer 左侧语言切换会立即更新已接入 i18n 的文案,Global Settings 中的 Language 选择会持久化同一偏好。
 - Worktree 面板可展开/折叠项目、拖拽排序、按钮上移/下移、打开右键 action sheet。
 - 空项目列表可分别触发 Import from Conductor 和 Add Project。
 - New worktree 会调用 Rust `create_workspace`,真实执行 `git worktree add`、文件复制和可选 setup。

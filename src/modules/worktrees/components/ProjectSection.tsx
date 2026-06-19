@@ -1,11 +1,12 @@
 /**
  * @purpose Renders one project group with collapsible worktree rows and project controls.
  * @role    Sortable project section inside WorktreePanel; renders persisted collapse state and local show-all state.
- * @deps    Hero UI Button, React state, motion, @dnd-kit, shared icons/ui, WorktreeRow, NewWorktreeEditor
+ * @deps    Hero UI Button, React state, react-i18next, motion, @dnd-kit, shared icons/ui, WorktreeRow, NewWorktreeEditor
  * @gotcha  Collapsed state is owned by the panel hook; VISIBLE_LIMIT only controls show-all preview; docs/modules/worktrees/README.md
  */
 import { Button } from '@heroui/react/button'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'motion/react'
 import {
   DndContext,
@@ -44,8 +45,7 @@ const collapseTransition = { duration: 0.22, ease: [0.4, 0, 0.2, 1] as const }
 interface ProjectSectionProps {
   project: Project
   density: Density
-  defaultOpenLabel: string
-  defaultOpenTarget: OpenWorkspaceTargetDto
+  hoverQuickOpenTargets: OpenWorkspaceTargetDto[]
   showCommit: boolean
   isAdding: boolean
   collapsed: boolean
@@ -67,8 +67,7 @@ interface ProjectSectionProps {
 export function ProjectSection({
   project,
   density,
-  defaultOpenLabel,
-  defaultOpenTarget,
+  hoverQuickOpenTargets,
   showCommit,
   isAdding,
   collapsed,
@@ -86,6 +85,7 @@ export function ProjectSection({
   onReorderWorktrees,
   onContext
 }: ProjectSectionProps) {
+  const { t } = useTranslation()
   const [showAll, setShowAll] = useState(false)
   const hasOverflow = project.worktrees.length > VISIBLE_LIMIT
   const head = project.worktrees.slice(0, VISIBLE_LIMIT)
@@ -126,12 +126,10 @@ export function ProjectSection({
       isContextOpen={activeContextWorktreeId === worktree.id}
       isFirst={index === 0}
       isLast={index === project.worktrees.length - 1}
-      defaultOpenLabel={defaultOpenLabel}
-      defaultOpenTarget={defaultOpenTarget}
+      hoverQuickOpenTargets={hoverQuickOpenTargets}
       onMove={(direction) => onMoveWorktree(worktree.id, direction)}
       onContext={onContext}
-      onOpenDefault={() => onOpenWorkspace(worktree, project, defaultOpenTarget)}
-      onOpenTerminal={() => onOpenWorkspace(worktree, project, 'terminal')}
+      onOpen={(target) => onOpenWorkspace(worktree, project, target)}
     />
   )
 
@@ -168,29 +166,37 @@ export function ProjectSection({
 
           <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover/proj:opacity-100">
             {!isFirst && (
-              <IconButton title="Move to top" size="project" onClick={() => onMove('top')}>
+              <IconButton
+                title={t('actions.moveToTop')}
+                size="project"
+                onClick={() => onMove('top')}
+              >
                 <ToTop />
               </IconButton>
             )}
             {!isFirst && (
-              <IconButton title="Move up" size="project" onClick={() => onMove('up')}>
+              <IconButton title={t('actions.moveUp')} size="project" onClick={() => onMove('up')}>
                 <ChevronUp />
               </IconButton>
             )}
             {!isLast && (
-              <IconButton title="Move down" size="project" onClick={() => onMove('down')}>
+              <IconButton
+                title={t('actions.moveDown')}
+                size="project"
+                onClick={() => onMove('down')}
+              >
                 <ChevronDown />
               </IconButton>
             )}
             <IconButton
-              title="Project settings"
+              title={t('actions.projectSettings')}
               size="project"
               onClick={() => onEditSettings(project.id)}
             >
               <Gear />
             </IconButton>
             <IconButton
-              title="New worktree"
+              title={t('actions.newWorktree')}
               size="project"
               tone="accent"
               onClick={() => {
@@ -255,7 +261,7 @@ export function ProjectSection({
               >
                 <span className="flex w-4 shrink-0 items-center justify-center" />
                 <span className="flex-1">
-                  {showAll ? 'Show less' : `Show all work tree (${rest.length} more)`}
+                  {showAll ? t('worktree.showLess') : t('worktree.showAll', { count: rest.length })}
                 </span>
               </div>
             )}
@@ -275,7 +281,7 @@ export function ProjectSection({
                   <Plus />
                 </span>
                 <span className="flex-1 text-[12.5px] font-medium text-[#1c1c1e]">
-                  New worktree
+                  {t('actions.newWorktree')}
                 </span>
               </div>
             )}

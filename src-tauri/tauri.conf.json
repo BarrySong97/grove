@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Tauri Tray",
+  "productName": "Grove",
   "version": "0.1.0",
-  "identifier": "com.seperate.tauri-tray",
+  "identifier": "com.seperate.grove",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://127.0.0.1:1420",

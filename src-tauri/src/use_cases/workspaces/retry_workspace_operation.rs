@@ -25,8 +25,7 @@ pub(crate) async fn run(
     log_root: PathBuf,
 ) -> AppResult<WorkspaceDto> {
     let workspace = workspaces_repository::get_workspace(pool, &input.workspace_id).await?;
-    let Some(operation) =
-        operations_repository::latest_for_workspace(pool, &workspace.id).await?
+    let Some(operation) = operations_repository::latest_for_workspace(pool, &workspace.id).await?
     else {
         return Err(AppError::InvalidRepo {
             message: "No failed operation exists for this workspace.".into(),

@@ -1,10 +1,11 @@
 /**
  * @purpose Renders Grove panel header with counts and global actions.
  * @role    Header slot for PanelShell used by WorktreePanel.
- * @deps    Hero UI Button, shared icons/ui
+ * @deps    Hero UI Button, react-i18next, shared icons/ui
  * @gotcha  Add project/settings actions delegate persistence and native work to the state hook.
  */
 import { Button } from '@heroui/react/button'
+import { useTranslation } from 'react-i18next'
 import { Gear, GroveIcon, Import } from '../../../shared/icons'
 import { Divider } from '../../../shared/ui/Divider'
 import { IconButton } from '../../../shared/ui/IconButton'
@@ -22,6 +23,8 @@ export function PanelHeader({
   onAddProject,
   onOpenSettings
 }: PanelHeaderProps) {
+  const { t } = useTranslation()
+
   return (
     <>
       <div className="flex items-center gap-2.5 px-2.5 pb-2 pt-1.5">
@@ -30,9 +33,9 @@ export function PanelHeader({
         </span>
         <span className="flex-1 text-[14px] font-semibold tracking-[-0.2px]">Grove</span>
         <span className="text-[11.5px] tabular-nums text-black/[0.34]">
-          {total} worktrees · {projectCount} projects
+          {t('header.counts', { worktrees: total, projects: projectCount })}
         </span>
-        <IconButton title="Settings" size="project" onClick={onOpenSettings}>
+        <IconButton title={t('header.settings')} size="project" onClick={onOpenSettings}>
           <Gear />
         </IconButton>
       </div>
@@ -44,7 +47,7 @@ export function PanelHeader({
           variant="ghost"
           className="grove-icon-scale h-auto justify-start gap-[7px] rounded-lg px-2.5 py-[7px] text-[12.5px] text-black/50 transition-colors hover:bg-black/[0.038] hover:text-black/90"
         >
-          <Import /> Add project…
+          <Import /> {t('header.addProject')}
         </Button>
       </div>
       <Divider />

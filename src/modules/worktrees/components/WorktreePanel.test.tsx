@@ -4,15 +4,19 @@
  * @deps    vitest, Testing Library, WorktreePanel
  * @gotcha  Tauri command wrappers are mocked; Rust workflows are covered separately.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import type { ReactElement } from 'react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppSettingsDto } from '../../../shared/bindings/commands'
 import type { Project, Worktree } from '../../../shared/contracts/worktrees'
+import { i18n } from '../../../shared/i18n/i18n'
 import { ContextMenu } from './ContextMenu'
 import { WorktreePanel } from './WorktreePanel'
 
 const defaultSettings: AppSettingsDto = {
-  defaultOpenTarget: 'cursor',
+  language: 'system',
+  hoverQuickOpenTargets: ['cursor', 'terminal'],
   ghosttyOpenMode: 'window',
   defaultArchivePolicy: 'ask',
   removeProjectBehavior: 'grove_only'
@@ -36,6 +40,15 @@ const api = vi.hoisted(() => ({
 
 vi.mock('../api/groveCommands', () => api)
 
+beforeEach(async () => {
+  await i18n.changeLanguage('en-US')
+  window.localStorage.clear()
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+})
+
 describe('WorktreePanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -43,10 +56,13 @@ describe('WorktreePanel', () => {
     api.loadWorktreePanelProjects.mockResolvedValue([])
     api.importConductorProjects.mockResolvedValue([])
     api.addProjectFromFolderPicker.mockResolvedValue(null)
+    api.updateAppSettings.mockImplementation((settings: AppSettingsDto) =>
+      Promise.resolve(settings)
+    )
   })
 
   it('wires empty-state import and add actions separately', async () => {
-    render(<WorktreePanel />)
+    renderWithQueryClient(<WorktreePanel />)
 
     fireEvent.click(await screen.findByText('Import from Conductor'))
     await waitFor(() => expect(api.importConductorProjects).toHaveBeenCalledTimes(1))
@@ -57,13 +73,62 @@ describe('WorktreePanel', () => {
   })
 
   it('renders the how-it-works link as an external link', async () => {
-    render(<WorktreePanel />)
+    renderWithQueryClient(<WorktreePanel />)
 
     const link = await screen.findByText('How it works')
     expect(link.closest('a')?.getAttribute('href')).toBe('https://example.com/grove-worktrees')
     expect(link.closest('a')?.getAttribute('target')).toBe('_blank')
   })
+
+  it('persists language changes from the footer shortcut', async () => {
+    renderWithQueryClient(<WorktreePanel />)
+
+    fireEvent.change(await screen.findByLabelText('Language'), {
+      target: { value: 'zh_cn' }
+    })
+
+    await waitFor(() =>
+      expect(api.updateAppSettings).toHaveBeenCalledWith({ ...defaultSettings, language: 'zh_cn' })
+    )
+  })
+
+  it('lets top alerts close immediately and auto-dismisses them after five seconds', async () => {
+    renderWithQueryClient(<WorktreePanel />)
+    const importButton = await screen.findByText('Import from Conductor')
+    vi.useFakeTimers()
+
+    fireEvent.click(importButton)
+    await flushAsyncWork()
+    expect(screen.getByText('No Conductor workspaces found')).toBeTruthy()
+
+    fireEvent.click(screen.getByLabelText('Close'))
+    expect(screen.queryByText('No Conductor workspaces found')).toBeNull()
+
+    fireEvent.click(importButton)
+    await flushAsyncWork()
+    expect(screen.getByText('No Conductor workspaces found')).toBeTruthy()
+    act(() => vi.advanceTimersByTime(4999))
+    expect(screen.getByText('No Conductor workspaces found')).toBeTruthy()
+    act(() => vi.advanceTimersByTime(1))
+    expect(screen.queryByText('No Conductor workspaces found')).toBeNull()
+  })
 })
+
+function renderWithQueryClient(ui: ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        gcTime: 0,
+        retry: false
+      },
+      mutations: {
+        retry: false
+      }
+    }
+  })
+
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>)
+}
 
 describe('ContextMenu', () => {
   it('does not render Run Command and shows recovery actions for failed worktrees', () => {
@@ -85,6 +150,27 @@ describe('ContextMenu', () => {
     expect(screen.getByText('View Log')).toBeTruthy()
     expect(screen.getByText('Retry')).toBeTruthy()
   })
+
+  it('does not archive the protected root worktree from the action sheet', () => {
+    const project = makeProject()
+    const worktree = makeWorktree({ isDefault: true, branch: 'main', path: project.path })
+    const onArchive = vi.fn()
+    render(
+      <ContextMenu
+        ctx={{ x: 0, y: 0, project, worktree }}
+        onArchive={onArchive}
+        onClose={vi.fn()}
+        onEditCommands={vi.fn()}
+        onOpenWorkspace={vi.fn()}
+        onRetry={vi.fn()}
+        onViewLog={vi.fn()}
+      />
+    )
+
+    fireEvent.click(screen.getByText('Archive Worktree…'))
+
+    expect(onArchive).not.toHaveBeenCalled()
+  })
 })
 
 function makeProject(): Project {
@@ -101,12 +187,21 @@ function makeProject(): Project {
   }
 }
 
+async function flushAsyncWork() {
+  await act(async () => {
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+  })
+}
+
 function makeWorktree(patch: Partial<Worktree> = {}): Worktree {
   return {
     id: 'workspace-1',
     branch: 'feature/test',
     base: 'main',
     current: false,
+    isDefault: false,
     ahead: 0,
     behind: 0,
     dirty: 0,

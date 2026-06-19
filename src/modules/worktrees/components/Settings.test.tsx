@@ -14,12 +14,14 @@ import { ProjectSettings } from './ProjectSettings'
 describe('GlobalSettings', () => {
   it('saves archive and remove project behavior without executing removal', () => {
     const settings: AppSettingsDto = {
-      defaultOpenTarget: 'cursor',
+      language: 'system',
+      hoverQuickOpenTargets: ['cursor', 'terminal'],
       ghosttyOpenMode: 'window',
       defaultArchivePolicy: 'ask',
       removeProjectBehavior: 'grove_only'
     }
     const onDefaultArchivePolicyChange = vi.fn()
+    const onLanguageChange = vi.fn()
     const onRemoveProjectBehaviorChange = vi.fn()
 
     render(
@@ -28,12 +30,16 @@ describe('GlobalSettings', () => {
         saving={false}
         onClose={vi.fn()}
         onDefaultArchivePolicyChange={onDefaultArchivePolicyChange}
-        onDefaultOpenTargetChange={vi.fn()}
+        onHoverQuickOpenTargetsChange={vi.fn()}
         onGhosttyOpenModeChange={vi.fn()}
+        onLanguageChange={onLanguageChange}
         onRemoveProjectBehaviorChange={onRemoveProjectBehaviorChange}
       />
     )
 
+    fireEvent.change(screen.getByLabelText('Application language'), {
+      target: { value: 'zh_cn' }
+    })
     fireEvent.change(screen.getByLabelText('Default archive workspace behavior'), {
       target: { value: 'remove_worktree' }
     })
@@ -41,8 +47,39 @@ describe('GlobalSettings', () => {
       target: { value: 'delete_worktrees' }
     })
 
+    expect(onLanguageChange).toHaveBeenCalledWith('zh_cn')
     expect(onDefaultArchivePolicyChange).toHaveBeenCalledWith('remove_worktree')
     expect(onRemoveProjectBehaviorChange).toHaveBeenCalledWith('delete_worktrees')
+  })
+
+  it('toggles hover quick-open targets on and off', () => {
+    const settings: AppSettingsDto = {
+      language: 'system',
+      hoverQuickOpenTargets: ['cursor', 'terminal'],
+      ghosttyOpenMode: 'window',
+      defaultArchivePolicy: 'ask',
+      removeProjectBehavior: 'grove_only'
+    }
+    const onHoverQuickOpenTargetsChange = vi.fn()
+
+    render(
+      <GlobalSettings
+        settings={settings}
+        saving={false}
+        onClose={vi.fn()}
+        onDefaultArchivePolicyChange={vi.fn()}
+        onHoverQuickOpenTargetsChange={onHoverQuickOpenTargetsChange}
+        onGhosttyOpenModeChange={vi.fn()}
+        onLanguageChange={vi.fn()}
+        onRemoveProjectBehaviorChange={vi.fn()}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Zed' }))
+    expect(onHoverQuickOpenTargetsChange).toHaveBeenCalledWith(['cursor', 'terminal', 'zed'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }))
+    expect(onHoverQuickOpenTargetsChange).toHaveBeenCalledWith(['terminal'])
   })
 })
 

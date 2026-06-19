@@ -1,17 +1,19 @@
 /**
  * @purpose Renders a sortable worktree row with status subtitle and hover/menu-pinned actions.
  * @role    Row-level UI for branch metadata, busy state, move controls, and context menu trigger.
- * @deps    @dnd-kit/sortable, generated open target DTO, Worktrees contracts/domain rules, shared icons/ui
+ * @deps    @dnd-kit/sortable, react-i18next, generated open target DTO, Worktrees contracts/domain rules, shared icons/ui
  * @gotcha  Busy rows suppress context/actions; menu-open rows keep actions visible; docs/modules/worktrees/README.md
  */
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useTranslation } from 'react-i18next'
 import { animateLayoutChanges, sortableTransition } from '../../../shared/lib/sortable'
 import type { OpenWorkspaceTargetDto } from '../../../shared/bindings/commands'
 import type { Density, Project, Worktree } from '../../../shared/contracts/worktrees'
 import { ChevronDown, ChevronUp, More, Spinner, ToTop } from '../../../shared/icons'
 import { IconButton } from '../../../shared/ui/IconButton'
-import { getBusyLabel, isWorktreeBusy } from '../domain/worktree-rules'
+import { isWorktreeBusy } from '../domain/worktree-rules'
+import { openTargetDisplayLabel } from '../domain/open-targets'
 import { OpenTargetIcon } from './OpenTargetIcon'
 
 interface WorktreeRowProps {
@@ -22,12 +24,10 @@ interface WorktreeRowProps {
   isContextOpen: boolean
   isFirst: boolean
   isLast: boolean
-  defaultOpenLabel: string
-  defaultOpenTarget: OpenWorkspaceTargetDto
+  hoverQuickOpenTargets: OpenWorkspaceTargetDto[]
   onMove: (direction: 'up' | 'down' | 'top') => void
   onContext: (event: React.MouseEvent, worktree: Worktree, project: Project) => void
-  onOpenDefault: () => void
-  onOpenTerminal: () => void
+  onOpen: (target: OpenWorkspaceTargetDto) => void
 }
 
 export function WorktreeRow({
@@ -38,13 +38,12 @@ export function WorktreeRow({
   isContextOpen,
   isFirst,
   isLast,
-  defaultOpenLabel,
-  defaultOpenTarget,
+  hoverQuickOpenTargets,
   onMove,
   onContext,
-  onOpenDefault,
-  onOpenTerminal
+  onOpen
 }: WorktreeRowProps) {
+  const { t } = useTranslation()
   const running = isWorktreeBusy(worktree)
   const padY = density === 'compact' ? 'py-1.5' : 'py-[9px]'
   const gap = density === 'compact' ? 'gap-2' : 'gap-[11px]'
@@ -91,7 +90,7 @@ export function WorktreeRow({
         >
           {!isFirst && (
             <IconButton
-              title="Move to top"
+              title={t('actions.moveToTop')}
               onClick={(event) => {
                 event.stopPropagation()
                 onMove('top')
@@ -102,7 +101,7 @@ export function WorktreeRow({
           )}
           {!isFirst && (
             <IconButton
-              title="Move up"
+              title={t('actions.moveUp')}
               onClick={(event) => {
                 event.stopPropagation()
                 onMove('up')
@@ -113,7 +112,7 @@ export function WorktreeRow({
           )}
           {!isLast && (
             <IconButton
-              title="Move down"
+              title={t('actions.moveDown')}
               onClick={(event) => {
                 event.stopPropagation()
                 onMove('down')
@@ -122,26 +121,24 @@ export function WorktreeRow({
               <ChevronDown />
             </IconButton>
           )}
+          {hoverQuickOpenTargets.map((target) => (
+            <IconButton
+              key={target}
+              title={
+                target === 'finder'
+                  ? t('actions.revealInFinder')
+                  : t('actions.openIn', { target: openTargetDisplayLabel(target) })
+              }
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpen(target)
+              }}
+            >
+              <OpenTargetIcon target={target} />
+            </IconButton>
+          ))}
           <IconButton
-            title={defaultOpenLabel}
-            onClick={(event) => {
-              event.stopPropagation()
-              onOpenDefault()
-            }}
-          >
-            <OpenTargetIcon target={defaultOpenTarget} />
-          </IconButton>
-          <IconButton
-            title="Open in Terminal"
-            onClick={(event) => {
-              event.stopPropagation()
-              onOpenTerminal()
-            }}
-          >
-            <OpenTargetIcon target="terminal" />
-          </IconButton>
-          <IconButton
-            title="More…"
+            title={t('actions.more')}
             onClick={(event) => {
               event.stopPropagation()
               onContext(event, worktree, project)
@@ -164,10 +161,14 @@ function WorktreeSubtitle({
   running: boolean
   showCommit: boolean
 }) {
+  const { t } = useTranslation()
+
   if (running) {
+    const label =
+      worktree.status === 'setting-up' ? t('worktree.runningSetup') : t('worktree.archiving')
     return (
       <span className="flex items-center gap-1.5 truncate text-[11px] font-medium text-accent">
-        <Spinner className="animate-spin" /> {getBusyLabel(worktree)}
+        <Spinner className="animate-spin" /> {label}
       </span>
     )
   }
@@ -175,7 +176,7 @@ function WorktreeSubtitle({
   if (worktree.status === 'failed') {
     return (
       <span className="truncate text-[11px] font-medium text-red-500">
-        Failed · open actions for log or retry
+        {t('worktree.failedSubtitle')}
       </span>
     )
   }
@@ -190,7 +191,8 @@ function WorktreeSubtitle({
 
   return (
     <span className="truncate text-[11px] text-black/[0.34]">
-      {worktree.base ? `from ${worktree.base}` : 'primary branch'} · {worktree.time}
+      {worktree.base ? `${t('worktree.from')} ${worktree.base}` : t('worktree.primaryBranch')} ·{' '}
+      {worktree.time}
     </span>
   )
 }

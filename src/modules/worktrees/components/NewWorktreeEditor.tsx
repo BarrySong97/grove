@@ -1,13 +1,14 @@
 /**
  * @purpose Renders the inline new-worktree editor.
  * @role    Focused form for branch name and base branch selection within a ProjectSection.
- * @deps    Hero UI Form/Button/Input, native select, React Hook Form, Worktrees contracts/domain rules
+ * @deps    Hero UI Form/Button/Input, native select, React Hook Form, react-i18next, Worktrees contracts/domain rules
  * @gotcha  Enter submits and Escape cancels locally; docs/modules/worktrees/README.md
  */
 import { Button } from '@heroui/react/button'
 import { Form } from '@heroui/react/form'
 import { Input } from '@heroui/react/input'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 import type { Project } from '../../../shared/contracts/worktrees'
 import { getCurrentWorktree } from '../domain/worktree-rules'
@@ -24,6 +25,7 @@ interface NewWorktreeEditorValues {
 }
 
 export function NewWorktreeEditor({ project, onCreate, onCancel }: NewWorktreeEditorProps) {
+  const { t } = useTranslation()
   const baseBranches = [
     project.defaultBranch,
     ...project.worktrees.map((worktree) => worktree.branch)
@@ -52,7 +54,7 @@ export function NewWorktreeEditor({ project, onCreate, onCancel }: NewWorktreeEd
     >
       <div className="flex min-w-0 items-center gap-1.5">
         <span className="flex shrink-0 items-center gap-1 text-[10.5px] text-black/[0.34]">
-          from
+          {t('newWorktree.basePrefix')}
           <select
             {...register('base')}
             className="grove-field-thin-focus h-[21px] max-w-[104px] appearance-auto rounded-md border-0 bg-white px-1.5 py-0 font-mono text-[10.5px] leading-none text-[#1c1c1e] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.08)] outline-none transition hover:bg-white focus:bg-white"
@@ -70,7 +72,7 @@ export function NewWorktreeEditor({ project, onCreate, onCancel }: NewWorktreeEd
           })}
           spellCheck={false}
           autoComplete="off"
-          placeholder="feature-name"
+          placeholder={t('newWorktree.placeholder')}
           onKeyDown={(event) => {
             if (event.key === 'Escape') onCancel()
           }}
@@ -86,7 +88,7 @@ export function NewWorktreeEditor({ project, onCreate, onCancel }: NewWorktreeEd
           variant="primary"
           className="h-auto min-w-0 rounded-md bg-accent px-2.5 py-[4px] text-[11px] font-semibold text-white disabled:opacity-40"
         >
-          确认
+          {t('common.confirm')}
         </Button>
         <Button
           type="button"
@@ -95,7 +97,7 @@ export function NewWorktreeEditor({ project, onCreate, onCancel }: NewWorktreeEd
           variant="secondary"
           className="h-auto min-w-0 rounded-md bg-transparent px-2.5 py-[4px] text-[11px] font-medium text-[#1c1c1e] hover:bg-black/[0.038] hover:text-[#1c1c1e]"
         >
-          取消
+          {t('common.cancel')}
         </Button>
       </div>
     </Form>

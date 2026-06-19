@@ -1,19 +1,22 @@
 /**
  * @purpose Renders per-project configuration controls and remove-project entry point.
  * @role    Bottom sheet content for editing workspace root, setup/archive commands, and archive override.
- * @deps    Hero UI Form/Input/Button, native select, React Hook Form, Worktrees contracts/domain command catalog, shared icons/ui
+ * @deps    Hero UI Form/Input, React Hook Form, react-i18next, Worktrees contracts/domain command catalog, shared Dot, local settings kit
  * @gotcha  Saves Grove overrides only; settings density comes from src/index.css tokens.
  */
-import { Button } from '@heroui/react/button'
-import { FieldError } from '@heroui/react/field-error'
 import { Form } from '@heroui/react/form'
 import { Input } from '@heroui/react/input'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import type { Project } from '../../../shared/contracts/worktrees'
-import { Divider } from '../../../shared/ui/Divider'
 import { Dot } from '../../../shared/ui/Dot'
 import { COMMAND_PLACEHOLDERS, COMMANDS } from '../domain/commands'
+import { SettingsButton } from './settings/SettingsButton'
+import { SettingsFooter } from './settings/SettingsFooter'
+import { SettingsHeader } from './settings/SettingsHeader'
+import { SettingsRow } from './settings/SettingsRow'
+import { SettingsSection } from './settings/SettingsSection'
 
 interface ProjectSettingsProps {
   project: Project
@@ -35,11 +38,11 @@ interface ProjectSettingsValues {
   commands: Project['commands']
 }
 
-const archivePolicies: Array<{ id: Project['archivePolicy']; label: string }> = [
-  { id: 'use_global', label: 'Use global default' },
-  { id: 'ask', label: 'Ask every time' },
-  { id: 'hide', label: 'Hide in Grove only' },
-  { id: 'remove_worktree', label: 'Delete worktree when safe' }
+const archivePolicies: Array<{ id: Project['archivePolicy']; labelKey: string }> = [
+  { id: 'use_global', labelKey: 'projectSettings.archive.useGlobal' },
+  { id: 'ask', labelKey: 'projectSettings.archive.ask' },
+  { id: 'hide', labelKey: 'projectSettings.archive.hide' },
+  { id: 'remove_worktree', labelKey: 'projectSettings.archive.removeWorktree' }
 ]
 
 function getProjectSettingsValues(project: Project): ProjectSettingsValues {
@@ -56,6 +59,7 @@ export function ProjectSettings({
   onClose,
   onRemoveProject
 }: ProjectSettingsProps) {
+  const { t } = useTranslation()
   const {
     formState: { errors, isValid },
     handleSubmit,
@@ -79,67 +83,62 @@ export function ProjectSettings({
 
   return (
     <Form className="p-0.5" onSubmit={handleSubmit(save)}>
-      <div className="px-2.5 pb-2.5 pt-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <Dot color={project.accent} className="h-2 w-2" />
-          <span className="grove-settings-title min-w-0 flex-1 truncate">{project.name}</span>
-        </div>
-        <span className="grove-settings-subtitle font-mono">{project.path}</span>
-      </div>
+      <SettingsHeader
+        dotColor={project.accent}
+        title={project.name}
+        subtitle={project.path}
+        subtitleClassName="font-mono"
+      />
 
-      <Divider />
-
-      <div className="grove-settings-section-title">Project</div>
-
-      <div className="grove-settings-row">
-        <div className="grove-settings-row-inner">
-          <span className="grove-settings-label">Workspace root</span>
+      <SettingsSection title={t('projectSettings.sections.project')}>
+        <SettingsRow
+          layout="stacked"
+          label={t('projectSettings.workspaceRoot.label')}
+          error={errors.workspaceRoot?.message}
+        >
           <Input
             {...register('workspaceRoot', {
-              validate: (value) => value.trim().length > 0 || 'Workspace root is required'
+              validate: (value) =>
+                value.trim().length > 0 || t('projectSettings.workspaceRoot.required')
             })}
             aria-invalid={Boolean(errors.workspaceRoot)}
-            aria-label="Workspace root"
+            aria-label={t('projectSettings.workspaceRoot.ariaLabel')}
             autoComplete="off"
             className="grove-field-thin-focus grove-settings-field min-w-0 flex-1 font-mono placeholder:text-black/[0.34]"
             data-invalid={Boolean(errors.workspaceRoot)}
             spellCheck={false}
             variant="secondary"
           />
-        </div>
-        {errors.workspaceRoot && (
-          <FieldError className="grove-settings-error">{errors.workspaceRoot.message}</FieldError>
-        )}
-      </div>
+        </SettingsRow>
 
-      <div className="grove-settings-row">
-        <div className="grove-settings-row-inner">
-          <span className="grove-settings-label">Archive</span>
+        <SettingsRow layout="stacked" label={t('projectSettings.archive.label')}>
           <select
             {...register('archivePolicy')}
-            aria-label="Archive"
+            aria-label={t('projectSettings.archive.label')}
             className="grove-field-thin-focus grove-settings-field min-w-0 flex-1 appearance-auto border-0 font-medium"
           >
             {archivePolicies.map((policy) => (
               <option key={policy.id} value={policy.id}>
-                {policy.label}
+                {t(policy.labelKey)}
               </option>
             ))}
           </select>
-        </div>
-      </div>
+        </SettingsRow>
+      </SettingsSection>
 
-      <Divider />
-
-      <div className="grove-settings-section-title">Commands</div>
-
-      {COMMANDS.map((command) => (
-        <div key={command.id} className="grove-settings-row">
-          <div className="grove-settings-row-inner">
-            <span className="grove-settings-command-label">
-              <Dot color={command.color} />
-              {command.name}
-            </span>
+      <SettingsSection title={t('projectSettings.sections.commands')}>
+        {COMMANDS.map((command) => (
+          <SettingsRow
+            key={command.id}
+            layout="stacked"
+            label={
+              <>
+                <Dot color={command.color} />
+                {t(`projectSettings.commands.${command.id}Name`)}
+              </>
+            }
+            help={`${t(`projectSettings.commands.${command.id}Desc`)}.`}
+          >
             <label className="grove-field-group-thin-focus grove-settings-field flex min-w-0 flex-1 items-center">
               <span className="mr-[7px] shrink-0 font-mono text-[length:var(--settings-control-size)] text-black/[0.22]">
                 $
@@ -152,53 +151,24 @@ export function ProjectSettings({
                 spellCheck={false}
               />
             </label>
-          </div>
-          <div className="grove-settings-help">{command.desc}.</div>
-        </div>
-      ))}
+          </SettingsRow>
+        ))}
+      </SettingsSection>
 
-      <Divider />
+      <SettingsSection title={t('projectSettings.sections.danger')}>
+        <SettingsRow layout="stacked" help={t('projectSettings.removeProject.help')}>
+          <SettingsButton tone="danger" onPress={() => onRemoveProject(project)}>
+            {t('projectSettings.removeProject.button')}
+          </SettingsButton>
+        </SettingsRow>
+      </SettingsSection>
 
-      <div className="grove-settings-section-title">Danger Zone</div>
-
-      <div className="grove-settings-row">
-        <div className="grove-settings-row-inner">
-          <span className="grove-settings-label">Remove project</span>
-          <Button
-            className="h-auto rounded-[var(--settings-control-radius)] px-[12px] py-[5px] text-[length:var(--settings-label-size)] font-semibold text-red-600"
-            onClick={() => onRemoveProject(project)}
-            size="sm"
-            type="button"
-            variant="secondary"
-          >
-            Remove Project…
-          </Button>
-        </div>
-        <div className="grove-settings-help">
-          Removes Grove registration; the main repository directory is never deleted.
-        </div>
-      </div>
-
-      <div className="flex justify-end gap-2 px-1.5 pb-1 pt-2.5">
-        <Button
-          className="h-auto rounded-[var(--settings-control-radius)] px-[14px] py-[6px] text-[length:var(--settings-label-size)] font-semibold"
-          onClick={onClose}
-          size="sm"
-          type="button"
-          variant="secondary"
-        >
-          关闭
-        </Button>
-        <Button
-          className="h-auto rounded-[var(--settings-control-radius)] bg-accent px-[16px] py-[6px] text-[length:var(--settings-label-size)] font-semibold text-white disabled:opacity-40"
-          isDisabled={!isValid}
-          size="sm"
-          type="submit"
-          variant="primary"
-        >
-          确认
-        </Button>
-      </div>
+      <SettingsFooter>
+        <SettingsButton onPress={onClose}>{t('common.close')}</SettingsButton>
+        <SettingsButton tone="primary" type="submit" isDisabled={!isValid}>
+          {t('common.confirm')}
+        </SettingsButton>
+      </SettingsFooter>
     </Form>
   )
 }

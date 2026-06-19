@@ -1,7 +1,7 @@
 // @purpose Registers a git repository as a Grove project.
 // @role    Project use case for manual Add project folder selection.
-// @deps    Conductor path/config readers, git worktree repository, project repository, DTOs
-// @gotcha  This records Grove project state only; it does not create git worktrees.
+// @deps    Conductor path/config readers, git repositories, project/workspace repositories, DTOs
+// @gotcha  This records Grove project state and the protected root workspace; it does not create git worktrees.
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
@@ -10,10 +10,13 @@ use sqlx::SqlitePool;
 
 use crate::domain::conductor::workspace_paths;
 use crate::infrastructure::conductor::config_repository;
-use crate::infrastructure::db::repositories::projects_repository;
-use crate::infrastructure::git::worktree_repository;
+use crate::infrastructure::db::repositories::{projects_repository, workspaces_repository};
+use crate::infrastructure::git::{status_repository, worktree_repository};
 use crate::shared::dto::errors::{AppError, AppResult};
 use crate::shared::dto::projects::{ArchivePolicyDto, CreateProjectInput, ProjectDto};
+use crate::shared::dto::workspaces::{
+    WorkspaceDto, WorkspaceLifecycleStatusDto, WorkspaceOperationStatusDto,
+};
 
 pub(crate) async fn run(pool: &SqlitePool, input: CreateProjectInput) -> AppResult<ProjectDto> {
     let root_path = resolve_repo_root(&input.root_path)?;
@@ -36,6 +39,7 @@ pub(crate) async fn run(pool: &SqlitePool, input: CreateProjectInput) -> AppResu
 
     projects_repository::upsert_project(pool, &project).await?;
     persist_commands(pool, &project.id, &config).await?;
+    persist_root_workspace(pool, &project).await?;
     projects_repository::get_project(pool, &project.id).await
 }
 
@@ -105,6 +109,26 @@ async fn persist_commands(
             .await?;
     }
     Ok(())
+}
+
+async fn persist_root_workspace(pool: &SqlitePool, project: &ProjectDto) -> AppResult<()> {
+    let workspace = WorkspaceDto {
+        id: stable_id(&format!("root-workspace:{}", project.root_path)),
+        project_id: project.id.clone(),
+        name: project.name.clone(),
+        branch: project.default_branch.clone(),
+        base_branch: None,
+        path: project.root_path.clone(),
+        lifecycle_status: WorkspaceLifecycleStatusDto::Active,
+        operation_status: WorkspaceOperationStatusDto::Idle,
+        hidden_at: None,
+        stale_at: None,
+        git_state: None,
+    };
+
+    workspaces_repository::upsert_workspace(pool, &workspace).await?;
+    let state = status_repository::read_git_state(Path::new(&workspace.path))?;
+    workspaces_repository::upsert_git_state(pool, &workspace.id, &state).await
 }
 
 fn stable_id(value: &str) -> String {

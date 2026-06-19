@@ -7,6 +7,7 @@
 import {
   Archive as LucideArchive,
   Copy as LucideCopy,
+  X,
   FileText,
   Folder as LucideFolder,
   Import as LucideImport,
@@ -50,3 +51,5 @@ export const Retry = (props: LucideProps) => <RotateCcw size={14} strokeWidth={2
 export const Log = (props: LucideProps) => <FileText size={14} strokeWidth={2} {...props} />
 
 export const Trash = (props: LucideProps) => <Trash2 size={14} strokeWidth={2} {...props} />
+
+export const Close = (props: LucideProps) => <X size={13} strokeWidth={2.2} {...props} />

@@ -18,29 +18,43 @@ pub(crate) async fn run(
     input: RefreshProjectInput,
 ) -> AppResult<Vec<WorkspaceDto>> {
     let project = projects_repository::get_project(pool, &input.project_id).await?;
-    let worktrees = worktree_repository::list_worktrees(Path::new(&project.root_path))?;
+    let root_path = PathBuf::from(&project.root_path);
+    let root_path = root_path.canonicalize().unwrap_or(root_path);
+    let worktrees = worktree_repository::list_worktrees(&root_path)?;
     let workspace_root = PathBuf::from(&project.workspace_root);
     let workspace_root = workspace_root.canonicalize().unwrap_or(workspace_root);
 
     let mut active_workspace_ids = Vec::new();
 
-    for entry in worktrees
-        .iter()
-        .filter(|entry| entry.path.starts_with(&workspace_root))
-    {
-        let name = entry
-            .path
-            .file_name()
-            .and_then(|value| value.to_str())
-            .unwrap_or("workspace")
-            .to_string();
+    for entry in worktrees.iter().filter(|entry| {
+        !entry.prunable && (entry.path == root_path || entry.path.starts_with(&workspace_root))
+    }) {
+        if !entry.path.is_dir() {
+            continue;
+        }
+
+        let is_root = entry.path == root_path;
+        let name = if is_root {
+            project.name.clone()
+        } else {
+            entry
+                .path
+                .file_name()
+                .and_then(|value| value.to_str())
+                .unwrap_or("workspace")
+                .to_string()
+        };
         let branch = entry.branch.clone().unwrap_or_else(|| name.clone());
         let workspace = WorkspaceDto {
-            id: stable_id(&entry.path.to_string_lossy()),
+            id: workspace_id(&entry.path, is_root),
             project_id: project.id.clone(),
             name,
             branch,
-            base_branch: Some(project.default_branch.clone()),
+            base_branch: if is_root {
+                None
+            } else {
+                Some(project.default_branch.clone())
+            },
             path: entry.path.to_string_lossy().to_string(),
             lifecycle_status: WorkspaceLifecycleStatusDto::Active,
             operation_status: WorkspaceOperationStatusDto::Idle,
@@ -48,9 +62,11 @@ pub(crate) async fn run(
             stale_at: None,
             git_state: None,
         };
+        let Ok(state) = status_repository::read_git_state(Path::new(&workspace.path)) else {
+            continue;
+        };
         active_workspace_ids.push(workspace.id.clone());
         workspaces_repository::upsert_workspace(pool, &workspace).await?;
-        let state = status_repository::read_git_state(Path::new(&workspace.path))?;
         workspaces_repository::upsert_git_state(pool, &workspace.id, &state).await?;
     }
 
@@ -62,6 +78,14 @@ pub(crate) async fn run(
     .await?;
 
     workspaces_repository::list_project_workspaces(pool, &project.id).await
+}
+
+fn workspace_id(path: &Path, is_root: bool) -> String {
+    if is_root {
+        stable_id(&format!("root-workspace:{}", path.to_string_lossy()))
+    } else {
+        stable_id(&path.to_string_lossy())
+    }
 }
 
 fn stable_id(value: &str) -> String {

@@ -11,6 +11,7 @@ export interface Worktree {
   branch: string
   base: string | null
   current: boolean
+  isDefault: boolean
   ahead: number
   behind: number
   dirty: number

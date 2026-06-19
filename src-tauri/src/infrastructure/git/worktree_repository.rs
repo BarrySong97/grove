@@ -1,5 +1,5 @@
-// @purpose Reads git worktree metadata through git command output.
-// @role    Git infrastructure adapter used by Conductor import and refresh use cases.
+// @purpose Reads and prunes git worktree metadata through git command output.
+// @role    Git infrastructure adapter used by Conductor import, refresh, archive, and remove use cases.
 // @deps    std process/path, shared errors
 // @gotcha  remove_worktree uses --force only after use cases have rejected dirty workspaces.
 use std::path::{Path, PathBuf};
@@ -11,6 +11,7 @@ use crate::shared::dto::errors::{AppError, AppResult};
 pub(crate) struct GitWorktreeEntry {
     pub path: PathBuf,
     pub branch: Option<String>,
+    pub prunable: bool,
 }
 
 pub(crate) fn list_worktrees(repo_path: &Path) -> AppResult<Vec<GitWorktreeEntry>> {
@@ -76,10 +77,28 @@ pub(crate) fn remove_worktree(root_path: &Path, workspace_path: &Path) -> AppRes
     }
 }
 
+pub(crate) fn prune_worktrees(root_path: &Path) -> AppResult<()> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(root_path)
+        .arg("worktree")
+        .arg("prune")
+        .output()?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(AppError::GitCommandFailed {
+            message: String::from_utf8_lossy(&output.stderr).trim().to_string(),
+        })
+    }
+}
+
 pub(crate) fn parse_worktree_porcelain(input: &str) -> AppResult<Vec<GitWorktreeEntry>> {
     let mut entries = Vec::new();
     let mut path: Option<PathBuf> = None;
     let mut branch: Option<String> = None;
+    let mut prunable = false;
 
     for line in input.lines() {
         if line.is_empty() {
@@ -87,7 +106,9 @@ pub(crate) fn parse_worktree_porcelain(input: &str) -> AppResult<Vec<GitWorktree
                 entries.push(GitWorktreeEntry {
                     path: entry_path,
                     branch: branch.take(),
+                    prunable,
                 });
+                prunable = false;
             }
             continue;
         }
@@ -101,6 +122,8 @@ pub(crate) fn parse_worktree_porcelain(input: &str) -> AppResult<Vec<GitWorktree
                     .unwrap_or(value)
                     .to_string(),
             );
+        } else if line.starts_with("prunable") {
+            prunable = true;
         }
     }
 
@@ -108,6 +131,7 @@ pub(crate) fn parse_worktree_porcelain(input: &str) -> AppResult<Vec<GitWorktree
         entries.push(GitWorktreeEntry {
             path: entry_path,
             branch,
+            prunable,
         });
     }
 
@@ -141,6 +165,28 @@ branch refs/heads/feat/login
         assert_eq!(entries.len(), 2);
         assert_eq!(entries[0].path, PathBuf::from("/Users/me/Code/acme"));
         assert_eq!(entries[0].branch.as_deref(), Some("main"));
+        assert!(!entries[0].prunable);
         assert_eq!(entries[1].branch.as_deref(), Some("feat/login"));
+        assert!(!entries[1].prunable);
+    }
+
+    #[test]
+    fn parses_prunable_git_worktree() {
+        let output = "\
+worktree /Users/me/Code/acme
+HEAD abc123
+branch refs/heads/main
+
+worktree /Users/me/conductor/workspaces/acme/missing
+HEAD def456
+branch refs/heads/missing
+prunable gitdir file points to non-existent location
+
+";
+
+        let entries = parse_worktree_porcelain(output).expect("porcelain should parse");
+        assert_eq!(entries.len(), 2);
+        assert!(!entries[0].prunable);
+        assert!(entries[1].prunable);
     }
 }

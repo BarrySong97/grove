@@ -15,14 +15,14 @@ use crate::shared::dto::projects::{
     UpdateProjectSettingsInput,
 };
 use crate::shared::dto::workspaces::{
-    ArchivePolicyChoiceDto, ArchiveWorkspaceInput, CreateWorkspaceInput,
+    ArchivePolicyChoiceDto, ArchiveWorkspaceInput, CreateWorkspaceInput, RefreshProjectInput,
     WorkspaceLifecycleStatusDto, WorkspaceOperationStatusDto,
 };
 use crate::use_cases::projects::{
     create_project, import_conductor_projects, list_worktree_projects, remove_project,
     update_project_settings,
 };
-use crate::use_cases::workspaces::{archive_workspace, create_workspace};
+use crate::use_cases::workspaces::{archive_workspace, create_workspace, refresh_project};
 
 #[test]
 fn conductor_backend_flow_import_create_archive_and_reject_dirty_remove() {
@@ -46,6 +46,9 @@ fn conductor_backend_flow_import_create_archive_and_reject_dirty_remove() {
         let log_root = fixture.path("operation logs");
 
         create_repo(&repo_path);
+        let canonical_repo_path = repo_path
+            .canonicalize()
+            .expect("repo path should canonicalize");
         fs::create_dir_all(&repo_workspace_root).expect("workspace root should be created");
         run_git(
             &repo_path,
@@ -68,7 +71,11 @@ fn conductor_backend_flow_import_create_archive_and_reject_dirty_remove() {
         .await
         .expect("import should succeed");
         assert_eq!(imported.len(), 1);
-        assert_eq!(imported[0].workspaces.len(), 1);
+        assert_eq!(imported[0].workspaces.len(), 2);
+        assert!(imported[0]
+            .workspaces
+            .iter()
+            .any(|workspace| workspace.path == canonical_repo_path.to_string_lossy().to_string()));
 
         let project_id = list_worktree_projects::run(&db)
             .await
@@ -247,7 +254,147 @@ fn manual_add_project_registers_selected_git_repo() {
         assert_eq!(listed[0].project.name, "alpha repo");
         assert_eq!(listed[1].project.name, "zeta repo");
         assert_eq!(listed[0].commands.setup, "");
-        assert!(listed[0].workspaces.is_empty());
+        assert_eq!(listed[0].workspaces.len(), 1);
+        let root_workspace = &listed[0].workspaces[0];
+        assert_eq!(root_workspace.name, "alpha repo");
+        assert_eq!(root_workspace.branch, "main");
+        assert_eq!(root_workspace.base_branch, None);
+        assert_eq!(
+            root_workspace.path,
+            canonical_repo_path.to_string_lossy().to_string()
+        );
+    });
+}
+
+#[test]
+fn archive_missing_workspace_hides_record_without_path_error() {
+    tauri::async_runtime::block_on(async {
+        let fixture = Fixture::new("grove archive missing workspace");
+        let db = migrated_db().await;
+        let repo_path = fixture.path("source repo");
+        create_repo(&repo_path);
+        let project = create_project::run(
+            &db,
+            CreateProjectInput {
+                root_path: repo_path.to_string_lossy().to_string(),
+            },
+        )
+        .await
+        .expect("project should register");
+        let workspace_root = fixture.path("workspaces").join("source repo");
+        set_project_settings(
+            &db,
+            &project.id,
+            &workspace_root,
+            ProjectCommandsDto {
+                setup: String::new(),
+                archive: "printf should-not-run".into(),
+            },
+        )
+        .await;
+        let workspace = create_workspace::run(
+            &db,
+            CreateWorkspaceInput {
+                project_id: project.id.clone(),
+                name: "missing workspace".into(),
+                branch: "feature/missing".into(),
+                base_branch: "main".into(),
+                run_setup: false,
+            },
+            fixture.path("logs"),
+        )
+        .await
+        .expect("workspace should create");
+        let workspace_path = PathBuf::from(&workspace.path);
+        fs::remove_dir_all(&workspace_path).expect("workspace should be deleted externally");
+
+        refresh_project::run(
+            &db,
+            RefreshProjectInput {
+                project_id: project.id.clone(),
+            },
+        )
+        .await
+        .expect("refresh should tolerate the missing workspace");
+        let stale = list_worktree_projects::run(&db)
+            .await
+            .expect("projects should list after refresh")[0]
+            .workspaces
+            .iter()
+            .find(|item| item.id == workspace.id)
+            .expect("stale workspace record should remain")
+            .clone();
+        assert!(matches!(
+            stale.lifecycle_status,
+            WorkspaceLifecycleStatusDto::Stale
+        ));
+
+        let hidden = archive_workspace::run(
+            &db,
+            ArchiveWorkspaceInput {
+                workspace_id: workspace.id,
+                policy: Some(ArchivePolicyChoiceDto::RemoveWorktree),
+                remember_policy: false,
+            },
+            fixture.path("archive logs"),
+        )
+        .await
+        .expect("archive should clean up missing workspace records");
+
+        assert!(matches!(
+            hidden.lifecycle_status,
+            WorkspaceLifecycleStatusDto::Hidden
+        ));
+        assert!(!workspace_path.exists());
+        let cleanup_log = latest_operation_log(&db, "archive").await;
+        assert!(fs::read_to_string(cleanup_log)
+            .expect("cleanup log should be readable")
+            .contains("hiding Grove workspace record"));
+    });
+}
+
+#[test]
+fn archive_rejects_project_root_workspace() {
+    tauri::async_runtime::block_on(async {
+        let fixture = Fixture::new("grove archive root workspace");
+        let db = migrated_db().await;
+        let repo_path = fixture.path("source repo");
+        create_repo(&repo_path);
+        let project = create_project::run(
+            &db,
+            CreateProjectInput {
+                root_path: repo_path.to_string_lossy().to_string(),
+            },
+        )
+        .await
+        .expect("project should register");
+        let root_workspace = list_worktree_projects::run(&db)
+            .await
+            .expect("projects should list")[0]
+            .workspaces[0]
+            .clone();
+
+        let result = archive_workspace::run(
+            &db,
+            ArchiveWorkspaceInput {
+                workspace_id: root_workspace.id,
+                policy: Some(ArchivePolicyChoiceDto::Hide),
+                remember_policy: false,
+            },
+            fixture.path("archive logs"),
+        )
+        .await;
+
+        assert!(result.is_err());
+        assert!(repo_path.exists());
+        let listed = list_worktree_projects::run(&db)
+            .await
+            .expect("projects should remain listed");
+        assert_eq!(listed[0].project.id, project.id);
+        assert!(matches!(
+            listed[0].workspaces[0].lifecycle_status,
+            WorkspaceLifecycleStatusDto::Active
+        ));
     });
 }
 

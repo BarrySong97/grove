@@ -7,14 +7,18 @@ use sqlx::SqlitePool;
 use crate::shared::dto::errors::{AppError, AppResult};
 use crate::shared::dto::projects::ArchivePolicyDto;
 use crate::shared::dto::settings::{
-    AppSettingsDto, GhosttyOpenModeDto, RemoveProjectBehaviorDto,
+    AppLanguageDto, AppSettingsDto, GhosttyOpenModeDto, RemoveProjectBehaviorDto,
 };
 use crate::shared::dto::workspaces::OpenWorkspaceTargetDto;
 
+const LANGUAGE_KEY: &str = "language";
 const GHOSTTY_OPEN_MODE_KEY: &str = "ghostty_open_mode";
-const DEFAULT_OPEN_TARGET_KEY: &str = "default_open_target";
+const HOVER_QUICK_OPEN_TARGETS_KEY: &str = "hover_quick_open_targets";
 const DEFAULT_ARCHIVE_POLICY_KEY: &str = "default_archive_policy";
 const REMOVE_PROJECT_BEHAVIOR_KEY: &str = "remove_project_behavior";
+const LANGUAGE_SYSTEM: &str = "system";
+const LANGUAGE_ZH_CN: &str = "zh_cn";
+const LANGUAGE_EN_US: &str = "en_us";
 const GHOSTTY_OPEN_MODE_WINDOW: &str = "window";
 const GHOSTTY_OPEN_MODE_TAB: &str = "tab";
 const ARCHIVE_POLICY_ASK: &str = "ask";
@@ -30,6 +34,12 @@ const OPEN_TARGET_GHOSTTY: &str = "ghostty";
 const OPEN_TARGET_TERMINAL: &str = "terminal";
 
 pub(crate) async fn get_app_settings(pool: &SqlitePool) -> AppResult<AppSettingsDto> {
+    let language =
+        sqlx::query_scalar::<_, String>("SELECT value FROM app_settings WHERE key = ? LIMIT 1")
+            .bind(LANGUAGE_KEY)
+            .fetch_optional(pool)
+            .await?
+            .map_or(Ok(AppLanguageDto::System), |value| parse_language(&value))?;
     let ghostty_open_mode =
         sqlx::query_scalar::<_, String>("SELECT value FROM app_settings WHERE key = ? LIMIT 1")
             .bind(GHOSTTY_OPEN_MODE_KEY)
@@ -38,13 +48,13 @@ pub(crate) async fn get_app_settings(pool: &SqlitePool) -> AppResult<AppSettings
             .map_or(Ok(GhosttyOpenModeDto::Window), |value| {
                 parse_ghostty_open_mode(&value)
             })?;
-    let default_open_target =
+    let hover_quick_open_targets =
         sqlx::query_scalar::<_, String>("SELECT value FROM app_settings WHERE key = ? LIMIT 1")
-            .bind(DEFAULT_OPEN_TARGET_KEY)
+            .bind(HOVER_QUICK_OPEN_TARGETS_KEY)
             .fetch_optional(pool)
             .await?
-            .map_or(Ok(OpenWorkspaceTargetDto::Cursor), |value| {
-                parse_open_target(&value)
+            .map_or_else(|| Ok(default_hover_quick_open_targets()), |value| {
+                parse_open_targets(&value)
             })?;
     let default_archive_policy =
         sqlx::query_scalar::<_, String>("SELECT value FROM app_settings WHERE key = ? LIMIT 1")
@@ -64,8 +74,9 @@ pub(crate) async fn get_app_settings(pool: &SqlitePool) -> AppResult<AppSettings
             })?;
 
     Ok(AppSettingsDto {
+        language,
         ghostty_open_mode,
-        default_open_target,
+        hover_quick_open_targets,
         default_archive_policy,
         remove_project_behavior,
     })
@@ -75,6 +86,18 @@ pub(crate) async fn update_app_settings(
     pool: &SqlitePool,
     settings: &AppSettingsDto,
 ) -> AppResult<AppSettingsDto> {
+    sqlx::query(
+        "INSERT INTO app_settings (key, value, updated_at)
+         VALUES (?, ?, CURRENT_TIMESTAMP)
+         ON CONFLICT(key) DO UPDATE SET
+           value = excluded.value,
+           updated_at = CURRENT_TIMESTAMP",
+    )
+    .bind(LANGUAGE_KEY)
+    .bind(format_language(&settings.language))
+    .execute(pool)
+    .await?;
+
     sqlx::query(
         "INSERT INTO app_settings (key, value, updated_at)
          VALUES (?, ?, CURRENT_TIMESTAMP)
@@ -94,8 +117,8 @@ pub(crate) async fn update_app_settings(
            value = excluded.value,
            updated_at = CURRENT_TIMESTAMP",
     )
-    .bind(DEFAULT_OPEN_TARGET_KEY)
-    .bind(format_open_target(&settings.default_open_target))
+    .bind(HOVER_QUICK_OPEN_TARGETS_KEY)
+    .bind(format_open_targets(&settings.hover_quick_open_targets))
     .execute(pool)
     .await?;
 
@@ -126,6 +149,25 @@ pub(crate) async fn update_app_settings(
     .await?;
 
     Ok(settings.clone())
+}
+
+fn parse_language(value: &str) -> AppResult<AppLanguageDto> {
+    match value {
+        LANGUAGE_SYSTEM => Ok(AppLanguageDto::System),
+        LANGUAGE_ZH_CN => Ok(AppLanguageDto::ZhCn),
+        LANGUAGE_EN_US => Ok(AppLanguageDto::EnUs),
+        _ => Err(AppError::Internal {
+            message: format!("Unknown app language: {value}"),
+        }),
+    }
+}
+
+fn format_language(value: &AppLanguageDto) -> &'static str {
+    match value {
+        AppLanguageDto::System => LANGUAGE_SYSTEM,
+        AppLanguageDto::ZhCn => LANGUAGE_ZH_CN,
+        AppLanguageDto::EnUs => LANGUAGE_EN_US,
+    }
 }
 
 fn parse_ghostty_open_mode(value: &str) -> AppResult<GhosttyOpenModeDto> {
@@ -170,6 +212,27 @@ fn format_open_target(value: &OpenWorkspaceTargetDto) -> &'static str {
     }
 }
 
+fn default_hover_quick_open_targets() -> Vec<OpenWorkspaceTargetDto> {
+    vec![OpenWorkspaceTargetDto::Cursor, OpenWorkspaceTargetDto::Terminal]
+}
+
+fn parse_open_targets(value: &str) -> AppResult<Vec<OpenWorkspaceTargetDto>> {
+    value
+        .split(',')
+        .map(str::trim)
+        .filter(|token| !token.is_empty())
+        .map(parse_open_target)
+        .collect()
+}
+
+fn format_open_targets(values: &[OpenWorkspaceTargetDto]) -> String {
+    values
+        .iter()
+        .map(format_open_target)
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
 fn parse_archive_policy(value: &str) -> AppResult<ArchivePolicyDto> {
     match value {
         ARCHIVE_POLICY_ASK => Ok(ArchivePolicyDto::Ask),
@@ -211,6 +274,22 @@ mod tests {
     use super::*;
 
     #[test]
+    fn parses_known_app_languages() {
+        assert_eq!(
+            parse_language("system").expect("system should parse"),
+            AppLanguageDto::System
+        );
+        assert_eq!(
+            parse_language("zh_cn").expect("zh cn should parse"),
+            AppLanguageDto::ZhCn
+        );
+        assert_eq!(
+            parse_language("en_us").expect("en us should parse"),
+            AppLanguageDto::EnUs
+        );
+    }
+
+    #[test]
     fn parses_known_ghostty_open_modes() {
         assert_eq!(
             parse_ghostty_open_mode("window").expect("window should parse"),
@@ -231,6 +310,24 @@ mod tests {
         assert_eq!(
             parse_open_target("vs_code").expect("vs code should parse"),
             OpenWorkspaceTargetDto::VsCode
+        );
+    }
+
+    #[test]
+    fn round_trips_hover_quick_open_targets() {
+        let targets = vec![
+            OpenWorkspaceTargetDto::Cursor,
+            OpenWorkspaceTargetDto::Terminal,
+        ];
+        let formatted = format_open_targets(&targets);
+        assert_eq!(formatted, "cursor,terminal");
+        assert_eq!(
+            parse_open_targets(&formatted).expect("targets should parse"),
+            targets
+        );
+        assert_eq!(
+            parse_open_targets("").expect("empty should parse"),
+            Vec::<OpenWorkspaceTargetDto>::new()
         );
     }
 

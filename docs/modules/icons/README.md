@@ -7,7 +7,7 @@ macOS app icon 和 menu bar template icon 属于 Tauri 运行壳资源,放在 `s
 workspace open target 的软件识别图标是产品 UI 资产,放在 `src/shared/assets/open-targets/`,由 Worktrees 的 `OpenTargetIcon` 渲染。
 
 ## 文件
-- `actions.tsx`:操作类图标,如 archive、copy、log、retry、trash、terminal、gear;通用图标来自 `lucide-react`。
+- `actions.tsx`:操作类图标,如 archive、close、copy、log、retry、trash、terminal、gear;通用图标来自 `lucide-react`。
 - `navigation.tsx`:方向和导航类图标;通用图标来自 `lucide-react`。
 - `status.tsx`:spinner 等状态图标;通用图标来自 `lucide-react`。
 - `brand.tsx`:Grove 品牌图标;`GroveIcon` 作为产品标识保留本地 SVG,branch 等通用图标使用 `lucide-react`。

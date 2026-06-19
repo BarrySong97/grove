@@ -85,7 +85,7 @@ function mapProject(item: WorktreeProjectDto): Project {
     commands: item.commands,
     worktrees: item.workspaces
       .filter((workspace) => workspace.lifecycleStatus === 'active')
-      .map(mapWorkspace)
+      .map((workspace) => mapWorkspace(workspace, item.project.rootPath))
   }
 }
 
@@ -175,12 +175,16 @@ export async function openWorkspace(
   return result.data
 }
 
-function mapWorkspace(workspace: WorktreeProjectDto['workspaces'][number]): Worktree {
+function mapWorkspace(
+  workspace: WorktreeProjectDto['workspaces'][number],
+  projectRootPath: string
+): Worktree {
   return {
     id: workspace.id,
     branch: workspace.branch,
     base: workspace.baseBranch,
     current: false,
+    isDefault: workspace.path === projectRootPath,
     ahead: workspace.gitState?.ahead ?? 0,
     behind: workspace.gitState?.behind ?? 0,
     dirty: workspace.gitState?.dirty ?? 0,
