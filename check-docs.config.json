@@ -1,14 +1,14 @@
 {
   "sourceExts": [".ts", ".tsx", ".rs", ".css"],
   "sourceRoots": [
-    "src/app",
-    "src/modules",
-    "src/shared",
-    "src-tauri/src",
-    "src/main.tsx",
-    "src/vite-env.d.ts",
-    "vite.config.ts",
-    "src-tauri/build.rs"
+    "apps/desktop/src/app",
+    "apps/desktop/src/modules",
+    "apps/desktop/src/shared",
+    "apps/desktop/src-tauri/src",
+    "apps/desktop/src/main.tsx",
+    "apps/desktop/src/vite-env.d.ts",
+    "apps/desktop/vite.config.ts",
+    "apps/desktop/src-tauri/build.rs"
   ],
   "ignoreDirs": [
     "node_modules",

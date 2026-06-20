@@ -4,13 +4,13 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "node scripts/hooks/guard.mjs", "timeout": 10 }
+          { "type": "command", "command": "cd \"$(git rev-parse --show-toplevel)\" && node scripts/hooks/guard.mjs", "timeout": 10 }
         ]
       },
       {
         "matcher": "Write|Edit",
         "hooks": [
-          { "type": "command", "command": "node scripts/hooks/guard-files.mjs", "timeout": 10 }
+          { "type": "command", "command": "cd \"$(git rev-parse --show-toplevel)\" && node scripts/hooks/guard-files.mjs", "timeout": 10 }
         ]
       }
     ],
@@ -18,14 +18,14 @@
       {
         "matcher": "Write|Edit",
         "hooks": [
-          { "type": "command", "command": "node scripts/hooks/format-lint.mjs", "timeout": 60 }
+          { "type": "command", "command": "cd \"$(git rev-parse --show-toplevel)\" && node scripts/hooks/format-lint.mjs", "timeout": 60 }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "node scripts/check-docs.mjs --hook", "timeout": 60 }
+          { "type": "command", "command": "cd \"$(git rev-parse --show-toplevel)\" && node scripts/check-docs.mjs --hook", "timeout": 60 }
         ]
       }
     ]

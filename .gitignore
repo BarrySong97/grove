@@ -1,6 +1,15 @@
 node_modules
 dist
-src-tauri/target
-src-tauri/gen
+**/src-tauri/target
+**/src-tauri/gen
 *.log
 .DS_Store
+
+# next.js / turborepo
+.next/
+out/
+.turbo/
+next-env.d.ts
+
+# pnpm
+.pnpm-store/

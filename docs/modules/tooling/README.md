@@ -3,6 +3,12 @@
 ## 职责
 工具链模块记录项目启动、构建、文档检查和 agent hooks 的配置入口。它不是业务运行时,但会影响所有开发和验证流程。
 
+## Monorepo 结构
+仓库是 pnpm + Turborepo monorepo:
+- `apps/desktop/`:本桌面应用(包名 `tauri-tray`),下文 `vite.config.ts` / `package.json` / `src/` / `src-tauri/` 等均位于此包内。Tauri 与前端命令在该包内运行(`pnpm --filter tauri-tray <script>`)。
+- `apps/web/`:Next.js 官网(包名 `web`,App Router + Tailwind v4),用自带 ESLint,不走 Oxfmt/Oxlint。
+- 仓库根:`pnpm-workspace.yaml`、`turbo.json`、根 `package.json`(`turbo run dev/build/lint/test`)、以及共享的 AI 文档体系(`AGENTS.md`、`docs/`、`design.md`、`scripts/`、`check-docs.config.json`)。`node scripts/check-docs.mjs` 从仓库根运行。
+
 ## 文件
 - `vite.config.ts`:Vite 配置,启用 React 与 Tailwind 插件,固定 dev server 为 `127.0.0.1:1420`。
 - `vitest.config.ts`:Vitest 配置,使用 React plugin 和 jsdom 环境跑前端单元测试。
@@ -23,7 +29,7 @@
 - `pnpm test` 使用 Vitest 跑 `src/**/*.test.{ts,tsx}` 前端单元测试。
 - `pnpm lint` 使用 Oxlint 扫描项目 JS/TS/TSX 文件,提交前作为兜底。
 - `pnpm format` 使用 Oxfmt 写回前端源码、配置和 hook 支持的文本文件;`pnpm format:check` 只检查不写入。
-- `scripts/hooks/format-lint.mjs` 在 Write/Edit 后对单文件跑 Oxfmt,并对 JS/TS 文件追加 Oxlint。
+- `scripts/hooks/format-lint.mjs` 在 Write/Edit 后对单文件跑 Oxfmt,并对 JS/TS 文件追加 Oxlint;只处理 `apps/desktop/` 下的文件(以该包为 cwd),其它包跳过。
 - `node scripts/check-docs.mjs --hook` 是 Stop hook 专用模式:成功只输出 `{}`,失败只输出 `{"decision":"block","reason":"..."}`,不能打印普通日志或 `hookSpecificOutput`。
 - `scripts/hooks/pre-commit` 跑 `node scripts/check-docs.mjs`、`pnpm format:check`、`pnpm lint` 和 `pnpm build`。
 

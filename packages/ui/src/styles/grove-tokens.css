@@ -1,0 +1,116 @@
+/* Grove design tokens + glass surfaces, ported from apps/desktop/src/index.css.
+   Everything is scoped under .grove-ui so it never leaks into a host app's styles. */
+
+.grove-ui {
+  --window-radius: 18px;
+  --glass-surface: rgba(244, 244, 241, 0.34);
+  --glass-surface-strong: rgba(242, 242, 239, 0.46);
+  --glass-border: rgba(255, 255, 255, 0.72);
+  --bottom-sheet-surface: #f4f4f1;
+  --foreground: #1c1c1e;
+  --muted: rgba(0, 0, 0, 0.55);
+  --accent: #2f6fe0;
+  --accent-foreground: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+  --danger: #ef4444;
+  --danger-soft: rgba(239, 68, 68, 0.1);
+  --shadow-panel:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.7), 0 0 0 0.5px rgba(0, 0, 0, 0.04),
+    0 18px 50px rgba(0, 0, 0, 0.24), 0 5px 16px rgba(0, 0, 0, 0.12);
+  --settings-title-size: 13px;
+  --settings-label-size: 11.5px;
+  --settings-meta-size: 9.5px;
+  --settings-control-size: 10.5px;
+  --settings-control-px: 7px;
+  --settings-control-py: 4px;
+  --settings-label-width: 78px;
+  --settings-command-label-width: 56px;
+  --settings-row-gap: 7px;
+  --settings-control-radius: 7px;
+}
+
+.grove-ui .glass-surface {
+  border-color: var(--glass-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(225, 225, 222, 0.05)),
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.09), transparent 34%),
+    radial-gradient(circle at 88% 10%, rgba(186, 184, 178, 0.04), transparent 44%),
+    var(--glass-surface);
+  -webkit-backdrop-filter: blur(54px) saturate(1.8);
+  backdrop-filter: blur(54px) saturate(1.8);
+}
+
+.grove-ui .bottom-sheet-surface {
+  border-color: var(--glass-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(224, 224, 221, 0.16)),
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.18), transparent 34%),
+    var(--bottom-sheet-surface);
+  -webkit-backdrop-filter: blur(54px) saturate(1.8);
+  backdrop-filter: blur(54px) saturate(1.8);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .grove-ui .glass-surface {
+    background: rgba(244, 244, 241, 0.85);
+  }
+  .grove-ui .bottom-sheet-surface {
+    background: rgba(244, 244, 241, 0.95);
+  }
+}
+
+.grove-ui .no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.grove-ui .no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide every scrollbar inside the mock app while keeping scroll. */
+.grove-ui :where(*) {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.grove-ui ::-webkit-scrollbar {
+  display: none;
+}
+
+.grove-ui .grove-icon-scale svg {
+  height: auto !important;
+  width: auto !important;
+  flex-shrink: 0;
+}
+
+.grove-ui .grove-settings-field {
+  border-radius: var(--settings-control-radius);
+  background: rgba(0, 0, 0, 0.04);
+  padding: var(--settings-control-py) var(--settings-control-px);
+  font-size: var(--settings-control-size);
+  line-height: 1.2;
+  color: #1c1c1e;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.09);
+  outline: none;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.grove-ui .grove-settings-field:hover {
+  background: rgba(0, 0, 0, 0.055);
+}
+
+.grove-ui .grove-field-thin-focus:focus,
+.grove-ui .grove-field-thin-focus:focus-visible {
+  outline: none !important;
+  box-shadow: inset 0 0 0 0.5px var(--accent) !important;
+}
+
+.grove-ui .animate-panel-in {
+  animation: grove-panel-in 0.14s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+@keyframes grove-panel-in {
+  from {
+    transform: scale(0.98) translateY(-5px);
+  }
+}
