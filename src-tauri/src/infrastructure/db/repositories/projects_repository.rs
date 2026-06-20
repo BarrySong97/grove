@@ -1,7 +1,7 @@
 // @purpose Reads, writes, and removes Grove project records in SQLite.
 // @role    Persistence adapter used by project use cases and destructive project removal.
 // @deps    sqlx, Project DTOs, shared errors
-// @gotcha  Project lists are newest registration first; run command rows are ignored legacy data.
+// @gotcha  Project lists are newest registration first; upsert_config_command never clobbers grove_override edits; run command rows are ignored legacy data.
 use sqlx::{FromRow, SqlitePool};
 
 use crate::shared::dto::errors::AppResult;
@@ -106,6 +106,34 @@ pub(crate) async fn upsert_project_command(
     .bind(kind)
     .bind(command)
     .bind(source)
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+/// Upserts a command discovered from Conductor config, but never overwrites a
+/// user's Grove override so manual Project Settings edits survive re-syncs.
+pub(crate) async fn upsert_config_command(
+    pool: &SqlitePool,
+    project_id: &str,
+    kind: &str,
+    command: &str,
+) -> AppResult<()> {
+    sqlx::query(
+        r#"
+        INSERT INTO project_commands (project_id, kind, command, source, enabled)
+        VALUES (?1, ?2, ?3, 'conductor', 1)
+        ON CONFLICT(project_id, kind) DO UPDATE SET
+            command = excluded.command,
+            source = excluded.source,
+            enabled = excluded.enabled
+        WHERE project_commands.source != 'grove_override'
+        "#,
+    )
+    .bind(project_id)
+    .bind(kind)
+    .bind(command)
     .execute(pool)
     .await?;
 

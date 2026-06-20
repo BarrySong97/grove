@@ -7,7 +7,7 @@
 - `projects/list_projects.rs`:从持久化层按最新登记优先读取已登记项目。
 - `projects/create_project.rs`:从用户选择的 git repo 文件夹登记 Grove project,推断默认 workspace root、branch 和命令配置,并写入受保护的 repo root workspace。
 - `projects/import_conductor_projects.rs`:扫描 Conductor workspace root,读取 git/config 并写入 Grove DB;导入结果包含 repo root 和 workspace root 下的有效 worktree。
-- `projects/list_worktree_projects.rs`:组合项目、setup/archive 命令和 workspace 列表给前端面板,继承项目列表的最新登记优先顺序。
+- `projects/list_worktree_projects.rs`:组合项目、setup/archive 命令和 workspace 列表给前端面板,继承项目列表的最新登记优先顺序;每次加载会重读 Conductor 配置回填 setup/archive(经守卫保留 `grove_override` 手动编辑),让已有项目无需重新导入也能拿到命令。
 - `projects/remove_project.rs`:从 Grove 移除项目,并按全局 remove behavior 可选地对 active managed worktree 逐个执行 archive command 和 `git worktree remove`;主 repo 目录永不删除,缺失/损坏 workspace 不阻塞 Grove 记录移除。
 - `projects/update_project_settings.rs`:保存 Grove override 的 workspace root、命令和 archive policy。
 - `settings/get_app_settings.rs`:读取全局 app settings。

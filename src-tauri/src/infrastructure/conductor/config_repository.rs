@@ -1,7 +1,7 @@
 // @purpose Reads Conductor project configuration files.
 // @role    Filesystem/config adapter used by import and create workspace use cases.
 // @deps    serde_json, toml, std fs/path, project DTOs, shared errors
-// @gotcha  settings.toml takes precedence over repo-level conductor.json when present.
+// @gotcha  Each script field is resolved across .conductor/settings(.local).toml > repo conductor.json > global ~/.conductor/settings.toml; a higher file missing a script key falls through to a lower file instead of shadowing it.
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -21,32 +21,70 @@ pub(crate) struct ResolvedProjectConfig {
 }
 
 pub(crate) fn read_project_config(repo_path: &Path) -> AppResult<ResolvedProjectConfig> {
+    resolve_project_config(repo_path, user_settings_path())
+}
+
+fn resolve_project_config(
+    repo_path: &Path,
+    user_settings: Option<PathBuf>,
+) -> AppResult<ResolvedProjectConfig> {
+    // Conductor splits config across files: `.conductor/settings(.local).toml`
+    // carries repo prefs (e.g. scripts.run_mode), while `conductor.json` carries
+    // the setup/run/archive commands. Read every present source in precedence
+    // order (highest first) and merge per field, so a higher file that lacks a
+    // given script key falls through to a lower file instead of shadowing it.
+    let mut layers: Vec<ResolvedProjectConfig> = Vec::new();
+
     let local_settings = repo_path.join(".conductor").join("settings.local.toml");
     if local_settings.exists() {
-        return read_settings_toml(&local_settings, ConfigSourceDto::ConductorSettings);
+        layers.push(read_settings_toml(
+            &local_settings,
+            ConfigSourceDto::ConductorSettings,
+        )?);
     }
 
     let shared_settings = repo_path.join(".conductor").join("settings.toml");
     if shared_settings.exists() {
-        return read_settings_toml(&shared_settings, ConfigSourceDto::ConductorSettings);
-    }
-
-    if let Some(user_settings) = user_settings_path().filter(|path| path.exists()) {
-        return read_settings_toml(&user_settings, ConfigSourceDto::ConductorSettings);
+        layers.push(read_settings_toml(
+            &shared_settings,
+            ConfigSourceDto::ConductorSettings,
+        )?);
     }
 
     let conductor_json = repo_path.join("conductor.json");
     if conductor_json.exists() {
-        return read_conductor_json(&conductor_json);
+        layers.push(read_conductor_json(&conductor_json)?);
     }
 
-    Ok(ResolvedProjectConfig {
-        source: ConfigSourceDto::None,
+    if let Some(user_settings) = user_settings.filter(|path| path.exists()) {
+        layers.push(read_settings_toml(
+            &user_settings,
+            ConfigSourceDto::ConductorSettings,
+        )?);
+    }
+
+    let source = layers
+        .first()
+        .map(|layer| layer.source.clone())
+        .unwrap_or(ConfigSourceDto::None);
+
+    let mut merged = ResolvedProjectConfig {
+        source,
         setup_command: None,
         archive_command: None,
         run_command: None,
         file_include_globs: Vec::new(),
-    })
+    };
+    for layer in layers {
+        merged.setup_command = merged.setup_command.take().or(layer.setup_command);
+        merged.archive_command = merged.archive_command.take().or(layer.archive_command);
+        merged.run_command = merged.run_command.take().or(layer.run_command);
+        if merged.file_include_globs.is_empty() {
+            merged.file_include_globs = layer.file_include_globs;
+        }
+    }
+
+    Ok(merged)
 }
 
 pub(crate) fn read_user_workspace_root() -> AppResult<Option<PathBuf>> {
@@ -241,6 +279,65 @@ mod tests {
         let config = read_project_config(fixture.path()).expect("settings should parse");
         assert!(matches!(config.source, ConfigSourceDto::ConductorSettings));
         assert_eq!(config.setup_command.as_deref(), Some("from settings"));
+    }
+
+    #[test]
+    fn conductor_json_wins_over_global_user_settings() {
+        let fixture = Fixture::new("json-over-global");
+        fs::write(
+            fixture.path().join("conductor.json"),
+            r#"{"scripts":{"setup":"from json","archive":"from json archive"}}"#,
+        )
+        .expect("json config should be written");
+
+        let global = Fixture::new("global-settings");
+        let global_settings = global.path().join("settings.toml");
+        fs::write(&global_settings, "[scripts]\nsetup = \"from global\"\n")
+            .expect("global settings should be written");
+
+        let config = resolve_project_config(fixture.path(), Some(global_settings))
+            .expect("config should resolve");
+        assert!(matches!(config.source, ConfigSourceDto::ConductorJson));
+        assert_eq!(config.setup_command.as_deref(), Some("from json"));
+        assert_eq!(config.archive_command.as_deref(), Some("from json archive"));
+    }
+
+    #[test]
+    fn settings_local_without_scripts_falls_through_to_conductor_json() {
+        // Real Conductor layout: settings.local.toml only carries scripts.run_mode,
+        // while conductor.json holds the actual setup/archive/run commands.
+        let fixture = Fixture::new("local-no-scripts");
+        fs::create_dir_all(fixture.path().join(".conductor"))
+            .expect("config dir should be created");
+        fs::write(
+            fixture.path().join(".conductor/settings.local.toml"),
+            "[scripts]\nrun_mode = \"concurrent\"\n",
+        )
+        .expect("local settings should be written");
+        fs::write(
+            fixture.path().join("conductor.json"),
+            r#"{"scripts":{"setup":"pnpm install","archive":"pnpm archive","run":"bash scripts/dev.sh"}}"#,
+        )
+        .expect("json config should be written");
+
+        let config = resolve_project_config(fixture.path(), None).expect("config should resolve");
+        assert_eq!(config.setup_command.as_deref(), Some("pnpm install"));
+        assert_eq!(config.archive_command.as_deref(), Some("pnpm archive"));
+        assert_eq!(config.run_command.as_deref(), Some("bash scripts/dev.sh"));
+    }
+
+    #[test]
+    fn falls_back_to_global_user_settings_without_repo_config() {
+        let fixture = Fixture::new("global-fallback");
+        let global = Fixture::new("global-only");
+        let global_settings = global.path().join("settings.toml");
+        fs::write(&global_settings, "[scripts]\nsetup = \"from global\"\n")
+            .expect("global settings should be written");
+
+        let config = resolve_project_config(fixture.path(), Some(global_settings))
+            .expect("config should resolve");
+        assert!(matches!(config.source, ConfigSourceDto::ConductorSettings));
+        assert_eq!(config.setup_command.as_deref(), Some("from global"));
     }
 
     struct Fixture {

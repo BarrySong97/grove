@@ -5,13 +5,13 @@
 
 ## 文件
 - `db/connection.rs`:打开 app data 目录下的 `grove.sqlite` 并运行 migration;dev/release 通过不同 Tauri identifier 进入不同 app data 目录。
-- `db/repositories/projects_repository.rs`:读写/删除 Grove project、setup/archive 命令和 archive policy 持久化记录;项目列表按最新登记优先返回,旧 run command 行会被忽略。
+- `db/repositories/projects_repository.rs`:读写/删除 Grove project、setup/archive 命令和 archive policy 持久化记录;项目列表按最新登记优先返回,旧 run command 行会被忽略;`upsert_config_command` 写入 Conductor 来源命令时带 `source != 'grove_override'` 守卫,不覆盖用户手动编辑。
 - `db/repositories/workspaces_repository.rs`:写入导入/刷新得到的 workspace 记录、git state 和 lifecycle/operation 状态,并支持按 active workspace 列出 remove project 候选。
 - `db/repositories/operations_repository.rs`:记录 create/setup/archive/remove_project 等操作状态、退出码和日志路径,并提供 latest operation 与运行中 lock 查询。
 - `db/repositories/settings_repository.rs`:读写全局 app settings,当前包含语言、默认打开目标、Ghostty 打开模式、默认 archive 策略和 remove project 行为。
 - `git/worktree_repository.rs`:运行并解析 `git worktree list --porcelain`,识别 prunable worktree,并封装 `git worktree add/remove/prune`。
 - `git/status_repository.rs`:读取 dirty/ahead/behind/latest commit 的 git snapshot。
-- `conductor/config_repository.rs`:读取 `.conductor/settings*.toml`、user settings 和 legacy `conductor.json` 的 scripts/files-to-copy 配置。
+- `conductor/config_repository.rs`:按字段合并 `.conductor/settings(.local).toml`、repo `conductor.json` 与全局 `~/.conductor/settings.toml` 的 scripts/files-to-copy 配置——每个字段取优先级最高且定义了该字段的文件,高优先级文件缺该字段则回退,避免 `settings.local.toml` 遮住 `conductor.json` 的 setup/archive。
 - `filesystem/file_copy.rs`:按 `.worktreeinclude`、`file_include_globs` 或默认 `.env*` 复制 gitignored 文件。
 - `process/command_runner.rs`:在 workspace 目录运行 setup/archive command 并写日志;remove project 聚合每个 workspace 的 archive 输出到 project removal log。
 - `native/opener.rs`:打开 Finder、Zed、Cursor、VS Code、Ghostty 和 macOS Terminal;Cursor/VS Code 通过 `--new-window <path>` 打开目标目录,Ghostty window 模式通过 `--working-directory=<path>` 设置启动目录,tab 模式通过 macOS folder-open 路径交给 Ghostty 在当前实例中打开。
