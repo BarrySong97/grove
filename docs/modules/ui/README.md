@@ -5,7 +5,7 @@
 
 ## 文件
 - `IconButton.tsx`:基于 Hero UI `Button`/`Tooltip` 的固定尺寸 icon-only button,支持 project/row 尺寸和 ghost/accent/danger tone。
-- `BottomSheet.tsx`:基于 `motion/react` 的共享底部 sheet shell,负责 overlay、Escape 关闭和 slide-up 动效。
+- `BottomSheet.tsx`:基于 `motion/react` 的共享底部 sheet shell,负责 overlay、Escape 关闭和 slide-up 动效;`elevated` 让确认 sheet 浮到其它 sheet 之上,`maxHeightClassName` 可调 sheet 最大高度(内容多的 sheet 如 Global Settings 用更高的 cap 完整显示所有选项)。
 - `MenuItem.tsx`:context menu item 和 separator。
 - `ScrollArea.tsx`:隐藏原生滚动条的滚动容器。
 - `Divider.tsx`:细分隔线。

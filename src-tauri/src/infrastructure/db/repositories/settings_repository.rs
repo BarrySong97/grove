@@ -7,7 +7,8 @@ use sqlx::SqlitePool;
 use crate::shared::dto::errors::{AppError, AppResult};
 use crate::shared::dto::projects::ArchivePolicyDto;
 use crate::shared::dto::settings::{
-    AppLanguageDto, AppSettingsDto, GhosttyOpenModeDto, RemoveProjectBehaviorDto,
+    AppLanguageDto, AppSettingsDto, GhosttyOpenModeDto, NewProjectPositionDto,
+    RemoveProjectBehaviorDto,
 };
 use crate::shared::dto::workspaces::OpenWorkspaceTargetDto;
 
@@ -16,6 +17,7 @@ const GHOSTTY_OPEN_MODE_KEY: &str = "ghostty_open_mode";
 const HOVER_QUICK_OPEN_TARGETS_KEY: &str = "hover_quick_open_targets";
 const DEFAULT_ARCHIVE_POLICY_KEY: &str = "default_archive_policy";
 const REMOVE_PROJECT_BEHAVIOR_KEY: &str = "remove_project_behavior";
+const NEW_PROJECT_POSITION_KEY: &str = "new_project_position";
 const LANGUAGE_SYSTEM: &str = "system";
 const LANGUAGE_ZH_CN: &str = "zh_cn";
 const LANGUAGE_EN_US: &str = "en_us";
@@ -26,6 +28,8 @@ const ARCHIVE_POLICY_HIDE: &str = "hide";
 const ARCHIVE_POLICY_REMOVE_WORKTREE: &str = "remove_worktree";
 const REMOVE_PROJECT_GROVE_ONLY: &str = "grove_only";
 const REMOVE_PROJECT_DELETE_WORKTREES: &str = "delete_worktrees";
+const NEW_PROJECT_POSITION_FIRST: &str = "first";
+const NEW_PROJECT_POSITION_LAST: &str = "last";
 const OPEN_TARGET_FINDER: &str = "finder";
 const OPEN_TARGET_ZED: &str = "zed";
 const OPEN_TARGET_CURSOR: &str = "cursor";
@@ -72,6 +76,14 @@ pub(crate) async fn get_app_settings(pool: &SqlitePool) -> AppResult<AppSettings
             .map_or(Ok(RemoveProjectBehaviorDto::GroveOnly), |value| {
                 parse_remove_project_behavior(&value)
             })?;
+    let new_project_position =
+        sqlx::query_scalar::<_, String>("SELECT value FROM app_settings WHERE key = ? LIMIT 1")
+            .bind(NEW_PROJECT_POSITION_KEY)
+            .fetch_optional(pool)
+            .await?
+            .map_or(Ok(NewProjectPositionDto::First), |value| {
+                parse_new_project_position(&value)
+            })?;
 
     Ok(AppSettingsDto {
         language,
@@ -79,6 +91,7 @@ pub(crate) async fn get_app_settings(pool: &SqlitePool) -> AppResult<AppSettings
         hover_quick_open_targets,
         default_archive_policy,
         remove_project_behavior,
+        new_project_position,
     })
 }
 
@@ -145,6 +158,18 @@ pub(crate) async fn update_app_settings(
     .bind(format_remove_project_behavior(
         &settings.remove_project_behavior,
     ))
+    .execute(pool)
+    .await?;
+
+    sqlx::query(
+        "INSERT INTO app_settings (key, value, updated_at)
+         VALUES (?, ?, CURRENT_TIMESTAMP)
+         ON CONFLICT(key) DO UPDATE SET
+           value = excluded.value,
+           updated_at = CURRENT_TIMESTAMP",
+    )
+    .bind(NEW_PROJECT_POSITION_KEY)
+    .bind(format_new_project_position(&settings.new_project_position))
     .execute(pool)
     .await?;
 
@@ -262,6 +287,23 @@ fn parse_remove_project_behavior(value: &str) -> AppResult<RemoveProjectBehavior
     }
 }
 
+fn parse_new_project_position(value: &str) -> AppResult<NewProjectPositionDto> {
+    match value {
+        NEW_PROJECT_POSITION_FIRST => Ok(NewProjectPositionDto::First),
+        NEW_PROJECT_POSITION_LAST => Ok(NewProjectPositionDto::Last),
+        _ => Err(AppError::Internal {
+            message: format!("Unknown new project position: {value}"),
+        }),
+    }
+}
+
+fn format_new_project_position(value: &NewProjectPositionDto) -> &'static str {
+    match value {
+        NewProjectPositionDto::First => NEW_PROJECT_POSITION_FIRST,
+        NewProjectPositionDto::Last => NEW_PROJECT_POSITION_LAST,
+    }
+}
+
 fn format_remove_project_behavior(value: &RemoveProjectBehaviorDto) -> &'static str {
     match value {
         RemoveProjectBehaviorDto::GroveOnly => REMOVE_PROJECT_GROVE_ONLY,
@@ -340,6 +382,10 @@ mod tests {
         assert_eq!(
             parse_remove_project_behavior("delete_worktrees").expect("behavior should parse"),
             RemoveProjectBehaviorDto::DeleteWorktrees
+        );
+        assert_eq!(
+            parse_new_project_position("last").expect("position should parse"),
+            NewProjectPositionDto::Last
         );
     }
 }

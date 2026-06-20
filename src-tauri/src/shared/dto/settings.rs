@@ -30,6 +30,13 @@ pub(crate) enum RemoveProjectBehaviorDto {
     DeleteWorktrees,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum NewProjectPositionDto {
+    First,
+    Last,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct AppSettingsDto {
@@ -38,6 +45,7 @@ pub(crate) struct AppSettingsDto {
     pub hover_quick_open_targets: Vec<OpenWorkspaceTargetDto>,
     pub default_archive_policy: ArchivePolicyDto,
     pub remove_project_behavior: RemoveProjectBehaviorDto,
+    pub new_project_position: NewProjectPositionDto,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -48,4 +56,5 @@ pub(crate) struct UpdateAppSettingsInput {
     pub hover_quick_open_targets: Vec<OpenWorkspaceTargetDto>,
     pub default_archive_policy: ArchivePolicyDto,
     pub remove_project_behavior: RemoveProjectBehaviorDto,
+    pub new_project_position: NewProjectPositionDto,
 }

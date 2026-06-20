@@ -178,6 +178,7 @@ export function WorktreePanel({
       <BottomSheet
         ariaLabel={t('settings.title')}
         className="bottom-sheet-surface rounded-[var(--window-radius)] border-[0.5px] p-1.5 font-sans text-[13.5px] text-[#1c1c1e] antialiased shadow-panel"
+        maxHeightClassName="max-h-[min(94vh,700px)]"
         isOpen={state.globalSettingsOpen}
         onClose={() => state.setGlobalSettingsOpen(false)}
       >
@@ -190,6 +191,7 @@ export function WorktreePanel({
             state.setGhosttyOpenMode(openInTabs ? 'tab' : 'window')
           }
           onLanguageChange={state.setLanguage}
+          onNewProjectPositionChange={state.setNewProjectPosition}
           onRemoveProjectBehaviorChange={state.setRemoveProjectBehavior}
           onClose={() => state.setGlobalSettingsOpen(false)}
         />

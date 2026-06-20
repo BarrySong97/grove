@@ -18,6 +18,7 @@ pub(crate) async fn run(
         hover_quick_open_targets: input.hover_quick_open_targets,
         default_archive_policy: input.default_archive_policy,
         remove_project_behavior: input.remove_project_behavior,
+        new_project_position: input.new_project_position,
     };
     settings_repository::update_app_settings(pool, &settings).await
 }

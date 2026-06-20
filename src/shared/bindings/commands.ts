@@ -88,6 +88,7 @@ export type AppSettingsDto = {
   hoverQuickOpenTargets: OpenWorkspaceTargetDto[]
   defaultArchivePolicy: ArchivePolicyDto
   removeProjectBehavior: RemoveProjectBehaviorDto
+  newProjectPosition: NewProjectPositionDto
 }
 
 export type ArchivePolicyChoiceDto = 'hide' | 'remove_worktree'
@@ -128,6 +129,8 @@ export type GhosttyOpenModeDto = 'window' | 'tab'
 export type ImportConductorProjectsInput = {
   workspaceRoot: string | null
 }
+
+export type NewProjectPositionDto = 'first' | 'last'
 
 export type OpenWorkspaceInput = {
   workspaceId: string
@@ -217,6 +220,7 @@ export type UpdateAppSettingsInput = {
   hoverQuickOpenTargets: OpenWorkspaceTargetDto[]
   defaultArchivePolicy: ArchivePolicyDto
   removeProjectBehavior: RemoveProjectBehaviorDto
+  newProjectPosition: NewProjectPositionDto
 }
 
 export type UpdateProjectSettingsInput = {

@@ -17,6 +17,11 @@ interface BottomSheetProps {
    * so they surface in front instead of being obscured.
    */
   elevated?: boolean
+  /**
+   * Tailwind max-height class for the sheet surface. Override for content-heavy
+   * sheets (e.g. Global Settings) so all rows fit without inner scrolling.
+   */
+  maxHeightClassName?: string
   isOpen: boolean
   onClose: () => void
 }
@@ -26,6 +31,7 @@ export function BottomSheet({
   children,
   className = '',
   elevated = false,
+  maxHeightClassName = 'max-h-[min(82vh,520px)]',
   isOpen,
   onClose
 }: BottomSheetProps) {
@@ -53,7 +59,7 @@ export function BottomSheet({
           <motion.div
             role="dialog"
             aria-label={ariaLabel}
-            className={`max-h-[min(82vh,520px)] w-full overflow-y-auto ${className}`}
+            className={`${maxHeightClassName} w-full overflow-y-auto ${className}`}
             initial={{ y: 22, opacity: 0, scale: 0.98 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 18, opacity: 0, scale: 0.98 }}

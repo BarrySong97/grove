@@ -12,5 +12,5 @@
 ## 约束
 - 语言偏好由 Rust app settings 持久化;本模块只负责前端应用和资源映射。
 - `system` 不写死语言,必须根据当前 webview/browser language 解析。
-- 翻译 key 要稳定,组件测试可能依赖可访问 label。
+- 翻译 key 要稳定且按 feature 分组(如 `settings.newProjectPosition.*`),组件测试可能依赖可访问 label。
 - 新增语言时同步 Rust `AppLanguageDto`、settings repository、migration、bindings、语言选项和本模块资源。

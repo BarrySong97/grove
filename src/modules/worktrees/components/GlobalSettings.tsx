@@ -9,6 +9,7 @@ import type {
   AppLanguageDto,
   AppSettingsDto,
   ArchivePolicyDto,
+  NewProjectPositionDto,
   OpenWorkspaceTargetDto,
   RemoveProjectBehaviorDto
 } from '../../../shared/bindings/commands'
@@ -31,6 +32,7 @@ interface GlobalSettingsProps {
   onDefaultArchivePolicyChange: (policy: ArchivePolicyDto) => void
   onGhosttyOpenModeChange: (openInTabs: boolean) => void
   onLanguageChange: (language: AppLanguageDto) => void
+  onNewProjectPositionChange: (position: NewProjectPositionDto) => void
   onRemoveProjectBehaviorChange: (behavior: RemoveProjectBehaviorDto) => void
   onClose: () => void
 }
@@ -51,6 +53,7 @@ export function GlobalSettings({
   onDefaultArchivePolicyChange,
   onGhosttyOpenModeChange,
   onLanguageChange,
+  onNewProjectPositionChange,
   onRemoveProjectBehaviorChange,
   onClose
 }: GlobalSettingsProps) {
@@ -71,6 +74,19 @@ export function GlobalSettings({
               value: option.id,
               label: t(option.labelKey)
             }))}
+          />
+        </SettingsRow>
+
+        <SettingsRow label={t('settings.newProjectPosition.label')}>
+          <SettingsSelect
+            ariaLabel={t('settings.newProjectPosition.ariaLabel')}
+            disabled={saving}
+            value={settings.newProjectPosition}
+            onChange={onNewProjectPositionChange}
+            options={[
+              { value: 'first', label: t('settings.newProjectPosition.first') },
+              { value: 'last', label: t('settings.newProjectPosition.last') }
+            ]}
           />
         </SettingsRow>
       </SettingsSection>

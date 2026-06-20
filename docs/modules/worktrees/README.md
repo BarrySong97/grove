@@ -24,7 +24,7 @@
 - `retryWorktree` 调用 Rust `retry_workspace_operation`;setup 失败只重跑 setup,archive 失败重跑 archive workflow。
 - `removeProject` 调用 Rust `remove_project`;Project Settings 触发动作,Global Settings 只配置默认 remove 行为。主 repo 目录永远不会删除。
 - `openWorktree` 调用 Rust `open_workspace`,按 workspace path 打开 Finder、Zed、Cursor、VS Code、Ghostty 或 macOS Terminal;编辑器和终端的启动目录由 Rust native opener 显式传入。
-- 全局设置通过 Rust `get_app_settings`/`update_app_settings` 读写 SQLite,当前控制语言、默认打开方式、Ghostty window/tab、默认 archive 策略和 remove project 行为。
+- 全局设置通过 Rust `get_app_settings`/`update_app_settings` 读写 SQLite,当前控制语言、悬停快捷打开、新项目在列表顶部/底部、Ghostty window/tab、默认 archive 策略和 remove project 行为。新项目位置由前端 `orderProjects` 应用(`first` 放最前、`last` 放最后),默认 `first`。
 - Grove 不再暴露 Run Command 入口;项目命令只保留 setup/archive,分别由 create/archive/remove workflow 调用。
 - Worktree/Project 等共享类型来自 `src/shared/contracts/worktrees/`,模块内部不得重新定义一份业务类型。
 - 项目设置表单用 React Hook Form 管理前端 form state,`workspaceRoot` 必填校验通过 Hero UI invalid state 展示;命令字段允许为空。

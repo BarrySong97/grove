@@ -18,7 +18,8 @@ describe('GlobalSettings', () => {
       hoverQuickOpenTargets: ['cursor', 'terminal'],
       ghosttyOpenMode: 'window',
       defaultArchivePolicy: 'ask',
-      removeProjectBehavior: 'grove_only'
+      removeProjectBehavior: 'grove_only',
+      newProjectPosition: 'first'
     }
     const onDefaultArchivePolicyChange = vi.fn()
     const onLanguageChange = vi.fn()
@@ -29,6 +30,7 @@ describe('GlobalSettings', () => {
         settings={settings}
         saving={false}
         onClose={vi.fn()}
+        onNewProjectPositionChange={vi.fn()}
         onDefaultArchivePolicyChange={onDefaultArchivePolicyChange}
         onHoverQuickOpenTargetsChange={vi.fn()}
         onGhosttyOpenModeChange={vi.fn()}
@@ -58,7 +60,8 @@ describe('GlobalSettings', () => {
       hoverQuickOpenTargets: ['cursor', 'terminal'],
       ghosttyOpenMode: 'window',
       defaultArchivePolicy: 'ask',
-      removeProjectBehavior: 'grove_only'
+      removeProjectBehavior: 'grove_only',
+      newProjectPosition: 'first'
     }
     const onHoverQuickOpenTargetsChange = vi.fn()
 
@@ -67,6 +70,7 @@ describe('GlobalSettings', () => {
         settings={settings}
         saving={false}
         onClose={vi.fn()}
+        onNewProjectPositionChange={vi.fn()}
         onDefaultArchivePolicyChange={vi.fn()}
         onHoverQuickOpenTargetsChange={onHoverQuickOpenTargetsChange}
         onGhosttyOpenModeChange={vi.fn()}

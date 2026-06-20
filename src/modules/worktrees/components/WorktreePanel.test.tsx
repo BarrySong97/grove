@@ -19,7 +19,8 @@ const defaultSettings: AppSettingsDto = {
   hoverQuickOpenTargets: ['cursor', 'terminal'],
   ghosttyOpenMode: 'window',
   defaultArchivePolicy: 'ask',
-  removeProjectBehavior: 'grove_only'
+  removeProjectBehavior: 'grove_only',
+  newProjectPosition: 'first'
 }
 
 const api = vi.hoisted(() => ({

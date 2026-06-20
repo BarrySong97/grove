@@ -149,6 +149,12 @@ export const enUS = {
       zhCn: '中文',
       enUs: 'English'
     },
+    newProjectPosition: {
+      label: 'New project',
+      ariaLabel: 'New project list position',
+      first: 'Top of list',
+      last: 'Bottom of list'
+    },
     hoverQuickOpen: {
       label: 'Hover quick open',
       help: 'Choose which apps appear as quick-open buttons when hovering a worktree.'

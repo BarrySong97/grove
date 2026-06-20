@@ -149,6 +149,12 @@ export const zhCN = {
       zhCn: '中文',
       enUs: 'English'
     },
+    newProjectPosition: {
+      label: '新项目',
+      ariaLabel: '新项目在列表中的位置',
+      first: '列表顶部',
+      last: '列表底部'
+    },
     hoverQuickOpen: {
       label: '悬停快捷打开',
       help: '选择悬停 worktree 时显示哪些 app 作为快捷打开按钮。'

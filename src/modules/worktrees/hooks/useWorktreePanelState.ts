@@ -30,7 +30,8 @@ import type {
   AppSettingsDto,
   ArchivePolicyChoiceDto,
   ArchivePolicyDto,
-  GhosttyOpenModeDto
+  GhosttyOpenModeDto,
+  NewProjectPositionDto
 } from '../../../shared/bindings/commands'
 import type {
   OpenWorkspaceTargetDto,
@@ -60,7 +61,8 @@ const DEFAULT_APP_SETTINGS: AppSettingsDto = {
   hoverQuickOpenTargets: ['cursor', 'terminal'],
   ghosttyOpenMode: 'window',
   defaultArchivePolicy: 'ask',
-  removeProjectBehavior: 'grove_only'
+  removeProjectBehavior: 'grove_only',
+  newProjectPosition: 'first'
 }
 type ToastTone = 'notice' | 'progress' | 'error'
 interface ToastState {
@@ -110,11 +112,17 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
     queryFn: getAppSettings,
     initialData: DEFAULT_APP_SETTINGS
   })
-  const projects = useMemo(
-    () => applySortOrder(projectsQuery.data ?? [], projectOrder, worktreeOrderByProject),
-    [projectOrder, projectsQuery.data, worktreeOrderByProject]
-  )
   const appSettings = appSettingsQuery.data ?? DEFAULT_APP_SETTINGS
+  const projects = useMemo(
+    () =>
+      applySortOrder(
+        projectsQuery.data ?? [],
+        projectOrder,
+        worktreeOrderByProject,
+        appSettings.newProjectPosition
+      ),
+    [appSettings.newProjectPosition, projectOrder, projectsQuery.data, worktreeOrderByProject]
+  )
 
   const [addingTo, setAddingTo] = useState<string | null>(null)
   const [settingsFor, setSettingsFor] = useState<string | null>(null)
@@ -441,6 +449,10 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
     saveAppSettings({ ...appSettings, removeProjectBehavior: behavior })
   }
 
+  const setNewProjectPosition = (position: NewProjectPositionDto) => {
+    saveAppSettings({ ...appSettings, newProjectPosition: position })
+  }
+
   const saveAppSettings = (next: AppSettingsDto) => {
     updateAppSettingsMutation.mutate(next)
   }
@@ -524,6 +536,7 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
     setGhosttyOpenMode,
     setLanguage,
     setRemoveProjectBehavior,
+    setNewProjectPosition,
     setGlobalSettingsOpen,
     setLogViewer,
     setRemoveProjectPrompt,
@@ -546,9 +559,10 @@ function getEffectiveArchivePolicy(project: Project, settings: AppSettingsDto) {
 function applySortOrder(
   projects: Project[],
   projectOrder: string[],
-  worktreeOrderByProject: Record<string, string[]>
+  worktreeOrderByProject: Record<string, string[]>,
+  newProjectPosition: NewProjectPositionDto
 ) {
-  return orderBySavedIds(projects, projectOrder, (project) => project.id).map((project) => ({
+  return orderProjects(projects, projectOrder, newProjectPosition).map((project) => ({
     ...project,
     worktrees: orderBySavedIds(
       project.worktrees,
@@ -556,6 +570,21 @@ function applySortOrder(
       (worktree) => worktree.id
     )
   }))
+}
+
+function orderProjects(
+  projects: Project[],
+  savedIds: string[],
+  newPosition: NewProjectPositionDto
+) {
+  const byId = new Map(projects.map((project) => [project.id, project]))
+  const seen = new Set(savedIds)
+  const ordered = savedIds
+    .map((id) => byId.get(id))
+    .filter((project): project is Project => Boolean(project))
+  // Backend returns projects newest-registration-first, so `fresh` is newest first.
+  const fresh = projects.filter((project) => !seen.has(project.id))
+  return newPosition === 'last' ? [...ordered, ...[...fresh].reverse()] : [...fresh, ...ordered]
 }
 
 function writeProjectWorktreeOrder(
