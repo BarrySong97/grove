@@ -4,11 +4,25 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { ChevronRight, ChevronUp, ChevronDown, Gear, Plus, ToTop, Dot, Divider, IconButton } from '@grove/ui'
-import type { Project } from './data'
+import {
+  SCRIPTED_PROJECT_ID,
+  SCRIPTED_WORKTREE_ID,
+  type AppPreviewDemoPhase,
+  type AppPreviewDemoStep,
+  type Project,
+} from './data'
 import { WorktreeRow } from './WorktreeRow'
 
 const VISIBLE_LIMIT = 3
 const collapseTransition = { duration: 0.22, ease: [0.4, 0, 0.2, 1] as const }
+const pressTransition = { duration: 0.3, delay: 1.02, ease: [0.22, 1, 0.36, 1] as const }
+const demoPressTransition = { duration: 0.16, ease: [0.22, 1, 0.36, 1] as const }
+
+const demoButtonAnimation = (active: boolean, phase: AppPreviewDemoPhase) => {
+  if (!active || phase === 'idle') return { scale: 1, backgroundColor: 'rgba(0,0,0,0)' }
+  if (phase === 'press') return { scale: 0.965, backgroundColor: 'rgba(0,0,0,0.07)' }
+  return { scale: 1, backgroundColor: 'rgba(0,0,0,0.038)' }
+}
 
 export function ProjectSection({
   project,
@@ -16,29 +30,68 @@ export function ProjectSection({
   isFirst,
   isLast,
   onToggle,
+  onNewWorktree,
+  demoPhase = 'idle',
+  demoStep,
+  revealDelay,
+  forceExpanded = false,
 }: {
   project: Project
   collapsed: boolean
   isFirst: boolean
   isLast: boolean
   onToggle: () => void
+  onNewWorktree?: (projectId: string) => void
+  demoPhase?: AppPreviewDemoPhase
+  demoStep?: AppPreviewDemoStep
+  revealDelay?: number
+  forceExpanded?: boolean
 }) {
   const [showAll, setShowAll] = useState(false)
+  const collapsedState = forceExpanded ? false : collapsed
   const hasOverflow = project.worktrees.length > VISIBLE_LIMIT
   const head = project.worktrees.slice(0, VISIBLE_LIMIT)
   const rest = project.worktrees.slice(VISIBLE_LIMIT)
+  const newWorktreePressed = demoStep === 'create-worktree' && project.id === SCRIPTED_PROJECT_ID
+  const newWorktreeClasses = 'mt-px flex w-full cursor-pointer items-center gap-[11px] rounded-[9px] px-2.5 py-2'
 
-  const renderRow = (index: number) => (
-    <WorktreeRow
-      key={project.worktrees[index].id}
-      worktree={project.worktrees[index]}
-      isFirst={index === 0}
-      isLast={index === project.worktrees.length - 1}
-    />
-  )
+  const renderRow = (index: number) => {
+    const worktree = project.worktrees[index]
+    const highlightCreate =
+      demoStep === 'create-worktree' &&
+      project.id === SCRIPTED_PROJECT_ID &&
+      worktree.id === SCRIPTED_WORKTREE_ID
+    const highlightOpen =
+      demoStep === 'open-archive' &&
+      project.id === SCRIPTED_PROJECT_ID &&
+      worktree.id === SCRIPTED_WORKTREE_ID
+
+    return (
+      <WorktreeRow
+        key={worktree.id}
+        worktree={worktree}
+        isFirst={index === 0}
+        isLast={index === project.worktrees.length - 1}
+        demoStatus={highlightCreate ? 'setting-up' : undefined}
+        forceActionsVisible={highlightOpen && demoPhase !== 'idle'}
+        demoPhase={demoPhase}
+        demoPressedAction={highlightOpen ? 'ghostty' : undefined}
+        revealDelay={highlightCreate ? 0 : undefined}
+      />
+    )
+  }
 
   return (
-    <div className="group/proj relative">
+    <motion.div
+      className="group/proj relative"
+      initial={revealDelay === undefined ? false : { height: 0, opacity: 0, y: -8 }}
+      animate={{ height: 'auto', opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.28,
+        delay: revealDelay ?? 0,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+    >
       <div className="px-2.5 py-2">
         <div className="flex items-center gap-2">
           <button
@@ -48,7 +101,7 @@ export function ProjectSection({
           >
             <motion.span
               className="flex w-3 shrink-0 items-center justify-center text-black/30"
-              animate={{ rotate: collapsed ? 0 : 90 }}
+              animate={{ rotate: collapsedState ? 0 : 90 }}
               transition={collapseTransition}
             >
               <ChevronRight />
@@ -78,7 +131,12 @@ export function ProjectSection({
             <IconButton title="Project settings" size="project">
               <Gear />
             </IconButton>
-            <IconButton title="New worktree" size="project" tone="accent">
+            <IconButton
+              title="New worktree"
+              size="project"
+              tone="accent"
+              onClick={() => onNewWorktree?.(project.id)}
+            >
               <Plus />
             </IconButton>
           </div>
@@ -90,7 +148,7 @@ export function ProjectSection({
       </div>
 
       <AnimatePresence initial={false}>
-        {!collapsed && (
+        {!collapsedState && (
           <motion.div
             key="body"
             initial={{ height: 0, opacity: 0 }}
@@ -129,9 +187,16 @@ export function ProjectSection({
               </button>
             )}
 
-            <button
+            <motion.button
               type="button"
-              className="mt-px flex w-full cursor-pointer items-center gap-[11px] rounded-[9px] px-2.5 py-2 transition-colors hover:bg-black/[0.038]"
+              onClick={() => onNewWorktree?.(project.id)}
+              className={newWorktreeClasses}
+              animate={demoButtonAnimation(newWorktreePressed, demoPhase)}
+              transition={
+                newWorktreePressed
+                  ? demoPressTransition
+                  : pressTransition
+              }
             >
               <span className="flex w-4 shrink-0 items-center justify-center text-[var(--accent)]">
                 <Plus />
@@ -139,12 +204,12 @@ export function ProjectSection({
               <span className="flex-1 text-left text-[12.5px] font-medium text-[#1c1c1e]">
                 New Worktree…
               </span>
-            </button>
+            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
 
       {!isLast && <Divider />}
-    </div>
+    </motion.div>
   )
 }

@@ -5,6 +5,15 @@ dist
 *.log
 .DS_Store
 
+# Signing / credential material — never commit
+*.p12
+*.p8
+*.cer
+*.mobileprovision
+*.tauri.key
+grove_updater.key
+grove_updater.key.pub
+
 # next.js / turborepo
 .next/
 out/

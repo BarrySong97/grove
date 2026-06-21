@@ -2,6 +2,12 @@
 // No Tauri, no real git.
 
 export type WorktreeStatus = 'ready' | 'setting-up' | 'archiving' | 'failed'
+export type AppPreviewDemoStep = 'add-project' | 'create-worktree' | 'open-archive'
+export type AppPreviewDemoMode = 'interactive' | 'scroll' | 'static'
+export type AppPreviewDemoPhase = 'idle' | 'hover' | 'press' | 'done'
+
+export const SCRIPTED_PROJECT_ID = 'scripted-project'
+export const SCRIPTED_WORKTREE_ID = 'scripted-worktree'
 
 export type Worktree = {
   id: string

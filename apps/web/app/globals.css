@@ -3,6 +3,7 @@
 
 /* HeroUI v3 styles (used by the shared @grove/ui components in the app preview). */
 @import "@heroui/styles/base" layer(base);
+@import "@heroui/styles/components/accordion.css" layer(components);
 @import "@heroui/styles/components/button.css" layer(components);
 @import "@heroui/styles/components/tooltip.css" layer(components);
 @import "@heroui/styles/components/switch.css" layer(components);
@@ -16,23 +17,25 @@
 @config "../tailwind.config.ts";
 
 :root {
-  /* Accent palette — change these four to re-theme the whole site. */
-  --grn: #14b8a6;
-  --grn-bright: #5eead4;
-  --grn-deep: #0d9488;
-  --grn-ink: #0f766e;
+  /* Neutral blue-gray accent derived from the desktop Grove icon background. */
+  --grn: #4f6f8f;
+  --grn-bright: #a9bdd2;
+  --grn-deep: #3f5872;
+  --grn-ink: #405a75;
 }
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
-  background: #fbfbf9; /* colors.canvas */
+  background: #f7f7f4; /* colors.canvas */
   color: #181a1e; /* colors.ink.DEFAULT */
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
 ::selection {
@@ -56,7 +59,7 @@ body {
   .btn-grn:hover {
     @apply -translate-y-px;
     background: var(--grn-deep);
-    box-shadow: 0 5px 16px color-mix(in srgb, var(--grn-deep) 28%, transparent);
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--grn-deep) 22%, transparent);
   }
   .btn-ghost {
     @apply border-black/[0.14] bg-white text-ink shadow-[0_1px_2px_rgba(0,0,0,0.04)];
@@ -76,7 +79,7 @@ body {
     border: 0.5px solid color-mix(in srgb, var(--grn) 34%, transparent);
   }
   .card {
-    @apply rounded-2xl border-[0.5px] border-black/[0.09] bg-panel shadow-card;
+    @apply rounded-2xl border-[0.5px] border-black/[0.08] bg-panel shadow-card;
   }
   .tint {
     background: color-mix(in srgb, var(--grn) 12%, transparent);

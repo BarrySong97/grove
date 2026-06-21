@@ -178,5 +178,13 @@ export const enUS = {
       tabsTitle: 'Open workspaces in tabs',
       tabsHelp: 'Use the current Ghostty window when possible'
     }
+  },
+  updater: {
+    available: 'Update',
+    availableTooltip: 'Grove {{version}} is available — click to install and restart',
+    downloading: 'Updating… {{progress}}%',
+    installing: 'Restarting…',
+    error: 'Update failed',
+    errorTooltip: 'Update failed — click to retry'
   }
 }

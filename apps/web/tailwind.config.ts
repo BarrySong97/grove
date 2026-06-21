@@ -32,7 +32,7 @@ export default {
           2: '#565b64',
           3: '#8a8f99',
         },
-        canvas: '#fbfbf9',
+        canvas: '#f7f7f4',
         panel: '#ffffff',
       },
       boxShadow: {

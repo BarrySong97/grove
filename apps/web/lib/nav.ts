@@ -2,12 +2,11 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 
-export type Route = 'home' | 'how' | 'releases'
+export type Route = 'home' | 'releases'
 
 /** Route key → real Next.js path. */
 export const PATHS: Record<Route, string> = {
   home: '/',
-  how: '/how-it-works',
   releases: '/releases',
 }
 
@@ -20,7 +19,6 @@ export function useGo(): (r: Route) => void {
 /** Current route key, derived from the pathname (for nav highlighting). */
 export function useActive(): Route {
   const p = usePathname()
-  if (p.startsWith('/how-it-works')) return 'how'
   if (p.startsWith('/releases')) return 'releases'
   return 'home'
 }

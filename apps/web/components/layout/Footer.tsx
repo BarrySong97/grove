@@ -8,12 +8,6 @@ export function Footer() {
         <BrandLink markSize={26} className="text-[15px] font-[650]" />
         <span className="flex-1" />
         <div className="flex gap-[22px]">
-          <NavLink size="xs" route="home">
-            Features
-          </NavLink>
-          <NavLink size="xs" route="how">
-            How it works
-          </NavLink>
           <NavLink size="xs" route="releases">
             Release notes
           </NavLink>

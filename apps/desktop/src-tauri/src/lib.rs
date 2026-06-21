@@ -77,6 +77,8 @@ pub fn run() {
     let native_dialog_app_state = Arc::clone(&native_dialog_open);
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(specta_builder.invoke_handler())
         .setup(|app| {

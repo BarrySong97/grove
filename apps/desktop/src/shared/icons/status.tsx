@@ -5,6 +5,7 @@
  * @gotcha  Spinner consumers are responsible for animation classes; docs/modules/icons/README.md
  */
 import {
+  ArrowDownToLine,
   Check as LucideCheck,
   LoaderCircle,
   Plus as LucidePlus,
@@ -17,4 +18,8 @@ export const Plus = (props: LucideProps) => <LucidePlus size={14} strokeWidth={2
 
 export const Spinner = (props: LucideProps) => (
   <LoaderCircle size={13} strokeWidth={2.2} {...props} />
+)
+
+export const UpdateDownload = (props: LucideProps) => (
+  <ArrowDownToLine size={13} strokeWidth={2.4} {...props} />
 )

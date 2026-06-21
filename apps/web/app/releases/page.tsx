@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ReleaseTimeline } from "@/components/releases/ReleaseTimeline";
+import { Footer } from "@/components/layout/Footer";
 
 export default function Page() {
   return (
@@ -17,6 +18,7 @@ export default function Page() {
       </PageHeader>
 
       <ReleaseTimeline />
+      <Footer />
     </>
   );
 }

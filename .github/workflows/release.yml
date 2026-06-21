@@ -1,0 +1,88 @@
+name: Release Grove (macOS)
+
+# Builds, signs, notarizes, and publishes a universal macOS DMG + updater
+# artifacts (latest.json + *.app.tar.gz + *.sig) to a GitHub Release.
+#
+# Trigger by pushing a version tag, e.g.:
+#   git tag v0.1.1 && git push origin v0.1.1
+#
+# Required repository secrets — see apps/desktop/RELEASING.md:
+#   Apple Developer ID signing:
+#     APPLE_CERTIFICATE            base64 of the exported Developer ID .p12
+#     APPLE_CERTIFICATE_PASSWORD   password for that .p12
+#     APPLE_SIGNING_IDENTITY       e.g. "Developer ID Application: Your Name (TEAMID)"
+#   Apple notarization (App Store Connect API key):
+#     APPLE_API_ISSUER             Issuer ID (UUID)
+#     APPLE_API_KEY                Key ID (e.g. ABC123DEF4)
+#     APPLE_API_KEY_P8             full contents of the AuthKey_XXXX.p8 file
+#   Tauri updater signing:
+#     TAURI_SIGNING_PRIVATE_KEY            contents of ~/.tauri/grove_updater.key
+#     TAURI_SIGNING_PRIVATE_KEY_PASSWORD   its password ("" if none)
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup Rust (universal targets)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Cache cargo
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Write App Store Connect API key
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$APPLE_API_KEY_P8" > ~/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8
+        env:
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+
+      - name: Build, sign, notarize & publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Developer ID signing
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          # Notarization via App Store Connect API key
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          # Updater artifact signing
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: apps/desktop
+          tagName: ${{ github.ref_name }}
+          releaseName: "Grove ${{ github.ref_name }}"
+          releaseDraft: true
+          prerelease: false
+          args: --target universal-apple-darwin

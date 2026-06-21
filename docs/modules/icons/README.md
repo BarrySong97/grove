@@ -3,7 +3,7 @@
 ## 职责
 `src/shared/icons/` 集中维护项目图标 wrapper,避免业务组件重复定义同语义图标。
 
-macOS app icon 和 menu bar template icon 属于 Tauri 运行壳资源,放在 `src-tauri/icons/`,由 [Tauri Runtime 模块](../tauri-runtime/) 维护。
+macOS app icon 和 menu bar template icon 属于 Tauri 运行壳资源,放在 `src-tauri/icons/`,由 [Tauri Runtime 模块](../tauri-runtime/) 维护。前端面板 header 使用 `src/shared/assets/Grove.svg`,该文件应与 `src-tauri/icons/Grove.svg` 保持同步。
 workspace open target 的软件识别图标是产品 UI 资产,放在 `src/shared/assets/open-targets/`,由 Worktrees 的 `OpenTargetIcon` 渲染。
 
 ## 文件

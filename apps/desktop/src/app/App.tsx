@@ -6,6 +6,7 @@
  */
 import { QueryClientProvider } from '@tanstack/react-query'
 import { useEffect } from 'react'
+import { UpdateBadge } from '../modules/updater'
 import { WorktreePanel } from '../modules/worktrees'
 import '../shared/i18n/i18n'
 import { queryClient } from './queryClient'
@@ -23,8 +24,9 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <main className="app-shell h-screen w-screen bg-transparent p-0 font-sans text-[#1c1c1e]">
+      <main className="app-shell relative h-screen w-screen bg-transparent p-0 font-sans text-[#1c1c1e]">
         <WorktreePanel onQuit={() => invokeQuietly('quit_app')} />
+        <UpdateBadge />
       </main>
     </QueryClientProvider>
   )

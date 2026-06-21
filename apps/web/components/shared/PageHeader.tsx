@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
-import { GlowBackdrop } from './GlowBackdrop'
 
-/** Shared page header: eyebrow + headline + subtitle over a glow backdrop. */
+/** Shared page header: eyebrow + headline + subtitle on the site canvas. */
 export function PageHeader({
   eyebrow,
   title,
@@ -13,7 +12,6 @@ export function PageHeader({
 }) {
   return (
     <header className="relative pb-[30px] pt-[78px]">
-      <GlowBackdrop variant="page" className="h-[560px]" />
       <div className="mx-auto max-w-[820px] px-8">
         <span className="eyebrow">{eyebrow}</span>
         <h1 className="mt-4 text-[clamp(36px,5vw,50px)] font-[680] leading-[1.05] -tracking-[1.6px] text-balance">

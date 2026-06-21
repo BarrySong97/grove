@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Grove Dev",
-  "identifier": "com.seperate.grove.dev",
+  "identifier": "com.4real.grove.dev",
   "app": {
     "windows": [
       {

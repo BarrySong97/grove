@@ -8,7 +8,7 @@ const RELEASES: Release[] = [
     groups: [
       { kind: 'new', items: [
         { lead: 'Agent mode.', text: 'Spin up a batch of isolated worktrees for parallel coding agents in one action — each gets its own checkout and Setup run.' },
-        { lead: 'Per-project script editor.', text: 'Edit your New, Setup, and Archive scripts inline, with live validation.' },
+        { lead: 'Per-project script editor.', text: 'Edit your Setup and Archive scripts inline, with live validation.' },
       ] },
       { kind: 'imp', items: [
         { text: 'Setup scripts now run in parallel across worktrees — bulk creation is up to 3× faster.' },
@@ -43,7 +43,7 @@ const RELEASES: Release[] = [
   {
     ver: '1.1', date: 'Feb 1, 2026', head: 'Setup scripts arrive.',
     groups: [
-      { kind: 'new', items: [{ lead: 'Lifecycle scripts.', text: 'Define New, Setup, and Archive per project — run automatically as worktrees come and go.' }] },
+      { kind: 'new', items: [{ lead: 'Lifecycle scripts.', text: 'Define Setup and Archive per project — run automatically as worktrees come and go.' }] },
     ],
   },
   {

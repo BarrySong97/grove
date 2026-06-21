@@ -178,5 +178,13 @@ export const zhCN = {
       tabsTitle: '在标签页中打开 workspace',
       tabsHelp: '尽量复用当前 Ghostty 窗口'
     }
+  },
+  updater: {
+    available: '更新',
+    availableTooltip: 'Grove {{version}} 可用 — 点击安装并重启',
+    downloading: '更新中… {{progress}}%',
+    installing: '正在重启…',
+    error: '更新失败',
+    errorTooltip: '更新失败 — 点击重试'
   }
 }

@@ -1,5 +1,7 @@
 'use client'
 
+// @refresh reset
+
 import { useEffect, useState } from 'react'
 import { type Route, useActive } from '@/lib/nav'
 import { BrandLink } from '@/components/shared/BrandLink'
@@ -7,20 +9,26 @@ import { NavLink } from '@/components/shared/NavLink'
 import { DownloadButton } from '@/components/shared/DownloadButton'
 
 const LINKS: { label: string; route: Route }[] = [
-  { label: 'Features', route: 'home' },
-  { label: 'How it works', route: 'how' },
   { label: 'Release notes', route: 'releases' },
 ]
+const DESKTOP_MEDIA_QUERY = '(min-width: 1024px)'
 
 export function Nav() {
   const active = useActive()
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12)
+    const mediaQuery = window.matchMedia(DESKTOP_MEDIA_QUERY)
+    const onScroll = () => setScrolled(active !== 'home' || !mediaQuery.matches ? window.scrollY > 12 : false)
+    const onResize = () => onScroll()
+
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+    mediaQuery.addEventListener('change', onResize)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      mediaQuery.removeEventListener('change', onResize)
+    }
+  }, [active])
 
   return (
     <nav
@@ -35,7 +43,7 @@ export function Nav() {
         <BrandLink markSize={30} className="text-[17px] font-[650] -tracking-[0.2px]" />
         <div className="ml-2 hidden items-center gap-[26px] sm:flex">
           {LINKS.map((l) => (
-            <NavLink key={l.label} route={l.route} active={active === l.route && l.route !== 'home'}>
+            <NavLink key={l.label} route={l.route} active={active === l.route}>
               {l.label}
             </NavLink>
           ))}
