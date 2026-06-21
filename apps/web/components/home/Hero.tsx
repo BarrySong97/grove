@@ -13,6 +13,8 @@ import {
 } from 'motion/react'
 import { DownloadButton } from '@/components/shared/DownloadButton'
 import { GhostButton } from '@/components/shared/GhostButton'
+import { BrewCommand } from '@/components/shared/BrewCommand'
+import { SITE } from '@/lib/site'
 import type { AppPreviewDemoPhase, AppPreviewDemoStep } from './app-preview/data'
 import { AppPreview } from './AppPreview'
 
@@ -401,8 +403,9 @@ export function Hero() {
                     <>
                       <div className="mt-[30px] flex flex-wrap items-center gap-3">
                         <DownloadButton size="lg" />
-                        <GhostButton href="#">View on GitHub</GhostButton>
+                        <GhostButton href={SITE.githubUrl}>View on GitHub</GhostButton>
                       </div>
+                      <BrewCommand className="mt-3.5" />
                       <div className="mt-[18px] flex items-center gap-3.5 font-mono text-[12.5px] text-ink-3">
                         <span>Apple silicon &amp; Intel</span>
                         <span>·</span>
@@ -444,8 +447,9 @@ export function Hero() {
           </p>
           <div className="mt-[30px] flex flex-wrap items-center gap-3">
             <DownloadButton size="lg" />
-            <GhostButton href="#">View on GitHub</GhostButton>
+            <GhostButton href={SITE.githubUrl}>View on GitHub</GhostButton>
           </div>
+          <BrewCommand className="mt-3.5" />
         </div>
 
         <div className="flex justify-center py-6">

@@ -1,6 +1,9 @@
 import type { MetadataRoute } from 'next'
 import { SITE_URL } from '@/lib/site'
 
+// Required for `output: export` (Cloudflare static build); harmless on Vercel.
+export const dynamic = 'force-static'
+
 // Public routes to expose to crawlers. Keep in sync with lib/nav.ts.
 // Inlined (rather than importing PATHS) because lib/nav.ts is a client module.
 const ROUTES: {

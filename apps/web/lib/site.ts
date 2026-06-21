@@ -28,4 +28,8 @@ export const SITE = {
   description:
     'Grove turns git worktrees into one-click workspaces. Spin up an isolated checkout for every feature, fix, or AI agent — then switch between them from your menu bar.',
   githubUrl: 'https://github.com/BarrySong97/grove',
+  // Latest macOS build (DMG lives on the GitHub release page).
+  downloadUrl: 'https://github.com/BarrySong97/grove/releases/latest',
+  // Homebrew cask install (see apps/desktop/distribution/homebrew/grove.rb).
+  brewCommand: 'brew install --cask BarrySong97/tap/grove',
 } as const

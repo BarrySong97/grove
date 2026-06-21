@@ -4,55 +4,14 @@ type Release = { ver: string; date: string; head: string; badge?: 'latest' | 'be
 
 const RELEASES: Release[] = [
   {
-    ver: '1.4', date: 'Jun 12, 2026', head: 'Agent workspaces & faster setup.', badge: 'latest',
+    ver: '0.1.0', date: 'Jun 21, 2026', head: 'Grove’s first preview.', badge: 'latest',
     groups: [
       { kind: 'new', items: [
-        { lead: 'Agent mode.', text: 'Spin up a batch of isolated worktrees for parallel coding agents in one action — each gets its own checkout and Setup run.' },
-        { lead: 'Per-project script editor.', text: 'Edit your Setup and Archive scripts inline, with live validation.' },
-      ] },
-      { kind: 'imp', items: [
-        { text: 'Setup scripts now run in parallel across worktrees — bulk creation is up to 3× faster.' },
-        { text: 'Git status badges refresh on file-system changes instead of polling.' },
-      ] },
-      { kind: 'fix', items: [{ text: 'Archived worktrees occasionally left a stale folder when a service was still running.' }] },
-    ],
-  },
-  {
-    ver: '1.3', date: 'May 2, 2026', head: 'Right-click actions everywhere.',
-    groups: [
-      { kind: 'new', items: [
-        { text: 'Right-click menu on any branch — open in editor, terminal, or Finder, run a script, or archive.' },
-        { lead: 'Custom editor & terminal.', text: 'Point Grove at VS Code, Cursor, iTerm, Ghostty, or any app.' },
-      ] },
-      { kind: 'imp', items: [
-        { text: 'Projects can now be collapsed, with a live worktree count in the header.' },
-        { text: 'Menu width and row density are now configurable.' },
-      ] },
-    ],
-  },
-  {
-    ver: '1.2', date: 'Mar 18, 2026', head: 'Live git status badges.',
-    groups: [
-      { kind: 'new', items: [{ text: 'Status badges on every worktree — ahead, behind, dirty, and clean states at a glance.' }] },
-      { kind: 'fix', items: [
-        { text: 'Worktrees on external volumes no longer disappear from the list after sleep.' },
-        { text: 'Apple silicon launch time reduced by ~40%.' },
-      ] },
-    ],
-  },
-  {
-    ver: '1.1', date: 'Feb 1, 2026', head: 'Setup scripts arrive.',
-    groups: [
-      { kind: 'new', items: [{ lead: 'Lifecycle scripts.', text: 'Define Setup and Archive per project — run automatically as worktrees come and go.' }] },
-    ],
-  },
-  {
-    ver: '1.0', date: 'Jan 9, 2026', head: 'Grove ships.',
-    groups: [
-      { kind: 'new', items: [
-        { text: 'Manage git worktrees from the menu bar — grouped by project.' },
-        { text: 'One-click switch between checkouts.' },
-        { text: 'Create and remove worktrees without touching the terminal.' },
+        { lead: 'Worktrees in your menu bar.', text: 'Manage git worktrees grouped by project, and switch between checkouts in one click — no terminal required.' },
+        { lead: 'Create & archive instantly.', text: 'Spin up an isolated worktree for any feature, fix, or AI agent, then archive it when you’re done.' },
+        { lead: 'Setup scripts.', text: 'Define a per-project Setup script that runs automatically as each worktree is created.' },
+        { lead: 'Open anywhere.', text: 'Open a worktree in your editor, terminal, or Finder — point Grove at VS Code, Cursor, iTerm, Ghostty, or any app.' },
+        { text: 'Universal macOS build for Apple silicon & Intel, with in-app updates and Homebrew install.' },
       ] },
     ],
   },

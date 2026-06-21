@@ -1,5 +1,7 @@
 import { DownloadButton } from '@/components/shared/DownloadButton'
 import { GhostButton } from '@/components/shared/GhostButton'
+import { BrewCommand } from '@/components/shared/BrewCommand'
+import { SITE } from '@/lib/site'
 
 /** Final download band — the strongest-intent readers reach the bottom; close them here. */
 export function ClosingCta() {
@@ -27,7 +29,10 @@ export function ClosingCta() {
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <DownloadButton size="lg" />
-            <GhostButton href="#">View on GitHub</GhostButton>
+            <GhostButton href={SITE.githubUrl}>View on GitHub</GhostButton>
+          </div>
+          <div className="mt-3.5 flex justify-center">
+            <BrewCommand />
           </div>
           <div className="mt-[18px] flex items-center justify-center gap-3.5 font-mono text-[12.5px] text-ink-3">
             <span>Apple silicon &amp; Intel</span>

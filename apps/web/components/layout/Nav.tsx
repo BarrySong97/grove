@@ -7,6 +7,7 @@ import { type Route, useActive } from '@/lib/nav'
 import { BrandLink } from '@/components/shared/BrandLink'
 import { NavLink } from '@/components/shared/NavLink'
 import { DownloadButton } from '@/components/shared/DownloadButton'
+import { SITE } from '@/lib/site'
 
 const LINKS: { label: string; route: Route }[] = [
   { label: 'Release notes', route: 'releases' },
@@ -49,7 +50,7 @@ export function Nav() {
           ))}
         </div>
         <span className="flex-1" />
-        <NavLink href="#" className="hidden sm:inline">
+        <NavLink href={SITE.githubUrl} className="hidden sm:inline">
           GitHub
         </NavLink>
         <DownloadButton size="sm" />

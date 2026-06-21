@@ -1,5 +1,6 @@
 import { BrandLink } from '@/components/shared/BrandLink'
 import { NavLink } from '@/components/shared/NavLink'
+import { SITE } from '@/lib/site'
 
 export function Footer() {
   return (
@@ -11,7 +12,7 @@ export function Footer() {
           <NavLink size="xs" route="releases">
             Release notes
           </NavLink>
-          <NavLink size="xs" href="#">
+          <NavLink size="xs" href={SITE.githubUrl}>
             GitHub
           </NavLink>
         </div>
