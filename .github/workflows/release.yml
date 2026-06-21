@@ -80,10 +80,16 @@ jobs:
             echo "APPLE_SIGNING_IDENTITY=$APPLE_SIGNING_IDENTITY"
           } >> "$GITHUB_ENV"
           if [ -n "$APPLE_API_KEY" ]; then
-            echo "APPLE_API_ISSUER=$APPLE_API_ISSUER" >> "$GITHUB_ENV"
-            echo "APPLE_API_KEY=$APPLE_API_KEY" >> "$GITHUB_ENV"
-            mkdir -p ~/.appstoreconnect/private_keys
-            echo "$APPLE_API_KEY_P8" > ~/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8
+            # Tauri only enters the notarize path when APPLE_API_KEY_PATH is set
+            # explicitly — the dir-search fallback is not enough. Write the .p8 to
+            # an absolute path and point at it.
+            KEY_PATH="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY}.p8"
+            printf '%s' "$APPLE_API_KEY_P8" > "$KEY_PATH"
+            {
+              echo "APPLE_API_ISSUER=$APPLE_API_ISSUER"
+              echo "APPLE_API_KEY=$APPLE_API_KEY"
+              echo "APPLE_API_KEY_PATH=$KEY_PATH"
+            } >> "$GITHUB_ENV"
           fi
 
       - name: Build, sign, notarize & publish
