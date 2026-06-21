@@ -20,7 +20,7 @@ cask "grove" do
   # Grove updates itself in-app via the Tauri updater, so Homebrew should not
   # try to manage upgrades for it.
   auto_updates true
-  depends_on macos: ">= :ventura"
+  depends_on macos: :ventura
 
   app "Grove.app"
 
