@@ -23,6 +23,7 @@ import { SettingsRow } from './settings/SettingsRow'
 import { SettingsSection } from './settings/SettingsSection'
 import { SettingsSelect } from './settings/SettingsSelect'
 import { SettingsSheet } from './settings/SettingsSheet'
+import { UpdateSettingsRow } from './settings/UpdateSettingsRow'
 
 interface GlobalSettingsProps {
   settings: AppSettingsDto
@@ -154,6 +155,10 @@ export function GlobalSettings({
             ]}
           />
         </SettingsRow>
+      </SettingsSection>
+
+      <SettingsSection title={t('settings.sections.updates')}>
+        <UpdateSettingsRow />
       </SettingsSection>
 
       <SettingsFooter>

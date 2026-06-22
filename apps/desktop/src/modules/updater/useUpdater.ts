@@ -16,6 +16,9 @@ export interface UpdaterState {
   status: UpdaterStatus
   version: string | null
   progress: number
+  checking: boolean
+  checkedAt: number | null
+  checkNow: () => void
   installAndRestart: () => void
 }
 
@@ -23,11 +26,16 @@ export function useUpdater(): UpdaterState {
   const [status, setStatus] = useState<UpdaterStatus>('idle')
   const [version, setVersion] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
+  const [checking, setChecking] = useState(false)
+  const [checkedAt, setCheckedAt] = useState<number | null>(null)
   const updateRef = useRef<Update | null>(null)
   const busyRef = useRef(false)
+  const checkingRef = useRef(false)
 
   const runCheck = useCallback(async () => {
-    if (busyRef.current) return
+    if (busyRef.current || checkingRef.current) return
+    checkingRef.current = true
+    setChecking(true)
     try {
       const update = await check()
       if (update) {
@@ -37,6 +45,10 @@ export function useUpdater(): UpdaterState {
       }
     } catch {
       // No published release, offline, or running outside Tauri — stay idle.
+    } finally {
+      checkingRef.current = false
+      setChecking(false)
+      setCheckedAt(Date.now())
     }
   }, [])
 
@@ -83,5 +95,5 @@ export function useUpdater(): UpdaterState {
     })()
   }, [])
 
-  return { status, version, progress, installAndRestart }
+  return { status, version, progress, checking, checkedAt, checkNow: runCheck, installAndRestart }
 }

@@ -6,9 +6,10 @@
 不做静默自动更新——是否升级由用户点击决定。底层依赖 Tauri `updater` 插件(读取 `latest.json`)与 `process` 插件(`relaunch`),配置见 [Tauri Runtime 模块](../tauri-runtime/) 的 `tauri.conf.json > plugins.updater` 与 `bundle.createUpdaterArtifacts`。
 
 ## 文件
-- `useUpdater.ts`:更新生命周期 hook。生产构建下(`import.meta.env.PROD`)启动时及每 6 小时调用 `check()`;暴露 `status` / `version` / `progress` 与 `installAndRestart()`。任何失败(无 release、离线、非 Tauri 环境)都静默回到 `idle`,不向 UI 抛错。
+- `useUpdater.ts`:更新生命周期 hook。生产构建下(`import.meta.env.PROD`)启动时及每 6 小时自动调用 `check()`;暴露 `status` / `version` / `progress` / `checking` / `checkedAt` 与 `checkNow()`、`installAndRestart()`。`checkNow()` 是手动检查,不受 PROD 门控(dev 下 `check()` 失败会静默)。任何失败(无 release、离线、非 Tauri 环境)都静默回到 `idle`,不向 UI 抛错。
 - `UpdateBadge.tsx`:右下角浮动角标。`idle` 时不渲染;`available`/`error` 可点击触发下载安装;`downloading`/`installing` 显示进度与 spinner。文案走 i18n `updater.*`。
-- `index.ts`:统一导出 `UpdateBadge`。
+- `index.ts`:统一导出 `UpdateBadge` 与 `useUpdater`。
+- 手动检查入口:Global Settings 的「更新」分区有一行「检查更新」,由 `worktrees/components/settings/UpdateSettingsRow.tsx` 渲染——它复用本模块的 `useUpdater`(自带一个实例,打开设置即触发一次 `checkNow()`),文案走 i18n `settings.updates.*`。角标和这行各持有独立 `useUpdater` 实例,读同一个 feed,互不影响。
 
 ## 约束
 - 角标只在有可用更新时出现,挂载于 `src/app/App.tsx` 的面板 shell 内,定位 `absolute bottom-[52px] right-3.5`,避免遮挡 footer 的语言/退出控件。

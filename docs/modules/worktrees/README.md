@@ -4,7 +4,7 @@
 `src/modules/worktrees/` 拥有 Grove 的核心面板:项目列表、worktree 行、排序、新建、归档、失败恢复、空状态导入、语言切换、项目/全局设置和 remove project 入口。
 
 ## 目录
-- `components/`:面板、项目组、worktree 行、右键菜单、打开目标图标、footer 语言快捷入口、项目/全局设置页和局部编辑器;`components/settings/` 是统一的设置样式组件库(SettingsSheet/Header/Section/Row/Select/SwitchRow/Button/Footer)以及 archive/remove/log 确认 bottom sheet。
+- `components/`:面板、项目组、worktree 行、右键菜单、打开目标图标、footer 语言快捷入口、项目/全局设置页和局部编辑器;`components/settings/` 是统一的设置样式组件库(SettingsSheet/Header/Section/Row/Select/SwitchRow/Button/Footer)、复用 updater hook 的 `UpdateSettingsRow`,以及 archive/remove/log 确认 bottom sheet。
 - `api/`:前端到 Rust 业务 command 的薄 wrapper 和 TanStack Query key catalog,包含项目创建/删除、项目列表、Conductor 导入、创建/retry/archive/open workspace、operation log、项目设置和全局设置 API。
 - `hooks/useWorktreePanelState.ts`:前端 presentation hook,用 TanStack Query 编排 Rust-backed 读写,用 Jotai atoms 持久化纯 UI 偏好,并持有 toast/sheet 等瞬态 React state。
 - `state/`:Worktree panel 的前端状态 atoms;当前只存排序和折叠这类 UI preference。
@@ -69,7 +69,7 @@
 - 设置 UI 由 `components/settings/` 的统一组件拼装:布局/排版用 Tailwind 工具类(读 `--settings-*` token),field 的 hover/focus 状态仍由 `src/index.css` 的 `grove-settings-field`/`grove-field-thin-focus` CSS 提供。
 - `SettingsRow` 提供两种布局:`inline`(标签在左、定宽列,GlobalSettings 用,help/error 左缘对齐控件列——标准 label 85px、command 63px)和 `stacked`(标签在控件正上方、控件占满整行,ProjectSettings 用,help/error 对齐控件左缘)。ProjectSettings 危险操作行省略标签,直接放红色 `移除项目…` 按钮。
 - Settings sheet 顶部不放返回 Projects 按钮;`ProjectSettings` 底部 action row 使用 secondary `关闭` + primary `确认`,Global Settings 底部提供 secondary `关闭`。
-- `GlobalSettings` 的语言、archive 策略和 remove 行为使用原生 `<select>`(`SettingsSelect`);「悬停快捷打开」用一组可多选 chip,选项来自 `domain/open-targets.ts`。
+- `GlobalSettings` 的语言、archive 策略和 remove 行为使用原生 `<select>`(`SettingsSelect`);「悬停快捷打开」用一组可多选 chip,选项来自 `domain/open-targets.ts`;「更新」分区有一行手动「检查更新」,由 `components/settings/UpdateSettingsRow.tsx` 渲染,复用 updater 模块的 `useUpdater`(打开设置即检查一次,发现新版可直接安装重启)。
 
 ## 约束
 - 改真实 git/worktree/operation workflow 前,先更新 [Worktree Operation Workflow Boundary](../../topics/worktree-command-simulation.md) 或新增 spec/plan。

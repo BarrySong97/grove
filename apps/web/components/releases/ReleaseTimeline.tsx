@@ -4,7 +4,15 @@ type Release = { ver: string; date: string; head: string; badge?: 'latest' | 'be
 
 const RELEASES: Release[] = [
   {
-    ver: '0.2.0', date: 'Jun 22, 2026', head: 'Smoother first launch, more reliable Ghostty.', badge: 'latest',
+    ver: '0.2.1', date: 'Jun 22, 2026', head: 'Check for updates without relaunching.', badge: 'latest',
+    groups: [
+      { kind: 'new', items: [
+        { lead: 'Check for updates in Settings.', text: 'A new Settings → Updates section lets you check for the latest Grove and install it on the spot — no need to quit and reopen the app.' },
+      ] },
+    ],
+  },
+  {
+    ver: '0.2.0', date: 'Jun 22, 2026', head: 'Smoother first launch, more reliable Ghostty.',
     groups: [
       { kind: 'new', items: [
         { lead: 'Guided first launch.', text: 'The first time you open Grove, Settings opens automatically so you can choose which apps appear as one-click quick-open buttons.' },

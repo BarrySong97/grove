@@ -139,7 +139,8 @@ export const zhCN = {
     sections: {
       general: '通用',
       open: '打开',
-      workflows: '工作流'
+      workflows: '工作流',
+      updates: '更新'
     },
     language: {
       label: '语言',
@@ -171,6 +172,16 @@ export const zhCN = {
       groveOnly: '只从 Grove 移除',
       deleteWorktrees: '同时删除干净的 worktree',
       help: '移除项目永远不会删除主仓库目录。'
+    },
+    updates: {
+      label: '软件更新',
+      check: '检查更新',
+      checking: '检查中…',
+      upToDate: 'Grove 已是最新版本。',
+      available: '发现新版本 {{version}}。',
+      install: '安装并重启',
+      downloading: '下载中… {{progress}}%',
+      installing: '安装中…'
     }
   },
   updater: {

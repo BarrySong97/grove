@@ -139,7 +139,8 @@ export const enUS = {
     sections: {
       general: 'General',
       open: 'Open',
-      workflows: 'Workflows'
+      workflows: 'Workflows',
+      updates: 'Updates'
     },
     language: {
       label: 'Language',
@@ -171,6 +172,16 @@ export const enUS = {
       groveOnly: 'Only remove from Grove',
       deleteWorktrees: 'Also delete clean worktrees',
       help: 'Project removal never deletes the main repository directory.'
+    },
+    updates: {
+      label: 'Software update',
+      check: 'Check for updates',
+      checking: 'Checking…',
+      upToDate: 'Grove is up to date.',
+      available: 'Version {{version}} is available.',
+      install: 'Install & restart',
+      downloading: 'Downloading… {{progress}}%',
+      installing: 'Installing…'
     }
   },
   updater: {
