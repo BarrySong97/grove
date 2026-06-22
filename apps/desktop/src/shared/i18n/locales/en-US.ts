@@ -139,8 +139,7 @@ export const enUS = {
     sections: {
       general: 'General',
       open: 'Open',
-      workflows: 'Workflows',
-      ghostty: 'Ghostty'
+      workflows: 'Workflows'
     },
     language: {
       label: 'Language',
@@ -172,11 +171,6 @@ export const enUS = {
       groveOnly: 'Only remove from Grove',
       deleteWorktrees: 'Also delete clean worktrees',
       help: 'Project removal never deletes the main repository directory.'
-    },
-    ghostty: {
-      tabsAriaLabel: 'Open Ghostty workspaces in tabs',
-      tabsTitle: 'Open workspaces in tabs',
-      tabsHelp: 'Use the current Ghostty window when possible'
     }
   },
   updater: {

@@ -6,18 +6,13 @@ use std::path::Path;
 
 use sqlx::SqlitePool;
 
-use crate::infrastructure::db::repositories::{settings_repository, workspaces_repository};
+use crate::infrastructure::db::repositories::workspaces_repository;
 use crate::infrastructure::native::opener;
 use crate::shared::dto::errors::AppResult;
 use crate::shared::dto::workspaces::{OpenWorkspaceInput, WorkspaceDto};
 
 pub(crate) async fn run(pool: &SqlitePool, input: OpenWorkspaceInput) -> AppResult<WorkspaceDto> {
     let workspace = workspaces_repository::get_workspace(pool, &input.workspace_id).await?;
-    let settings = settings_repository::get_app_settings(pool).await?;
-    opener::open(
-        &input.target,
-        Path::new(&workspace.path),
-        &settings.ghostty_open_mode,
-    )?;
+    opener::open(&input.target, Path::new(&workspace.path))?;
     Ok(workspace)
 }

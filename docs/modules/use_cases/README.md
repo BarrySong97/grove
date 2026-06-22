@@ -11,12 +11,12 @@
 - `projects/remove_project.rs`:从 Grove 移除项目,并按全局 remove behavior 可选地对 active managed worktree 逐个执行 archive command 和 `git worktree remove`;主 repo 目录永不删除,缺失/损坏 workspace 不阻塞 Grove 记录移除。
 - `projects/update_project_settings.rs`:保存 Grove override 的 workspace root、命令和 archive policy。
 - `settings/get_app_settings.rs`:读取全局 app settings。
-- `settings/update_app_settings.rs`:保存全局 app settings,当前影响语言、悬停快捷打开目标、Ghostty 打开 workspace 的 window/tab 行为、默认 archive 策略、remove project 行为和新项目列表位置。
+- `settings/update_app_settings.rs`:保存全局 app settings,当前影响语言、悬停快捷打开目标、默认 archive 策略、remove project 行为和新项目列表位置。
 - `workspaces/refresh_project.rs`:刷新真实 git worktree metadata,包含 repo root,跳过 prunable/损坏路径,并把缺失的 active workspace 标记为 stale。
 - `workspaces/create_workspace.rs`:创建 git worktree、复制 ignored 文件并运行 setup command;失败时把已写入的 workspace operation status 标记为 failed,避免 UI 保持 setting-up。
 - `workspaces/archive_workspace.rs`:保护 repo root,对有效 workspace 运行 archive command 并按策略 hide 或 `git worktree remove`;对 stale、缺失或损坏 workspace 直接隐藏 Grove 记录并尝试 `git worktree prune`。
 - `workspaces/retry_workspace_operation.rs`:重试最新 failed setup/create 或 archive workflow;setup retry 不重复 `git worktree add`。
-- `workspaces/open_workspace.rs`:读取全局 settings 后调用 native opener 打开 Finder/editor/terminal,其中 Ghostty 目标会应用全局 window/tab 设置。
+- `workspaces/open_workspace.rs`:调用 native opener 按 workspace path 打开 Finder/editor/terminal;Ghostty 目标统一在当前实例中以 tab 打开(`open -a Ghostty <path>`)。
 - `projects/mod.rs`:project use-case barrel。
 
 ## 约束

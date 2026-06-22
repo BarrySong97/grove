@@ -31,6 +31,15 @@ export const worktreeOrderByProjectAtom = atomWithStorage<unknown>(
   { getOnInit: true }
 )
 
+// Tracks whether the one-time first-launch onboarding (auto-opening Global Settings so
+// the user can pick their hover quick-open apps) has already run. Persisted so it fires once.
+export const onboardingCompletedAtom = atomWithStorage<boolean>(
+  'grove.onboardingCompleted',
+  false,
+  createJSONStorage<boolean>(() => window.localStorage),
+  { getOnInit: true }
+)
+
 export function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return []
   return value.filter(isNonEmptyString)

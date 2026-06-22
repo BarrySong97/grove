@@ -187,9 +187,6 @@ export function WorktreePanel({
           saving={state.appSettingsSaving}
           onDefaultArchivePolicyChange={state.setDefaultArchivePolicy}
           onHoverQuickOpenTargetsChange={state.setHoverQuickOpenTargets}
-          onGhosttyOpenModeChange={(openInTabs) =>
-            state.setGhosttyOpenMode(openInTabs ? 'tab' : 'window')
-          }
           onLanguageChange={state.setLanguage}
           onNewProjectPositionChange={state.setNewProjectPosition}
           onRemoveProjectBehaviorChange={state.setRemoveProjectBehavior}

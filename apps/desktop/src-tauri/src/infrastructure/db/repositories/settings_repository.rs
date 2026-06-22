@@ -7,13 +7,11 @@ use sqlx::SqlitePool;
 use crate::shared::dto::errors::{AppError, AppResult};
 use crate::shared::dto::projects::ArchivePolicyDto;
 use crate::shared::dto::settings::{
-    AppLanguageDto, AppSettingsDto, GhosttyOpenModeDto, NewProjectPositionDto,
-    RemoveProjectBehaviorDto,
+    AppLanguageDto, AppSettingsDto, NewProjectPositionDto, RemoveProjectBehaviorDto,
 };
 use crate::shared::dto::workspaces::OpenWorkspaceTargetDto;
 
 const LANGUAGE_KEY: &str = "language";
-const GHOSTTY_OPEN_MODE_KEY: &str = "ghostty_open_mode";
 const HOVER_QUICK_OPEN_TARGETS_KEY: &str = "hover_quick_open_targets";
 const DEFAULT_ARCHIVE_POLICY_KEY: &str = "default_archive_policy";
 const REMOVE_PROJECT_BEHAVIOR_KEY: &str = "remove_project_behavior";
@@ -21,8 +19,6 @@ const NEW_PROJECT_POSITION_KEY: &str = "new_project_position";
 const LANGUAGE_SYSTEM: &str = "system";
 const LANGUAGE_ZH_CN: &str = "zh_cn";
 const LANGUAGE_EN_US: &str = "en_us";
-const GHOSTTY_OPEN_MODE_WINDOW: &str = "window";
-const GHOSTTY_OPEN_MODE_TAB: &str = "tab";
 const ARCHIVE_POLICY_ASK: &str = "ask";
 const ARCHIVE_POLICY_HIDE: &str = "hide";
 const ARCHIVE_POLICY_REMOVE_WORKTREE: &str = "remove_worktree";
@@ -44,14 +40,6 @@ pub(crate) async fn get_app_settings(pool: &SqlitePool) -> AppResult<AppSettings
             .fetch_optional(pool)
             .await?
             .map_or(Ok(AppLanguageDto::System), |value| parse_language(&value))?;
-    let ghostty_open_mode =
-        sqlx::query_scalar::<_, String>("SELECT value FROM app_settings WHERE key = ? LIMIT 1")
-            .bind(GHOSTTY_OPEN_MODE_KEY)
-            .fetch_optional(pool)
-            .await?
-            .map_or(Ok(GhosttyOpenModeDto::Window), |value| {
-                parse_ghostty_open_mode(&value)
-            })?;
     let hover_quick_open_targets =
         sqlx::query_scalar::<_, String>("SELECT value FROM app_settings WHERE key = ? LIMIT 1")
             .bind(HOVER_QUICK_OPEN_TARGETS_KEY)
@@ -87,7 +75,6 @@ pub(crate) async fn get_app_settings(pool: &SqlitePool) -> AppResult<AppSettings
 
     Ok(AppSettingsDto {
         language,
-        ghostty_open_mode,
         hover_quick_open_targets,
         default_archive_policy,
         remove_project_behavior,
@@ -108,18 +95,6 @@ pub(crate) async fn update_app_settings(
     )
     .bind(LANGUAGE_KEY)
     .bind(format_language(&settings.language))
-    .execute(pool)
-    .await?;
-
-    sqlx::query(
-        "INSERT INTO app_settings (key, value, updated_at)
-         VALUES (?, ?, CURRENT_TIMESTAMP)
-         ON CONFLICT(key) DO UPDATE SET
-           value = excluded.value,
-           updated_at = CURRENT_TIMESTAMP",
-    )
-    .bind(GHOSTTY_OPEN_MODE_KEY)
-    .bind(format_ghostty_open_mode(&settings.ghostty_open_mode))
     .execute(pool)
     .await?;
 
@@ -192,23 +167,6 @@ fn format_language(value: &AppLanguageDto) -> &'static str {
         AppLanguageDto::System => LANGUAGE_SYSTEM,
         AppLanguageDto::ZhCn => LANGUAGE_ZH_CN,
         AppLanguageDto::EnUs => LANGUAGE_EN_US,
-    }
-}
-
-fn parse_ghostty_open_mode(value: &str) -> AppResult<GhosttyOpenModeDto> {
-    match value {
-        GHOSTTY_OPEN_MODE_WINDOW => Ok(GhosttyOpenModeDto::Window),
-        GHOSTTY_OPEN_MODE_TAB => Ok(GhosttyOpenModeDto::Tab),
-        _ => Err(AppError::Internal {
-            message: format!("Unknown Ghostty open mode: {value}"),
-        }),
-    }
-}
-
-fn format_ghostty_open_mode(value: &GhosttyOpenModeDto) -> &'static str {
-    match value {
-        GhosttyOpenModeDto::Window => GHOSTTY_OPEN_MODE_WINDOW,
-        GhosttyOpenModeDto::Tab => GHOSTTY_OPEN_MODE_TAB,
     }
 }
 
@@ -328,18 +286,6 @@ mod tests {
         assert_eq!(
             parse_language("en_us").expect("en us should parse"),
             AppLanguageDto::EnUs
-        );
-    }
-
-    #[test]
-    fn parses_known_ghostty_open_modes() {
-        assert_eq!(
-            parse_ghostty_open_mode("window").expect("window should parse"),
-            GhosttyOpenModeDto::Window
-        );
-        assert_eq!(
-            parse_ghostty_open_mode("tab").expect("tab should parse"),
-            GhosttyOpenModeDto::Tab
         );
     }
 

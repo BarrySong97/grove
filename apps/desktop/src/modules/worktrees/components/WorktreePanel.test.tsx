@@ -17,7 +17,6 @@ import { WorktreePanel } from './WorktreePanel'
 const defaultSettings: AppSettingsDto = {
   language: 'system',
   hoverQuickOpenTargets: ['cursor', 'terminal'],
-  ghosttyOpenMode: 'window',
   defaultArchivePolicy: 'ask',
   removeProjectBehavior: 'grove_only',
   newProjectPosition: 'first'

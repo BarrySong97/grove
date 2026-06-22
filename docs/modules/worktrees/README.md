@@ -24,11 +24,12 @@
 - `retryWorktree` 调用 Rust `retry_workspace_operation`;setup 失败只重跑 setup,archive 失败重跑 archive workflow。
 - `removeProject` 调用 Rust `remove_project`;Project Settings 触发动作,Global Settings 只配置默认 remove 行为。主 repo 目录永远不会删除。
 - `openWorktree` 调用 Rust `open_workspace`,按 workspace path 打开 Finder、Zed、Cursor、VS Code、Ghostty 或 macOS Terminal;编辑器和终端的启动目录由 Rust native opener 显式传入。
-- 全局设置通过 Rust `get_app_settings`/`update_app_settings` 读写 SQLite,当前控制语言、悬停快捷打开、新项目在列表顶部/底部、Ghostty window/tab、默认 archive 策略和 remove project 行为。新项目位置由前端 `orderProjects` 应用(`first` 放最前、`last` 放最后),默认 `first`。
+- 全局设置通过 Rust `get_app_settings`/`update_app_settings` 读写 SQLite,当前控制语言、悬停快捷打开、新项目在列表顶部/底部、默认 archive 策略和 remove project 行为。新项目位置由前端 `orderProjects` 应用(`first` 放最前、`last` 放最后),默认 `first`。
 - Grove 不再暴露 Run Command 入口;项目命令只保留 setup/archive,分别由 create/archive/remove workflow 调用。
 - Worktree/Project 等共享类型来自 `src/shared/contracts/worktrees/`,模块内部不得重新定义一份业务类型。
 - 项目设置表单用 React Hook Form 管理前端 form state,`workspaceRoot` 必填校验通过 Hero UI invalid state 展示;命令字段允许为空。
 - 项目展开/收起、project 排序和 worktree 排序是前端 UI 偏好,通过 Jotai `atomWithStorage` 存在 `localStorage` 的 `grove.worktrees.collapsedProjectIds`、`grove.worktrees.projectOrder` 和 `grove.worktrees.worktreeOrderByProject`;它们不属于 SQLite/git 状态。
+- 首次启动引导标志 `grove.onboardingCompleted`(同样是 `atomWithStorage` 持久化的 UI 偏好)记录是否已自动弹出过一次全局设置;置位后后续启动不再自动弹。
 
 ## 分层
 - 组件和 hook 属于前端 presentation,只编排 UI 事件、TanStack Query mutations、Jotai UI atoms、React transient state 和浮层反馈。
@@ -44,6 +45,7 @@
 - Header 左上角品牌图标使用 `src/shared/assets/Grove.svg`,该资产与 Tauri desktop app icon 保持同步。
 - 空项目列表显示 `Import from Conductor or Add Project` 和 `How it works`;import 调用 Conductor 导入,add 调用同一个系统文件夹选择动作。
 - Header 的齿轮按钮打开全局设置 bottom sheet;主 project/workspace 列表保持在底层可见。
+- 首次启动(`grove.onboardingCompleted` 未置位)会自动打开一次全局设置,引导用户挑选悬停快捷打开的 app,并立即把标志持久化,后续启动不再自动弹出。
 - Footer 左侧提供语言快捷切换,和 Global Settings 的语言 select 使用同一个 Rust app setting;`system` 会在前端解析当前浏览器/系统语言后应用到 `i18next`。
 - 空项目列表会在面板 body 中央显示一句添加项目提示,其中带 underline 的 `Add a project` 文本可点击并触发同一个文件夹选择动作。
 - 手动添加、导入和刷新都会显示受保护的 repo root 默认 worktree;`NewWorktreeEditor` 使用项目默认分支作为新 worktree 的 base branch。
@@ -67,7 +69,7 @@
 - 设置 UI 由 `components/settings/` 的统一组件拼装:布局/排版用 Tailwind 工具类(读 `--settings-*` token),field 的 hover/focus 状态仍由 `src/index.css` 的 `grove-settings-field`/`grove-field-thin-focus` CSS 提供。
 - `SettingsRow` 提供两种布局:`inline`(标签在左、定宽列,GlobalSettings 用,help/error 左缘对齐控件列——标准 label 85px、command 63px)和 `stacked`(标签在控件正上方、控件占满整行,ProjectSettings 用,help/error 对齐控件左缘)。ProjectSettings 危险操作行省略标签,直接放红色 `移除项目…` 按钮。
 - Settings sheet 顶部不放返回 Projects 按钮;`ProjectSettings` 底部 action row 使用 secondary `关闭` + primary `确认`,Global Settings 底部提供 secondary `关闭`。
-- `GlobalSettings` 的语言、archive 策略和 remove 行为使用原生 `<select>`(`SettingsSelect`);「悬停快捷打开」用一组可多选 chip,选项来自 `domain/open-targets.ts`;Ghostty 开关使用 Hero UI `Switch` 底座和 `size="sm"`,control/thumb 尺寸和颜色收敛到 Grove 紧凑面板。
+- `GlobalSettings` 的语言、archive 策略和 remove 行为使用原生 `<select>`(`SettingsSelect`);「悬停快捷打开」用一组可多选 chip,选项来自 `domain/open-targets.ts`。
 
 ## 约束
 - 改真实 git/worktree/operation workflow 前,先更新 [Worktree Operation Workflow Boundary](../../topics/worktree-command-simulation.md) 或新增 spec/plan。

@@ -30,7 +30,6 @@ import type {
   AppSettingsDto,
   ArchivePolicyChoiceDto,
   ArchivePolicyDto,
-  GhosttyOpenModeDto,
   NewProjectPositionDto
 } from '../../../shared/bindings/commands'
 import type {
@@ -51,6 +50,7 @@ import {
   asStringArray,
   asWorktreeOrderByProject,
   collapsedProjectIdsAtom,
+  onboardingCompletedAtom,
   projectOrderAtom,
   worktreeOrderByProjectAtom
 } from '../state/panelAtoms'
@@ -59,7 +59,6 @@ const TOAST_AUTO_DISMISS_MS = 5000
 const DEFAULT_APP_SETTINGS: AppSettingsDto = {
   language: 'system',
   hoverQuickOpenTargets: ['cursor', 'terminal'],
-  ghosttyOpenMode: 'window',
   defaultArchivePolicy: 'ask',
   removeProjectBehavior: 'grove_only',
   newProjectPosition: 'first'
@@ -90,6 +89,7 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
   const [rawWorktreeOrderByProject, setRawWorktreeOrderByProject] = useAtom(
     worktreeOrderByProjectAtom
   )
+  const [onboardingCompleted, setOnboardingCompleted] = useAtom(onboardingCompletedAtom)
   const projectOrder = useMemo(() => asStringArray(rawProjectOrder), [rawProjectOrder])
   const worktreeOrderByProject = useMemo(
     () => asWorktreeOrderByProject(rawWorktreeOrderByProject),
@@ -222,6 +222,14 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
   useEffect(() => {
     applyAppLanguage(appSettings.language)
   }, [appSettings.language])
+
+  // First launch: open Global Settings once so the user can choose their hover quick-open
+  // apps. The flag is persisted (localStorage), so this fires only on the very first run.
+  useEffect(() => {
+    if (onboardingCompleted) return
+    setOnboardingCompleted(true)
+    setGlobalSettingsOpen(true)
+  }, [onboardingCompleted, setOnboardingCompleted])
 
   useEffect(() => {
     if (projectsQuery.isError && !projectsLoadErrorShown.current) {
@@ -428,10 +436,6 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
       })
   }
 
-  const setGhosttyOpenMode = (mode: GhosttyOpenModeDto) => {
-    saveAppSettings({ ...appSettings, ghosttyOpenMode: mode })
-  }
-
   const setHoverQuickOpenTargets = (targets: OpenWorkspaceTargetDto[]) => {
     saveAppSettings({ ...appSettings, hoverQuickOpenTargets: targets })
   }
@@ -533,7 +537,6 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
     setCtx,
     setHoverQuickOpenTargets,
     setDefaultArchivePolicy,
-    setGhosttyOpenMode,
     setLanguage,
     setRemoveProjectBehavior,
     setNewProjectPosition,

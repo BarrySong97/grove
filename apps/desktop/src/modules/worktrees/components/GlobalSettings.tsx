@@ -23,14 +23,12 @@ import { SettingsRow } from './settings/SettingsRow'
 import { SettingsSection } from './settings/SettingsSection'
 import { SettingsSelect } from './settings/SettingsSelect'
 import { SettingsSheet } from './settings/SettingsSheet'
-import { SettingsSwitchRow } from './settings/SettingsSwitchRow'
 
 interface GlobalSettingsProps {
   settings: AppSettingsDto
   saving: boolean
   onHoverQuickOpenTargetsChange: (targets: OpenWorkspaceTargetDto[]) => void
   onDefaultArchivePolicyChange: (policy: ArchivePolicyDto) => void
-  onGhosttyOpenModeChange: (openInTabs: boolean) => void
   onLanguageChange: (language: AppLanguageDto) => void
   onNewProjectPositionChange: (position: NewProjectPositionDto) => void
   onRemoveProjectBehaviorChange: (behavior: RemoveProjectBehaviorDto) => void
@@ -51,7 +49,6 @@ export function GlobalSettings({
   saving,
   onHoverQuickOpenTargetsChange,
   onDefaultArchivePolicyChange,
-  onGhosttyOpenModeChange,
   onLanguageChange,
   onNewProjectPositionChange,
   onRemoveProjectBehaviorChange,
@@ -157,18 +154,6 @@ export function GlobalSettings({
             ]}
           />
         </SettingsRow>
-      </SettingsSection>
-
-      <SettingsSection title={t('settings.sections.ghostty')}>
-        <SettingsSwitchRow
-          ariaLabel={t('settings.ghostty.tabsAriaLabel')}
-          icon={<OpenTargetIcon target="ghostty" />}
-          title={t('settings.ghostty.tabsTitle')}
-          help={t('settings.ghostty.tabsHelp')}
-          isSelected={settings.ghosttyOpenMode === 'tab'}
-          disabled={saving}
-          onChange={onGhosttyOpenModeChange}
-        />
       </SettingsSection>
 
       <SettingsFooter>

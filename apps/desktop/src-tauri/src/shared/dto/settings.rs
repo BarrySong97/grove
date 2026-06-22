@@ -18,13 +18,6 @@ pub(crate) enum AppLanguageDto {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
-pub(crate) enum GhosttyOpenModeDto {
-    Window,
-    Tab,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Type)]
-#[serde(rename_all = "snake_case")]
 pub(crate) enum RemoveProjectBehaviorDto {
     GroveOnly,
     DeleteWorktrees,
@@ -41,7 +34,6 @@ pub(crate) enum NewProjectPositionDto {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct AppSettingsDto {
     pub language: AppLanguageDto,
-    pub ghostty_open_mode: GhosttyOpenModeDto,
     pub hover_quick_open_targets: Vec<OpenWorkspaceTargetDto>,
     pub default_archive_policy: ArchivePolicyDto,
     pub remove_project_behavior: RemoveProjectBehaviorDto,
@@ -52,7 +44,6 @@ pub(crate) struct AppSettingsDto {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UpdateAppSettingsInput {
     pub language: AppLanguageDto,
-    pub ghostty_open_mode: GhosttyOpenModeDto,
     pub hover_quick_open_targets: Vec<OpenWorkspaceTargetDto>,
     pub default_archive_policy: ArchivePolicyDto,
     pub remove_project_behavior: RemoveProjectBehaviorDto,

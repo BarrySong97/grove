@@ -4,7 +4,18 @@ type Release = { ver: string; date: string; head: string; badge?: 'latest' | 'be
 
 const RELEASES: Release[] = [
   {
-    ver: '0.1.0', date: 'Jun 21, 2026', head: 'Grove’s first preview.', badge: 'latest',
+    ver: '0.2.0', date: 'Jun 22, 2026', head: 'Smoother first launch, more reliable Ghostty.', badge: 'latest',
+    groups: [
+      { kind: 'new', items: [
+        { lead: 'Guided first launch.', text: 'The first time you open Grove, Settings opens automatically so you can choose which apps appear as one-click quick-open buttons.' },
+      ] },
+      { kind: 'imp', items: [
+        { lead: 'Ghostty opens reliably.', text: 'Opening a workspace in Ghostty now always lands in your current Ghostty window at the right directory. The separate window/tab preference was removed — on macOS a new window per workspace couldn’t be opened dependably.' },
+      ] },
+    ],
+  },
+  {
+    ver: '0.1.0', date: 'Jun 21, 2026', head: 'Grove’s first preview.',
     groups: [
       { kind: 'new', items: [
         { lead: 'Worktrees in your menu bar.', text: 'Manage git worktrees grouped by project, and switch between checkouts in one click — no terminal required.' },

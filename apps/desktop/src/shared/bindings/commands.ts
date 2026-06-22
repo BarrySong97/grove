@@ -84,7 +84,6 @@ export type AppLanguageDto = 'system' | 'zh_cn' | 'en_us'
 
 export type AppSettingsDto = {
   language: AppLanguageDto
-  ghosttyOpenMode: GhosttyOpenModeDto
   hoverQuickOpenTargets: OpenWorkspaceTargetDto[]
   defaultArchivePolicy: ArchivePolicyDto
   removeProjectBehavior: RemoveProjectBehaviorDto
@@ -123,8 +122,6 @@ export type CreateWorkspaceInput = {
   baseBranch: string
   runSetup: boolean
 }
-
-export type GhosttyOpenModeDto = 'window' | 'tab'
 
 export type ImportConductorProjectsInput = {
   workspaceRoot: string | null
@@ -216,7 +213,6 @@ export type RetryWorkspaceOperationInput = {
 
 export type UpdateAppSettingsInput = {
   language: AppLanguageDto
-  ghosttyOpenMode: GhosttyOpenModeDto
   hoverQuickOpenTargets: OpenWorkspaceTargetDto[]
   defaultArchivePolicy: ArchivePolicyDto
   removeProjectBehavior: RemoveProjectBehaviorDto

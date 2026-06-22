@@ -139,8 +139,7 @@ export const zhCN = {
     sections: {
       general: '通用',
       open: '打开',
-      workflows: '工作流',
-      ghostty: 'Ghostty'
+      workflows: '工作流'
     },
     language: {
       label: '语言',
@@ -172,11 +171,6 @@ export const zhCN = {
       groveOnly: '只从 Grove 移除',
       deleteWorktrees: '同时删除干净的 worktree',
       help: '移除项目永远不会删除主仓库目录。'
-    },
-    ghostty: {
-      tabsAriaLabel: '在标签页中打开 Ghostty workspace',
-      tabsTitle: '在标签页中打开 workspace',
-      tabsHelp: '尽量复用当前 Ghostty 窗口'
     }
   },
   updater: {
