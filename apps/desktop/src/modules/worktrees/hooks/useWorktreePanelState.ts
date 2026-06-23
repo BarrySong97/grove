@@ -4,6 +4,7 @@
  * @deps    React state/effect/ref, TanStack Query, Jotai atoms, Worktrees API/contracts/use-cases
  * @gotcha  Rust/SQLite/git remain authoritative; Jotai storage is only for UI preferences.
  */
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAtom } from 'jotai'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -19,6 +20,7 @@ import {
   loadWorktreePanelProjects,
   openWorkspace,
   readOperationLog,
+  refreshProject,
   removeProject,
   retryWorkspaceOperation,
   updateAppSettings,
@@ -168,6 +170,46 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
       queryFn: loadWorktreePanelProjects
     })
 
+  // Re-reads git as source of truth for the given projects (picking up branches
+  // switched outside Grove), then reloads the panel from the refreshed cache.
+  // Best-effort: a single project failing (e.g. its folder went away) must not
+  // block the others or the reload.
+  const refreshProjectsFromGit = async (projectIds: string[]) => {
+    if (projectIds.length === 0) return
+    await Promise.all(projectIds.map((id) => refreshProject(id).catch(() => null)))
+    await reloadProjects()
+  }
+
+  // Latest-snapshot ref so the once-mounted focus listener always refreshes the
+  // currently expanded projects without re-subscribing on every render.
+  const refreshExpandedProjects = useRef<() => void>(() => {})
+  refreshExpandedProjects.current = () => {
+    void refreshProjectsFromGit(
+      projects
+        .filter((project) => !collapsedProjectIds.has(project.id))
+        .map((project) => project.id)
+    )
+  }
+
+  // The tray panel is shown via window.show() + set_focus(), so a focus gain is
+  // the "panel opened" signal. Refresh the expanded projects each time it opens.
+  useEffect(() => {
+    let cancelled = false
+    let unlisten: (() => void) | undefined
+    void getCurrentWindow()
+      .onFocusChanged(({ payload: focused }) => {
+        if (focused) refreshExpandedProjects.current()
+      })
+      .then((stop) => {
+        if (cancelled) stop()
+        else unlisten = stop
+      })
+    return () => {
+      cancelled = true
+      unlisten?.()
+    }
+  }, [])
+
   const patchWorktree = (projectId: string, worktreeId: string, patch: Partial<Worktree>) =>
     queryClient.setQueryData<Project[]>(worktreeQueryKeys.projects, (current) =>
       current ? patchWorktreeUseCase(current, projectId, worktreeId, patch) : current
@@ -285,6 +327,9 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
       next.delete(projectId)
     }
     setRawCollapsedProjectIds([...next])
+    // Expanding a project re-reads its git state so a branch switched outside
+    // Grove shows up the moment the user opens that project.
+    if (!collapsed) void refreshProjectsFromGit([projectId])
   }
 
   const reorderWorktrees = (projectId: string, activeId: string, overId: string) => {

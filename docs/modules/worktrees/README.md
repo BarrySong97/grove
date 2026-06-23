@@ -17,6 +17,7 @@
 - `WorktreeStatus` 是前端展示状态,当前有 `ready | setting-up | archiving | failed`,由 Rust workspace operation status 映射而来。
 - 项目/workspace 列表通过 `api/` 调用 Rust generated command,来自 SQLite、手动添加项目、Conductor import 和 git refresh;后端按最新登记优先返回项目,所以新添加项目会显示在第一个。
 - 项目/workspace 列表和 app settings 的前端读取由 TanStack Query 承载,query cache 配置为立即 stale 且不跨刷新持久化;Rust/SQLite/git 仍是唯一权威来源。
+- 面板平时只读 SQLite 缓存里的分支和 git 状态,所以在 Grove 之外切换分支(在 worktree 里 `git switch`)不会自动反映;`refreshProjectsFromGit` 通过 Rust `refresh_project` 以 git 为权威重读分支/状态并回写 SQLite,再重载面板。它在两个时机触发:打开面板(托盘 `show()`+`set_focus()` 触发 window focus)刷新所有当前展开的项目,展开某个项目刷新该项目。刷新按项目 best-effort 且静默,单个项目失败不阻塞其余项目和重载。
 - repo root 会作为每个项目的默认 worktree 展示,前端映射为 `Worktree.isDefault`;它可打开但不能归档或删除。
 - `createWorktree` 调用 Rust `create_workspace`,执行真实 `git worktree add`、files-to-copy 和 setup command。
 - create/setup 失败后前端会重新加载项目列表并显示 error toast;后端 failed operation status 不映射成忙碌行,避免 spinner 停不下来。
@@ -41,6 +42,7 @@
 ## 交互
 - 项目和 worktree 都用 `@dnd-kit` 支持拖拽排序。
 - 项目组默认展开;用户收起后,重新打开面板或刷新前端仍保持收起。
+- 每次打开面板(window focus)会刷新所有展开项目的 git 状态,展开某个项目会刷新该项目,确保在 Grove 之外切换的分支及时显示;刷新静默进行,不显示 toast/spinner。
 - Header 的 `Add project…` 会打开系统文件夹选择器;选择 git repo 根目录后,Grove 注册该项目并从 repo/config 推断默认设置,失败时展示后端返回的 UI-safe 错误。
 - Header 左上角品牌图标使用 `src/shared/assets/Grove.svg`,该资产与 Tauri desktop app icon 保持同步。
 - 空项目列表显示 `Import from Conductor or Add Project` 和 `How it works`;import 调用 Conductor 导入,add 调用同一个系统文件夹选择动作。
