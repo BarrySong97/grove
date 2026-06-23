@@ -94,48 +94,48 @@ Repo → Settings → Secrets and variables → Actions → **New repository sec
 
 ## Cutting a release
 
-1. Bump the version in **both** files (keep them in sync):
-   - `apps/desktop/src-tauri/tauri.conf.json` → `version`
-   - `apps/desktop/package.json` → `version`
-2. Commit, then tag and push:
-   ```sh
-   git tag v0.1.1
-   git push origin v0.1.1
-   ```
-3. The `Release Grove (macOS)` workflow builds the universal app, signs + notarizes
-   it, and publishes a **draft** GitHub Release containing:
-   - `Grove_0.1.1_universal.dmg` (manual / Homebrew download)
-   - `Grove_0.1.1_universal.app.tar.gz` + `.sig` (updater payload)
-   - `latest.json` (updater feed)
-4. Review the draft release, then **publish** it. In-app updater + the
-   `releases/latest/download/latest.json` endpoint only resolve once published.
-5. Update the Homebrew cask (`version` + `sha256`) — see below.
+Two steps: AI writes the (dynamic) release notes, then one command does the rest.
 
-### Updating the Homebrew cask
+### 1. Write the release notes (AI / manual)
 
-Get the DMG sha256 from the release and bump `Casks/grove.rb` in the tap:
+Add a new entry at the **top** of the `RELEASES` array in
+`apps/web/components/releases/ReleaseTimeline.tsx`:
+
+- `ver` = the new version, `date` = today, a one-line `head`, and `groups` (new/imp/fix).
+- Set `badge: 'latest'` on the new entry and **remove it from the previous one** (exactly one
+  `badge: 'latest'` must exist).
+
+### 2. Run the release script
 
 ```sh
-shasum -a 256 Grove_0.1.1_universal.dmg
+pnpm release <version>          # e.g. pnpm release 0.2.2
 ```
 
-Optional automation — add this job to `.github/workflows/release.yml` (needs a
-`HOMEBREW_TAP_TOKEN` PAT with `contents:write` on the tap repo):
+That's it. `scripts/release.mjs` then does everything deterministically:
 
-```yaml
-bump-cask:
-  needs: release
-  runs-on: macos-latest
-  steps:
-    - uses: mislav/bump-homebrew-formula-action@v3
-      with:
-        formula-name: grove
-        formula-path: Casks/grove.rb
-        homebrew-tap: BarrySong97/homebrew-tap
-        download-url: https://github.com/BarrySong97/grove/releases/download/${{ github.ref_name }}/Grove_${{ github.ref_name }}_universal.dmg
-      env:
-        COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-```
+1. Validates that the newest release-notes entry == `<version>` (enforces step 1).
+2. Bumps the version in `apps/desktop/src-tauri/tauri.conf.json`, `apps/desktop/package.json`,
+   `apps/desktop/src-tauri/Cargo.toml`, and syncs `Cargo.lock` (`cargo build`).
+3. Commits (which runs the pre-commit gate: check-docs / format:check / lint / build).
+4. Pushes `main` → Cloudflare web auto-deploy.
+5. Pushes tag `v<version>` → the `Release Grove (macOS)` workflow builds + signs + notarizes a
+   **draft** release (`Grove_<v>_universal.dmg`, `*.app.tar.gz` + `.sig`, `latest.json`).
+6. Waits for that build to finish (`gh run watch`).
+7. **Publishes** the draft as `latest` — temporarily `gh auth switch` to the owner account
+   (`BarrySong97`, override with `GROVE_RELEASE_GH_USER`) and switches back when done.
+8. **Bumps the Homebrew cask** in the tap (`BarrySong97/homebrew-tap` → `Casks/grove.rb`):
+   `version` + `sha256` (taken straight from the GitHub DMG **asset digest** — no download).
+9. Verifies `releases/latest`, the updater `latest.json`, and the cask all read `<version>`.
+
+**Flags** (after `--`): `--dry-run` (print the whole plan, change nothing),
+`--no-publish`, `--no-cask`, `--no-wait` (stop after pushing the tag). Stages are idempotent —
+a failed run can simply be re-run (`pnpm release <version>` resumes publish/cask).
+
+Prereqs: on `main`; `gh` logged in to both your working account and the owner account
+(`gh auth login`); `cargo` + `pnpm` on PATH.
+
+> The in-repo cask **template** `distribution/homebrew/grove.rb` stays a zero-sha placeholder
+> (documentation only) — the script updates the live cask in the tap repo, not the template.
 
 ---
 

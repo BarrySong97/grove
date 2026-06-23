@@ -12,7 +12,8 @@
     "format": "turbo run format",
     "format:check": "turbo run format:check",
     "test": "turbo run test",
-    "check-docs": "node scripts/check-docs.mjs"
+    "check-docs": "node scripts/check-docs.mjs",
+    "release": "node scripts/release.mjs"
   },
   "devDependencies": {
     "turbo": "^2.5.0"
