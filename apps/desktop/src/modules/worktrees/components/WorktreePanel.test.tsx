@@ -40,6 +40,11 @@ const api = vi.hoisted(() => ({
 
 vi.mock('../api/groveCommands', () => api)
 
+// useWorktreePanelState wires a Tauri window focus listener; stub it for jsdom.
+vi.mock('@tauri-apps/api/window', () => ({
+  getCurrentWindow: () => ({ onFocusChanged: () => Promise.resolve(() => {}) })
+}))
+
 beforeEach(async () => {
   await i18n.changeLanguage('en-US')
   window.localStorage.clear()

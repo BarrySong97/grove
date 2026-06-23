@@ -48,7 +48,7 @@
 - 空项目列表显示 `Import from Conductor or Add Project` 和 `How it works`;import 调用 Conductor 导入,add 调用同一个系统文件夹选择动作。
 - Header 的齿轮按钮打开全局设置 bottom sheet;主 project/workspace 列表保持在底层可见。
 - 首次启动(`grove.onboardingCompleted` 未置位)会自动打开一次全局设置,引导用户挑选悬停快捷打开的 app,并立即把标志持久化,后续启动不再自动弹出。
-- Footer 左侧提供语言快捷切换,和 Global Settings 的语言 select 使用同一个 Rust app setting;`system` 会在前端解析当前浏览器/系统语言后应用到 `i18next`。
+- Footer 左侧提供语言快捷切换 + 软件版本号(`v<version>`,通过 `@tauri-apps/api/app` 的 `getVersion()` 读取,非 Tauri 环境静默为空);语言切换和 Global Settings 的语言 select 使用同一个 Rust app setting;`system` 会在前端解析当前浏览器/系统语言后应用到 `i18next`。
 - 空项目列表会在面板 body 中央显示一句添加项目提示,其中带 underline 的 `Add a project` 文本可点击并触发同一个文件夹选择动作。
 - 手动添加、导入和刷新都会显示受保护的 repo root 默认 worktree;`NewWorktreeEditor` 使用项目默认分支作为新 worktree 的 base branch。
 - `NewWorktreeEditor` 是两行表单:第一行先选 from base branch,再编辑 feature/workspace name;第二行右侧提供 `确认`/`取消` 文字按钮。
@@ -71,7 +71,7 @@
 - 设置 UI 由 `components/settings/` 的统一组件拼装:布局/排版用 Tailwind 工具类(读 `--settings-*` token),field 的 hover/focus 状态仍由 `src/index.css` 的 `grove-settings-field`/`grove-field-thin-focus` CSS 提供。
 - `SettingsRow` 提供两种布局:`inline`(标签在左、定宽列,GlobalSettings 用,help/error 左缘对齐控件列——标准 label 85px、command 63px)和 `stacked`(标签在控件正上方、控件占满整行,ProjectSettings 用,help/error 对齐控件左缘)。ProjectSettings 危险操作行省略标签,直接放红色 `移除项目…` 按钮。
 - Settings sheet 顶部不放返回 Projects 按钮;`ProjectSettings` 底部 action row 使用 secondary `关闭` + primary `确认`,Global Settings 底部提供 secondary `关闭`。
-- `GlobalSettings` 的语言、archive 策略和 remove 行为使用原生 `<select>`(`SettingsSelect`);「悬停快捷打开」用一组可多选 chip,选项来自 `domain/open-targets.ts`;「更新」分区有一行手动「检查更新」,由 `components/settings/UpdateSettingsRow.tsx` 渲染,复用 updater 模块的 `useUpdater`(打开设置即检查一次,发现新版可直接安装重启)。
+- `GlobalSettings` 的语言、archive 策略和 remove 行为使用原生 `<select>`(`SettingsSelect`);「悬停快捷打开」用一组可多选 chip,选项来自 `domain/open-targets.ts`;「更新」分区有一行「检查更新」+ 一行软件版本,由 `components/settings/UpdateSettingsRow.tsx` 渲染,用 `useUpdater({ auto: false })`——**只在点按钮时检查,打开设置不自动检查**,发现新版可直接安装重启;版本走 `getVersion()`。
 
 ## 约束
 - 改真实 git/worktree/operation workflow 前,先更新 [Worktree Operation Workflow Boundary](../../topics/worktree-command-simulation.md) 或新增 spec/plan。

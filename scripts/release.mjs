@@ -217,6 +217,8 @@ async function main() {
     )
     log('\n▶ Sync Cargo.lock (cargo build)')
     mut('cargo build --manifest-path apps/desktop/src-tauri/Cargo.toml', { inherit: true })
+    log('\n▶ Format (oxfmt --write — fixes generated-binding drift before the commit gate)')
+    mut('pnpm format', { inherit: true })
     log('\n▶ Commit (runs pre-commit gate: check-docs / format:check / lint / build)')
     mut('git add -A')
     mut(`git commit -m ${shq(msg)}`, { inherit: true })

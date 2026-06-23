@@ -22,7 +22,7 @@ export interface UpdaterState {
   installAndRestart: () => void
 }
 
-export function useUpdater(): UpdaterState {
+export function useUpdater({ auto = true }: { auto?: boolean } = {}): UpdaterState {
   const [status, setStatus] = useState<UpdaterStatus>('idle')
   const [version, setVersion] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
@@ -53,11 +53,11 @@ export function useUpdater(): UpdaterState {
   }, [])
 
   useEffect(() => {
-    if (!import.meta.env.PROD) return
+    if (!auto || !import.meta.env.PROD) return
     void runCheck()
     const id = window.setInterval(() => void runCheck(), CHECK_INTERVAL_MS)
     return () => window.clearInterval(id)
-  }, [runCheck])
+  }, [auto, runCheck])
 
   const installAndRestart = useCallback(() => {
     const update = updateRef.current

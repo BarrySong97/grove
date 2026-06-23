@@ -181,7 +181,8 @@ export const zhCN = {
       available: '发现新版本 {{version}}。',
       install: '安装并重启',
       downloading: '下载中… {{progress}}%',
-      installing: '安装中…'
+      installing: '安装中…',
+      version: '版本'
     }
   },
   updater: {

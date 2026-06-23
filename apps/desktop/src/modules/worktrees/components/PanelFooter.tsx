@@ -1,11 +1,13 @@
 /**
  * @purpose Renders the panel footer, language shortcut, and quit action.
  * @role    Footer slot for PanelShell; delegates settings updates and quit to parent state/app shell.
- * @deps    Hero UI Button/Tooltip, react-i18next, shared i18n/icons/ui
+ * @deps    Hero UI Button/Tooltip, @tauri-apps/api/app getVersion, react-i18next, shared i18n/icons/ui
  * @gotcha  Quit action is provided by Tauri command callback; docs/modules/app/README.md
  */
+import { getVersion } from '@tauri-apps/api/app'
 import { Button } from '@heroui/react/button'
 import { Tooltip } from '@heroui/react/tooltip'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AppLanguageDto } from '../../../shared/bindings/commands'
 import { LANGUAGE_OPTIONS } from '../../../shared/i18n/language'
@@ -26,6 +28,15 @@ export function PanelFooter({
   onQuit
 }: PanelFooterProps) {
   const { t } = useTranslation()
+  const [appVersion, setAppVersion] = useState('')
+  useEffect(() => {
+    // getVersion() throws outside a Tauri webview (e.g. vitest/jsdom) — guard it.
+    try {
+      getVersion()
+        .then(setAppVersion)
+        .catch(() => {})
+    } catch {}
+  }, [])
   const quitLabel = t('footer.quit')
   const languageLabel = t('footer.language')
   const quitTitleProps = { title: quitLabel }
@@ -47,6 +58,11 @@ export function PanelFooter({
             </option>
           ))}
         </select>
+        {appVersion && (
+          <span className="px-1 text-[11px] font-medium tabular-nums text-black/30">
+            v{appVersion}
+          </span>
+        )}
         <span className="flex-1" />
         <Tooltip delay={450}>
           <Tooltip.Trigger>

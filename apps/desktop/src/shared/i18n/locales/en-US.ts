@@ -181,7 +181,8 @@ export const enUS = {
       available: 'Version {{version}} is available.',
       install: 'Install & restart',
       downloading: 'Downloading… {{progress}}%',
-      installing: 'Installing…'
+      installing: 'Installing…',
+      version: 'Version'
     }
   },
   updater: {
