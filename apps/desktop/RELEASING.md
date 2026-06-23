@@ -117,7 +117,7 @@ That's it. `scripts/release.mjs` then does everything deterministically:
 2. Bumps the version in `apps/desktop/src-tauri/tauri.conf.json`, `apps/desktop/package.json`,
    `apps/desktop/src-tauri/Cargo.toml`, and syncs `Cargo.lock` (`cargo build`).
 3. Runs `pnpm format` (so generated bindings drift can't fail the gate), then commits (which
-   runs the pre-commit gate: check-docs / format:check / lint / build).
+   runs the pre-commit gate: check-docs / format:check / lint / test / build).
 4. Pushes `main` → Cloudflare web auto-deploy.
 5. Pushes tag `v<version>` → the `Release Grove (macOS)` workflow builds + signs + notarizes a
    **draft** release (`Grove_<v>_universal.dmg`, `*.app.tar.gz` + `.sig`, `latest.json`).

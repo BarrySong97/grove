@@ -8,4 +8,5 @@ set -e
 node scripts/check-docs.mjs
 pnpm format:check
 pnpm lint
+pnpm test
 pnpm build
