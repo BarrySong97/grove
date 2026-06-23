@@ -39,8 +39,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const shq = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`
 
 // Read-only / always executes (even in --dry-run), returns trimmed stdout.
+// stderr is captured (not inherited) so expected failures in try/catch probes
+// (e.g. `git rev-parse <missing-tag>`) don't leak noise to the console.
 function sh(cmd, opts = {}) {
-  return execSync(cmd, { cwd: ROOT, encoding: 'utf8', ...opts }).trim()
+  return execSync(cmd, { cwd: ROOT, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], ...opts }).trim()
 }
 // Mutating command: printed-and-skipped in --dry-run.
 function mut(cmd, { inherit = false } = {}) {

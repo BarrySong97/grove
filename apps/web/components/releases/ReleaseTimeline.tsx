@@ -4,7 +4,15 @@ type Release = { ver: string; date: string; head: string; badge?: 'latest' | 'be
 
 const RELEASES: Release[] = [
   {
-    ver: '0.2.1', date: 'Jun 22, 2026', head: 'Check for updates without relaunching.', badge: 'latest',
+    ver: '0.2.2', date: 'Jun 22, 2026', head: 'Worktree branches stay in sync.', badge: 'latest',
+    groups: [
+      { kind: 'fix', items: [
+        { lead: 'Live branch & git status.', text: 'Grove now refreshes each worktree’s real git branch and status when you open the panel or expand a project — a branch you switched outside Grove (git switch) shows up correctly instead of the one from when the worktree was created.' },
+      ] },
+    ],
+  },
+  {
+    ver: '0.2.1', date: 'Jun 22, 2026', head: 'Check for updates without relaunching.',
     groups: [
       { kind: 'new', items: [
         { lead: 'Check for updates in Settings.', text: 'A new Settings → Updates section lets you check for the latest Grove and install it on the spot — no need to quit and reopen the app.' },
