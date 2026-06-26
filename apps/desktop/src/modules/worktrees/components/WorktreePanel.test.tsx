@@ -117,6 +117,22 @@ describe('WorktreePanel', () => {
     act(() => vi.advanceTimersByTime(1))
     expect(screen.queryByText('No Conductor workspaces found')).toBeNull()
   })
+
+  it('keeps long-running progress alerts until the operation settles or the user closes them', async () => {
+    renderWithQueryClient(<WorktreePanel />)
+    const importButton = await screen.findByText('Import from Conductor')
+    api.importConductorProjects.mockReturnValue(new Promise(() => {}))
+    vi.useFakeTimers()
+
+    fireEvent.click(importButton)
+    expect(screen.getByText('Importing Conductor workspaces')).toBeTruthy()
+
+    act(() => vi.advanceTimersByTime(8000))
+    expect(screen.getByText('Importing Conductor workspaces')).toBeTruthy()
+
+    fireEvent.click(screen.getByLabelText('Close'))
+    expect(screen.queryByText('Importing Conductor workspaces')).toBeNull()
+  })
 })
 
 function renderWithQueryClient(ui: ReactElement) {

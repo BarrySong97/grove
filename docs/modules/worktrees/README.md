@@ -63,7 +63,7 @@
 - Global Settings 和 Project/Workspace Settings 也统一由 `src/shared/ui/BottomSheet.tsx` 承载,内部内容继续复用 settings density token,外层 sheet surface 不透底。
 - worktree 行的 hover actions 在对应右键/More 菜单打开期间保持可见,避免菜单浮层出现后触发行级操作消失。
 - Worktree action sheet 不展示 Run Command;setup/archive 命令在 Project Settings 中编辑。
-- Toast 区分 progress/error:error 不显示 spinner,并在 panel 宽度内换行展示,避免长错误文案被透明窗口截断。notice/error 会在 5 秒后自动消失,所有 toast 都提供 close icon 立即关闭。
+- Toast 区分 progress/error:error 不显示 spinner,并在 panel 宽度内换行展示,避免长错误文案被透明窗口截断。notice/error 会在 5 秒后自动消失,progress 不自动消失,直到后端操作完成/失败或用户手动关闭;所有 toast 都提供 close icon 立即关闭。后端操作完成时只清理自己创建的 progress toast,避免误关后续错误提示。
 - Grove 不建模用户“当前” worktree;`current` 仅兼容旧前端状态,后端不会依赖它做 archive 判断。
 - `ProjectSettings` 的 input/button 使用 Hero UI v3 底座和 `secondary` 视觉,archive policy 使用原生 select,所有支持 size 的 Hero UI 控件显式使用 `size="sm"`;`NewWorktreeEditor` 的 input/button 使用 Hero UI、base branch 使用原生 select;form state 由 React Hook Form 管理,但布局、透明背景和尺寸仍遵循 `design.md` 的 Grove 规则。
 - Grove 内所有 select 控件统一使用原生 `<select>`,不要再引入 Hero UI `Select`;原生 select 仍通过 Grove token/class 控制紧凑尺寸和 focus ring。

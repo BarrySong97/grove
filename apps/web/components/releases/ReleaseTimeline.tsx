@@ -4,7 +4,16 @@ type Release = { ver: string; date: string; head: string; badge?: 'latest' | 'be
 
 const RELEASES: Release[] = [
   {
-    ver: '0.2.3', date: 'Jun 22, 2026', head: 'Version in view, updates on demand.', badge: 'latest',
+    ver: '0.2.4', date: 'Jun 26, 2026', head: 'Long-running work stays visible.', badge: 'latest',
+    groups: [
+      { kind: 'fix', items: [
+        { lead: 'Setup and archive stay responsive.', text: 'Grove now runs project setup and archive shell commands away from the app runtime workers, while still waiting for the real command to finish before marking the operation complete.' },
+        { lead: 'Progress alerts no longer disappear early.', text: 'Long-running action alerts stay on screen until the operation finishes, fails, or you close them yourself.' },
+      ] },
+    ],
+  },
+  {
+    ver: '0.2.3', date: 'Jun 22, 2026', head: 'Version in view, updates on demand.',
     groups: [
       { kind: 'imp', items: [
         { lead: 'Version always visible.', text: 'The current Grove version now shows in the footer and under Settings → Updates.' },

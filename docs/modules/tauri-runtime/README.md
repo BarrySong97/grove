@@ -38,6 +38,7 @@
 - SQLite 只保存 Grove 项目登记、用户选择、全局 app settings 包括语言偏好、workspace lifecycle/operation 状态和 operation log metadata。
 - Mutating command 必须在 Rust use case/repository 层检查 operation lock;前端 disabled 状态不能作为安全边界。
 - Git 状态、Conductor 配置和文件系统状态以真实来源为准,后续 refresh/import use case 负责同步。
+- setup/archive 等用户配置 shell 命令由 Rust workflow 同步等待真实完成,但执行器必须通过 async runtime 的 blocking pool 运行,避免长命令占用 Tauri async worker;命令仍以 login shell 执行,保留用户环境加载语义。
 - 前端业务代码优先通过生成的 [Bindings 模块](../bindings/) 调用 Rust command,不要手写业务 `invoke(...)` 字符串。
 - Add project 文件夹选择在 Rust runtime 侧调用 `tauri-plugin-dialog`,返回 git repo 根目录后再交给项目 use case 登记;前端不直接调用 dialog plugin,也不临时切换 Dock 或 app activation policy。
 

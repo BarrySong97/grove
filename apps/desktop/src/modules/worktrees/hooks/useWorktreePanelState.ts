@@ -154,11 +154,16 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
         setToast((current) => (current?.id === id ? null : current))
       })
     }
+    return id
   }
 
-  const clearToast = () => {
-    toastId.current += 1
-    setToast(null)
+  const clearToast = (expectedId?: number) => {
+    if (typeof expectedId !== 'number') {
+      toastId.current += 1
+      setToast(null)
+      return
+    }
+    setToast((current) => (current?.id === expectedId ? null : current))
   }
 
   const describeError = (error: unknown, fallback: string) =>
@@ -345,7 +350,10 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
 
   const createWorktree = (project: Project, name: string, base: string) => {
     setAddingTo(null)
-    showToast(t('toast.create', { project: project.name, name }), 'progress')
+    const progressToastId = showToast(
+      t('toast.create', { project: project.name, name }),
+      'progress'
+    )
     void createWorkspaceMutation
       .mutateAsync({
         projectId: project.id,
@@ -355,7 +363,7 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
         runSetup: Boolean(project.commands.setup.trim())
       })
       .then(() => reloadProjects())
-      .then(() => clearToast())
+      .then(() => clearToast(progressToastId))
       .catch((error: unknown) => {
         const fallback = t('toast.createFailed', { project: project.name, name })
         const detail = describeError(error, fallback)
@@ -381,7 +389,10 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
     policy: ArchivePolicyChoiceDto | null
   ) => {
     setArchivePrompt(null)
-    showToast(t('toast.archive', { project: project.name, branch: worktree.branch }), 'progress')
+    const progressToastId = showToast(
+      t('toast.archive', { project: project.name, branch: worktree.branch }),
+      'progress'
+    )
     patchWorktree(project.id, worktree.id, { status: 'archiving' })
     void archiveWorkspaceMutation
       .mutateAsync({
@@ -390,7 +401,7 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
         rememberPolicy: false
       })
       .then(() => reloadProjects())
-      .then(() => clearToast())
+      .then(() => clearToast(progressToastId))
       .catch((error: unknown) => {
         patchWorktree(project.id, worktree.id, { status: 'ready' })
         const fallback = t('toast.archiveFailed', {
@@ -407,9 +418,9 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
       .mutateAsync()
       .then((project) => {
         if (!project) return
-        showToast(t('toast.addingProject'), 'progress')
+        const progressToastId = showToast(t('toast.addingProject'), 'progress')
         return reloadProjects().then(() => {
-          clearToast()
+          clearToast(progressToastId)
         })
       })
       .catch((error: unknown) =>
@@ -418,7 +429,7 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
   }
 
   const importFromConductor = () => {
-    showToast(t('toast.importingConductor'), 'progress')
+    const progressToastId = showToast(t('toast.importingConductor'), 'progress')
     void importConductorMutation
       .mutateAsync()
       .then((candidates) => {
@@ -426,7 +437,7 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
         return reloadProjects()
       })
       .then((nextProjects) => {
-        if (nextProjects.length > 0) clearToast()
+        if (nextProjects.length > 0) clearToast(progressToastId)
       })
       .catch((error: unknown) =>
         showToast(describeError(error, t('toast.importConductorFailed')), 'error')
@@ -441,7 +452,7 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
       commands: Project['commands']
     }
   ) => {
-    showToast(t('toast.saveProjectSettings'), 'progress')
+    const progressToastId = showToast(t('toast.saveProjectSettings'), 'progress')
     void updateProjectSettingsMutation
       .mutateAsync({
         projectId,
@@ -452,7 +463,7 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
       .then(() => reloadProjects())
       .then(() => {
         setSettingsFor(null)
-        clearToast()
+        clearToast(progressToastId)
       })
       .catch((error: unknown) =>
         showToast(describeError(error, t('toast.saveProjectSettingsFailed')), 'error')
@@ -464,14 +475,17 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
   }
 
   const confirmRemoveProject = (project: Project) => {
-    showToast(t('toast.removeProject', { project: project.name }), 'progress')
+    const progressToastId = showToast(
+      t('toast.removeProject', { project: project.name }),
+      'progress'
+    )
     void removeProjectMutation
       .mutateAsync({ projectId: project.id })
       .then(() => reloadProjects())
       .then(() => {
         setRemoveProjectPrompt(null)
         setSettingsFor(null)
-        clearToast()
+        clearToast(progressToastId)
       })
       .catch((error: unknown) => {
         showToast(
@@ -534,11 +548,14 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
   }
 
   const retryWorktree = (worktree: Worktree, project: Project) => {
-    showToast(t('toast.retry', { project: project.name, branch: worktree.branch }), 'progress')
+    const progressToastId = showToast(
+      t('toast.retry', { project: project.name, branch: worktree.branch }),
+      'progress'
+    )
     void retryWorkspaceMutation
       .mutateAsync(worktree.id)
       .then(() => reloadProjects())
-      .then(() => clearToast())
+      .then(() => clearToast(progressToastId))
       .catch((error: unknown) =>
         showToast(
           describeError(

@@ -130,7 +130,9 @@ async fn archive_steps(
             &workspace.name,
             &project.default_branch,
             &log_path,
-        ) {
+        )
+        .await
+        {
             Ok(result) => result,
             Err(error) => {
                 if workspace_needs_cleanup(project, workspace_path).unwrap_or(false) {

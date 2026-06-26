@@ -22,4 +22,4 @@
 ## 约束
 - use case 可以编排 domain 规则和 infrastructure adapter。
 - Tauri command handler 不拥有 workflow;repository 不反向调用 use case。
-- 长操作必须写 operation 状态和日志路径,避免 UI 只能看到静默失败;mutating workflow 必须在后端检查 project/workspace operation lock。
+- 长操作必须写 operation 状态和日志路径,避免 UI 只能看到静默失败;mutating workflow 必须在后端检查 project/workspace operation lock。setup/archive command 仍由 use case 等待真实完成,但进程执行必须委托 infrastructure blocking runner,不能直接阻塞 async worker。

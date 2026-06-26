@@ -125,7 +125,9 @@ async fn remove_managed_worktrees(
                 &workspace.name,
                 &project.default_branch,
                 &scratch_log,
-            ) {
+            )
+            .await
+            {
                 Ok(result) => result,
                 Err(error) => {
                     if workspace_needs_cleanup(project, Path::new(&workspace.path)).unwrap_or(false)

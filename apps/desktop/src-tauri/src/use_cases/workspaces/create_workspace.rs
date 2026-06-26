@@ -147,7 +147,8 @@ async fn create_workspace_steps(
                 &input.name,
                 &project.default_branch,
                 &log_path,
-            )?;
+            )
+            .await?;
             *operation_exit_code = Some(result.exit_code);
             *operation_log_path = Some(result.log_path);
         }

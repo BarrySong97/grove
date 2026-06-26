@@ -13,7 +13,7 @@
 - `git/status_repository.rs`:读取 dirty/ahead/behind/latest commit 的 git snapshot。
 - `conductor/config_repository.rs`:按字段合并 `.conductor/settings(.local).toml`、repo `conductor.json` 与全局 `~/.conductor/settings.toml` 的 scripts/files-to-copy 配置——每个字段取优先级最高且定义了该字段的文件,高优先级文件缺该字段则回退,避免 `settings.local.toml` 遮住 `conductor.json` 的 setup/archive。
 - `filesystem/file_copy.rs`:按 `.worktreeinclude`、`file_include_globs` 或默认 `.env*` 复制 gitignored 文件。
-- `process/command_runner.rs`:在 workspace 目录运行 setup/archive command 并写日志;remove project 聚合每个 workspace 的 archive 输出到 project removal log。
+- `process/command_runner.rs`:通过 Tauri async runtime 的 blocking pool 在 workspace 目录以 login shell 运行 setup/archive command 并写日志,避免长 shell 命令占用 async worker,同时保留用户登录环境加载语义;remove project 聚合每个 workspace 的 archive 输出到 project removal log。
 - `native/opener.rs`:打开 Finder、Zed、Cursor、VS Code、Ghostty 和 macOS Terminal;Cursor/VS Code 通过 `--new-window <path>` 打开目标目录。Ghostty 统一用 `open -a Ghostty <path>`——把目录交给 Ghostty 的 folder open-document handler,复用当前实例、在当前窗口开一个 tab 并显式设置工作目录。macOS 上没有从 CLI 在现有实例里强开「指定目录新窗口」的官方途径(`+new-window` 的 native IPC 仅 GTK 支持;`open -n` 从 accessory 应用发起会被 LaunchServices 合并成 tab,且独立进程会在 Dock 里各占一个图标),因此 Grove 不再提供 window/tab 开关,统一走 tab 行为。
 
 ## 约束
