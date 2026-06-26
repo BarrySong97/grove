@@ -4,7 +4,18 @@ type Release = { ver: string; date: string; head: string; badge?: 'latest' | 'be
 
 const RELEASES: Release[] = [
   {
-    ver: '0.2.4', date: 'Jun 26, 2026', head: 'Long-running work stays visible.', badge: 'latest',
+    ver: '0.2.5', date: 'Jun 26, 2026', head: 'Worktrees start from the right branch.', badge: 'latest',
+    groups: [
+      { kind: 'imp', items: [
+        { lead: 'Remote base branches.', text: 'New worktree creation now includes remote-tracking branches such as origin/main, and prefers the remote default branch when it is available.' },
+      ] },
+      { kind: 'fix', items: [
+        { lead: 'Cleaner branch picker.', text: 'Remote aliases like origin and origin/HEAD are filtered out, so the base branch menu only shows usable branches.' },
+      ] },
+    ],
+  },
+  {
+    ver: '0.2.4', date: 'Jun 26, 2026', head: 'Long-running work stays visible.',
     groups: [
       { kind: 'fix', items: [
         { lead: 'Setup and archive stay responsive.', text: 'Grove now runs project setup and archive shell commands away from the app runtime workers, while still waiting for the real command to finish before marking the operation complete.' },

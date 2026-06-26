@@ -7,7 +7,7 @@
 - `commands/projects.rs`:project 相关业务 command,包含 `add_project_from_folder_picker`、`create_project`、`list_projects`、`list_worktree_projects`、`import_conductor_projects`、`remove_project` 和 `update_project_settings`。
 - `commands/operations.rs`:operation 查询和日志读取 command,包含 `get_latest_operation` 和 `read_operation_log`。
 - `commands/settings.rs`:全局 app settings command,包含 `get_app_settings` 和 `update_app_settings`。
-- `commands/workspaces.rs`:workspace 相关业务 command,包含 `refresh_project`、`create_workspace`、`archive_workspace`、`retry_workspace_operation` 和 `open_workspace`。
+- `commands/workspaces.rs`:workspace 相关业务 command,包含 `refresh_project`、`list_base_branches`、`create_workspace`、`archive_workspace`、`retry_workspace_operation` 和 `open_workspace`。
 - `commands/mod.rs`:业务 command barrel。
 
 ## 约束

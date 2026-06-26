@@ -9,11 +9,12 @@ use tauri::Manager;
 use crate::app_state::AppState;
 use crate::shared::dto::errors::{AppError, AppErrorDto, CommandResult};
 use crate::shared::dto::workspaces::{
-    ArchiveWorkspaceInput, CreateWorkspaceInput, OpenWorkspaceInput, RefreshProjectInput,
-    RetryWorkspaceOperationInput, WorkspaceDto,
+    ArchiveWorkspaceInput, CreateWorkspaceInput, ListBaseBranchesInput, OpenWorkspaceInput,
+    RefreshProjectInput, RetryWorkspaceOperationInput, WorkspaceDto,
 };
 use crate::use_cases::workspaces::{
-    archive_workspace, create_workspace, open_workspace, refresh_project, retry_workspace_operation,
+    archive_workspace, create_workspace, list_base_branches, open_workspace, refresh_project,
+    retry_workspace_operation,
 };
 
 #[tauri::command]
@@ -24,6 +25,18 @@ pub(crate) async fn refresh_project(
 ) -> CommandResult<Vec<WorkspaceDto>> {
     let state = app.state::<AppState>();
     refresh_project::run(&state.db, input)
+        .await
+        .map_err(AppErrorDto::from)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub(crate) async fn list_base_branches(
+    app: tauri::AppHandle,
+    input: ListBaseBranchesInput,
+) -> CommandResult<Vec<String>> {
+    let state = app.state::<AppState>();
+    list_base_branches::run(&state.db, input)
         .await
         .map_err(AppErrorDto::from)
 }

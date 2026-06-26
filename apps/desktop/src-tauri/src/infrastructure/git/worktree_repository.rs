@@ -1,7 +1,7 @@
-// @purpose Reads and prunes git worktree metadata through git command output.
-// @role    Git infrastructure adapter used by Conductor import, refresh, archive, and remove use cases.
+// @purpose Reads git branch/worktree metadata and prunes worktrees through git command output.
+// @role    Git infrastructure adapter used by Conductor import, refresh, create, archive, and remove use cases.
 // @deps    std process/path, shared errors
-// @gotcha  remove_worktree uses --force only after use cases have rejected dirty workspaces.
+// @gotcha  Remote aliases like refs/remotes/origin and origin/HEAD are hidden from branch selection.
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -30,6 +30,27 @@ pub(crate) fn list_worktrees(repo_path: &Path) -> AppResult<Vec<GitWorktreeEntry
     }
 
     parse_worktree_porcelain(&String::from_utf8_lossy(&output.stdout))
+}
+
+pub(crate) fn list_base_branches(repo_path: &Path) -> AppResult<Vec<String>> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .arg("for-each-ref")
+        .arg("--format=%(refname)")
+        .arg("refs/heads")
+        .arg("refs/remotes")
+        .output()?;
+
+    if !output.status.success() {
+        return Err(AppError::GitCommandFailed {
+            message: String::from_utf8_lossy(&output.stderr).trim().to_string(),
+        });
+    }
+
+    Ok(parse_base_branches(&String::from_utf8_lossy(
+        &output.stdout,
+    )))
 }
 
 pub(crate) fn add_worktree(
@@ -92,6 +113,37 @@ pub(crate) fn prune_worktrees(root_path: &Path) -> AppResult<()> {
             message: String::from_utf8_lossy(&output.stderr).trim().to_string(),
         })
     }
+}
+
+pub(crate) fn parse_base_branches(input: &str) -> Vec<String> {
+    let mut branches = Vec::new();
+    for line in input.lines() {
+        let Some(branch) = parse_base_branch_ref(line.trim()) else {
+            continue;
+        };
+        if branches.iter().any(|known| known == branch) {
+            continue;
+        }
+
+        branches.push(branch.to_string());
+    }
+    branches
+}
+
+fn parse_base_branch_ref(value: &str) -> Option<&str> {
+    if value.is_empty() {
+        return None;
+    }
+
+    if let Some(branch) = value.strip_prefix("refs/heads/") {
+        return Some(branch).filter(|branch| !branch.is_empty());
+    }
+
+    if let Some(branch) = value.strip_prefix("refs/remotes/") {
+        return Some(branch).filter(|branch| branch.contains('/') && !branch.ends_with("/HEAD"));
+    }
+
+    Some(value).filter(|branch| !branch.ends_with("/HEAD"))
 }
 
 pub(crate) fn parse_worktree_porcelain(input: &str) -> AppResult<Vec<GitWorktreeEntry>> {
@@ -188,5 +240,34 @@ prunable gitdir file points to non-existent location
         assert_eq!(entries.len(), 2);
         assert!(!entries[0].prunable);
         assert!(entries[1].prunable);
+    }
+
+    #[test]
+    fn parses_base_branches_without_remote_aliases() {
+        let output = "\
+refs/heads/main
+refs/heads/feature/local
+refs/heads/origin
+refs/remotes/origin
+refs/remotes/origin/HEAD
+refs/remotes/origin/main
+refs/remotes/origin/feature/remote
+refs/remotes/upstream
+refs/remotes/upstream/main
+refs/remotes/origin/main
+
+";
+
+        assert_eq!(
+            parse_base_branches(output),
+            vec![
+                "main".to_string(),
+                "feature/local".to_string(),
+                "origin".to_string(),
+                "origin/main".to_string(),
+                "origin/feature/remote".to_string(),
+                "upstream/main".to_string()
+            ]
+        );
     }
 }

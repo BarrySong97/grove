@@ -13,6 +13,7 @@
 - `settings/get_app_settings.rs`:读取全局 app settings。
 - `settings/update_app_settings.rs`:保存全局 app settings,当前影响语言、悬停快捷打开目标、默认 archive 策略、remove project 行为和新项目列表位置。
 - `workspaces/refresh_project.rs`:刷新真实 git worktree metadata,包含 repo root,跳过 prunable/损坏路径,并把缺失的 active workspace 标记为 stale。
+- `workspaces/list_base_branches.rs`:读取项目 repo 的 local 和 remote-tracking branch refs,按 `origin/<默认分支>`、本地默认分支、其他分支排序,供新建 worktree 选择 base branch。
 - `workspaces/create_workspace.rs`:创建 git worktree、复制 ignored 文件并运行 setup command;失败时把已写入的 workspace operation status 标记为 failed,避免 UI 保持 setting-up。
 - `workspaces/archive_workspace.rs`:保护 repo root,对有效 workspace 运行 archive command 并按策略 hide 或 `git worktree remove`;对 stale、缺失或损坏 workspace 直接隐藏 Grove 记录并尝试 `git worktree prune`。
 - `workspaces/retry_workspace_operation.rs`:重试最新 failed setup/create 或 archive workflow;setup retry 不重复 `git worktree add`。

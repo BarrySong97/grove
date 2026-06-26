@@ -6,5 +6,6 @@
  */
 export const worktreeQueryKeys = {
   appSettings: ['worktrees', 'app-settings'] as const,
+  baseBranches: (projectId: string) => ['worktrees', 'base-branches', projectId] as const,
   projects: ['worktrees', 'projects'] as const
 }

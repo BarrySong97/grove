@@ -64,6 +64,8 @@ export const commands = {
     typedError<WorkspaceDto, AppErrorDto>(__TAURI_INVOKE('archive_workspace', { input })),
   createWorkspace: (input: CreateWorkspaceInput) =>
     typedError<WorkspaceDto, AppErrorDto>(__TAURI_INVOKE('create_workspace', { input })),
+  listBaseBranches: (input: ListBaseBranchesInput) =>
+    typedError<string[], AppErrorDto>(__TAURI_INVOKE('list_base_branches', { input })),
   openWorkspace: (input: OpenWorkspaceInput) =>
     typedError<WorkspaceDto, AppErrorDto>(__TAURI_INVOKE('open_workspace', { input })),
   refreshProject: (input: RefreshProjectInput) =>
@@ -125,6 +127,10 @@ export type CreateWorkspaceInput = {
 
 export type ImportConductorProjectsInput = {
   workspaceRoot: string | null
+}
+
+export type ListBaseBranchesInput = {
+  projectId: string
 }
 
 export type NewProjectPositionDto = 'first' | 'last'

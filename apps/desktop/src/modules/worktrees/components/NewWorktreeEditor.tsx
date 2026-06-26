@@ -1,16 +1,19 @@
 /**
  * @purpose Renders the inline new-worktree editor.
- * @role    Focused form for branch name and base branch selection within a ProjectSection.
- * @deps    Hero UI Form/Button/Input, native select, React Hook Form, react-i18next, Worktrees contracts/domain rules
- * @gotcha  Enter submits and Escape cancels locally; docs/modules/worktrees/README.md
+ * @role    Focused form for branch name and local/remote base branch selection within a ProjectSection.
+ * @deps    Hero UI Form/Button/Input, TanStack Query, native select, React Hook Form, react-i18next, Worktrees API/contracts/domain rules
+ * @gotcha  Remote refs are read from Rust without fetching; Enter submits and Escape cancels locally.
  */
 import { Button } from '@heroui/react/button'
 import { Form } from '@heroui/react/form'
 import { Input } from '@heroui/react/input'
-import { useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 import type { Project } from '../../../shared/contracts/worktrees'
+import { listBaseBranches } from '../api/groveCommands'
+import { worktreeQueryKeys } from '../api/queryKeys'
 import { getCurrentWorktree } from '../domain/worktree-rules'
 
 interface NewWorktreeEditorProps {
@@ -26,16 +29,35 @@ interface NewWorktreeEditorValues {
 
 export function NewWorktreeEditor({ project, onCreate, onCancel }: NewWorktreeEditorProps) {
   const { t } = useTranslation()
-  const baseBranches = [
-    project.defaultBranch,
-    ...project.worktrees.map((worktree) => worktree.branch)
-  ].filter((branch, index, branches) => branch && branches.indexOf(branch) === index)
-  const defaultBase = getCurrentWorktree(project)?.branch ?? project.defaultBranch
-  const { handleSubmit, register, setFocus, watch } = useForm<NewWorktreeEditorValues>({
-    defaultValues: { name: '', base: defaultBase },
-    mode: 'onChange'
+  const fallbackBaseBranches = useMemo(() => fallbackBranches(project), [project])
+  const branchesQuery = useQuery({
+    queryKey: worktreeQueryKeys.baseBranches(project.id),
+    queryFn: () => listBaseBranches(project.id),
+    staleTime: 30_000
   })
+  const baseBranches = useMemo(
+    () => uniqueBranches([...(branchesQuery.data ?? []), ...fallbackBaseBranches]),
+    [branchesQuery.data, fallbackBaseBranches]
+  )
+  const defaultBase = preferredBase(project, baseBranches)
+  const { formState, handleSubmit, register, setFocus, setValue, watch } =
+    useForm<NewWorktreeEditorValues>({
+      defaultValues: { name: '', base: defaultBase },
+      mode: 'onChange'
+    })
   const name = watch('name')
+  const selectedBase = watch('base')
+  const baseDirty = Boolean(formState.dirtyFields.base)
+
+  useEffect(() => {
+    if (baseBranches.length === 0) return
+    if (baseDirty) {
+      if (!baseBranches.includes(selectedBase))
+        setValue('base', defaultBase, { shouldDirty: false })
+      return
+    }
+    if (selectedBase !== defaultBase) setValue('base', defaultBase, { shouldDirty: false })
+  }, [baseBranches, baseDirty, defaultBase, selectedBase, setValue])
 
   useEffect(() => {
     setFocus('name')
@@ -101,5 +123,32 @@ export function NewWorktreeEditor({ project, onCreate, onCancel }: NewWorktreeEd
         </Button>
       </div>
     </Form>
+  )
+}
+
+function fallbackBranches(project: Project) {
+  return uniqueBranches([
+    project.defaultBranch,
+    getCurrentWorktree(project)?.branch,
+    ...project.worktrees.map((worktree) => worktree.branch)
+  ])
+}
+
+function preferredBase(project: Project, branches: string[]) {
+  const remoteDefault = project.defaultBranch.includes('/')
+    ? project.defaultBranch
+    : `origin/${project.defaultBranch}`
+  return (
+    branches.find((branch) => branch === remoteDefault) ??
+    branches.find((branch) => branch === project.defaultBranch) ??
+    branches[0] ??
+    project.defaultBranch
+  )
+}
+
+function uniqueBranches(branches: Array<string | undefined>) {
+  return branches.filter(
+    (branch, index, allBranches): branch is string =>
+      Boolean(branch) && allBranches.indexOf(branch) === index
   )
 }

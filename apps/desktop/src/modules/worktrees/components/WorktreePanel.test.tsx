@@ -12,6 +12,7 @@ import type { AppSettingsDto } from '../../../shared/bindings/commands'
 import type { Project, Worktree } from '../../../shared/contracts/worktrees'
 import { i18n } from '../../../shared/i18n/i18n'
 import { ContextMenu } from './ContextMenu'
+import { NewWorktreeEditor } from './NewWorktreeEditor'
 import { WorktreePanel } from './WorktreePanel'
 
 const defaultSettings: AppSettingsDto = {
@@ -29,6 +30,7 @@ const api = vi.hoisted(() => ({
   getAppSettings: vi.fn(),
   getLatestOperation: vi.fn(),
   importConductorProjects: vi.fn(),
+  listBaseBranches: vi.fn(),
   loadWorktreePanelProjects: vi.fn(),
   openWorkspace: vi.fn(),
   readOperationLog: vi.fn(),
@@ -61,6 +63,7 @@ describe('WorktreePanel', () => {
     api.loadWorktreePanelProjects.mockResolvedValue([])
     api.importConductorProjects.mockResolvedValue([])
     api.addProjectFromFolderPicker.mockResolvedValue(null)
+    api.listBaseBranches.mockResolvedValue([])
     api.updateAppSettings.mockImplementation((settings: AppSettingsDto) =>
       Promise.resolve(settings)
     )
@@ -132,6 +135,43 @@ describe('WorktreePanel', () => {
 
     fireEvent.click(screen.getByLabelText('Close'))
     expect(screen.queryByText('Importing Conductor workspaces')).toBeNull()
+  })
+})
+
+describe('NewWorktreeEditor', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    api.listBaseBranches.mockResolvedValue(['origin/main', 'main', 'origin/release'])
+  })
+
+  it('loads remote base branches and prefers the origin default', async () => {
+    const project = makeProject()
+    const onCreate = vi.fn()
+    renderWithQueryClient(
+      <NewWorktreeEditor project={project} onCreate={onCreate} onCancel={vi.fn()} />
+    )
+
+    const branchSelect = await screen.findByDisplayValue('origin/main')
+    const branchOptions = Array.from(branchSelect.querySelectorAll('option')).map(
+      (option) => option.value
+    )
+
+    expect(api.listBaseBranches).toHaveBeenCalledWith(project.id)
+    expect(branchOptions).toContain('origin/main')
+    expect(branchOptions).toContain('origin/release')
+
+    fireEvent.change(screen.getByPlaceholderText('feature-name'), {
+      target: { value: 'feature/new-worktree' }
+    })
+    await waitFor(() =>
+      expect((screen.getByText('Confirm') as HTMLButtonElement).disabled).toBe(false)
+    )
+
+    fireEvent.click(screen.getByText('Confirm'))
+
+    await waitFor(() =>
+      expect(onCreate).toHaveBeenCalledWith(project, 'feature/new-worktree', 'origin/main')
+    )
   })
 })
 

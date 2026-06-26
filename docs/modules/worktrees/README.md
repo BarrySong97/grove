@@ -5,7 +5,7 @@
 
 ## 目录
 - `components/`:面板、项目组、worktree 行、右键菜单、打开目标图标、footer 语言快捷入口、项目/全局设置页和局部编辑器;`components/settings/` 是统一的设置样式组件库(SettingsSheet/Header/Section/Row/Select/SwitchRow/Button/Footer)、复用 updater hook 的 `UpdateSettingsRow`,以及 archive/remove/log 确认 bottom sheet。
-- `api/`:前端到 Rust 业务 command 的薄 wrapper 和 TanStack Query key catalog,包含项目创建/删除、项目列表、Conductor 导入、创建/retry/archive/open workspace、operation log、项目设置和全局设置 API。
+- `api/`:前端到 Rust 业务 command 的薄 wrapper 和 TanStack Query key catalog,包含项目创建/删除、项目列表、Conductor 导入、创建/retry/archive/open workspace、base branch 列表、operation log、项目设置和全局设置 API。
 - `hooks/useWorktreePanelState.ts`:前端 presentation hook,用 TanStack Query 编排 Rust-backed 读写,用 Jotai atoms 持久化纯 UI 偏好,并持有 toast/sheet 等瞬态 React state。
 - `state/`:Worktree panel 的前端状态 atoms;当前只存排序和折叠这类 UI preference。
 - `domain/`:纯 Worktree 规则、派生标签、打开目标和 setup/archive 命令 catalog。
@@ -19,6 +19,7 @@
 - 项目/workspace 列表和 app settings 的前端读取由 TanStack Query 承载,query cache 配置为立即 stale 且不跨刷新持久化;Rust/SQLite/git 仍是唯一权威来源。
 - 面板平时只读 SQLite 缓存里的分支和 git 状态,所以在 Grove 之外切换分支(在 worktree 里 `git switch`)不会自动反映;`refreshProjectsFromGit` 通过 Rust `refresh_project` 以 git 为权威重读分支/状态并回写 SQLite,再重载面板。它在两个时机触发:打开面板(托盘 `show()`+`set_focus()` 触发 window focus)刷新所有当前展开的项目,展开某个项目刷新该项目。刷新按项目 best-effort 且静默,单个项目失败不阻塞其余项目和重载。
 - repo root 会作为每个项目的默认 worktree 展示,前端映射为 `Worktree.isDefault`;它可打开但不能归档或删除。
+- `NewWorktreeEditor` 通过 Rust `list_base_branches` 读取本地分支和已存在的 remote-tracking 分支(例如 `origin/main`)作为 base branch 选项;该读取不执行网络 fetch,失败时前端回退到项目默认分支和已登记 worktree 分支。
 - `createWorktree` 调用 Rust `create_workspace`,执行真实 `git worktree add`、files-to-copy 和 setup command。
 - create/setup 失败后前端会重新加载项目列表并显示 error toast;后端 failed operation status 不映射成忙碌行,避免 spinner 停不下来。
 - `archiveWorktree` 调用 Rust `archive_workspace`,执行 archive command 并按项目 override 或全局默认策略 hide 或 `git worktree remove`;`ask` 使用 Grove bottom sheet,不使用 `window.confirm`。外部已删除或损坏的 workspace 会由后端隐藏 Grove 记录并尝试 prune,不会因为缺失路径阻塞移除。
@@ -50,7 +51,7 @@
 - 首次启动(`grove.onboardingCompleted` 未置位)会自动打开一次全局设置,引导用户挑选悬停快捷打开的 app,并立即把标志持久化,后续启动不再自动弹出。
 - Footer 左侧提供语言快捷切换 + 软件版本号(`v<version>`,通过 `@tauri-apps/api/app` 的 `getVersion()` 读取,非 Tauri 环境静默为空);语言切换和 Global Settings 的语言 select 使用同一个 Rust app setting;`system` 会在前端解析当前浏览器/系统语言后应用到 `i18next`。
 - 空项目列表会在面板 body 中央显示一句添加项目提示,其中带 underline 的 `Add a project` 文本可点击并触发同一个文件夹选择动作。
-- 手动添加、导入和刷新都会显示受保护的 repo root 默认 worktree;`NewWorktreeEditor` 使用项目默认分支作为新 worktree 的 base branch。
+- 手动添加、导入和刷新都会显示受保护的 repo root 默认 worktree;`NewWorktreeEditor` 打开时加载 local/remote base branches,优先选择 `origin/<项目默认分支>`,没有远端默认分支时回退到项目默认分支。
 - `NewWorktreeEditor` 是两行表单:第一行先选 from base branch,再编辑 feature/workspace name;第二行右侧提供 `确认`/`取消` 文字按钮。
 - `NewWorktreeEditor` 的 base branch 使用原生 select,用于保留 macOS 紧凑原生外观并适配窄宽度。
 - `NewWorktreeEditor` 外层保持透明,可见外框由 1px accent ring 提供且不要额外叠白色 border;字段背景使用白色,input 不使用 Hero UI `secondary` variant;取消按钮使用正常主文本色,避免 inline editor 叠出灰蒙蒙的块面。

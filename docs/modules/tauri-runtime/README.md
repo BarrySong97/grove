@@ -10,7 +10,7 @@
 - `commands.rs`:运行壳命令,当前是 `hide_panel` 与 `quit_app`。
 - `app_state.rs`:Tauri managed state,保存 SQLite pool 和 native dialog lifecycle guard。
 - `shared/dto/`:Rust command DTO 和 typed error,由 `specta` 导出到 TypeScript。
-- `presentation/commands/`:业务 Tauri command handler,保持薄封装,包括 projects/workspaces/settings/operations。
+- `presentation/commands/`:业务 Tauri command handler,保持薄封装,包括 projects/workspaces/base branch listing/settings/operations。
 - `use_cases/`:业务 workflow,例如项目列表、Conductor 导入、项目设置、创建/归档/retry/remove/open workspace。
 - `infrastructure/db/`:SQLite 连接、migration 和 repository。
 - `migrations/`:SQLite schema migration。

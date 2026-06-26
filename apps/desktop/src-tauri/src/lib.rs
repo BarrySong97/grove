@@ -42,6 +42,7 @@ fn command_builder() -> tauri_specta::Builder<tauri::Wry> {
         presentation::commands::settings::update_app_settings,
         presentation::commands::workspaces::archive_workspace,
         presentation::commands::workspaces::create_workspace,
+        presentation::commands::workspaces::list_base_branches,
         presentation::commands::workspaces::open_workspace,
         presentation::commands::workspaces::refresh_project,
         presentation::commands::workspaces::retry_workspace_operation

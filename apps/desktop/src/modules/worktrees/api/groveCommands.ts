@@ -95,6 +95,12 @@ export async function refreshProject(projectId: string): Promise<WorkspaceDto[]>
   return result.data
 }
 
+export async function listBaseBranches(projectId: string): Promise<string[]> {
+  const result = await commands.listBaseBranches({ projectId })
+  if (result.status === 'error') throw new GroveCommandError(result.error)
+  return result.data
+}
+
 export async function updateProjectSettings(
   input: UpdateProjectSettingsInput
 ): Promise<ProjectDto> {

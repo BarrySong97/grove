@@ -1,5 +1,5 @@
-// @purpose Defines workspace DTOs returned by Grove business commands.
-// @role    Type-safe command boundary for git worktree workspaces.
+// @purpose Defines workspace DTOs and inputs for Grove business commands.
+// @role    Type-safe command boundary for git worktree workspaces and branch selection.
 // @deps    serde, specta
 // @gotcha  Grove does not model a user-current workspace; docs/spark/2026-06-15-grove-conductor-worktree-backend-design.md
 use serde::{Deserialize, Serialize};
@@ -56,6 +56,12 @@ pub(crate) struct WorkspaceGitStateDto {
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RefreshProjectInput {
+    pub project_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ListBaseBranchesInput {
     pub project_id: String,
 }
 
