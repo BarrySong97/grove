@@ -111,8 +111,10 @@ export const enUS = {
     }
   },
   toast: {
+    addedProject: 'Added project · {{project}} · {{path}}',
+    addProjectCanceled: 'No project folder selected',
     addProjectFailed: 'Add project failed',
-    addingProject: 'Adding project',
+    addingProject: 'Adding project · {{project}} · {{path}}',
     archive: 'Archive · {{project}}/{{branch}}',
     archiveFailed: 'Archive failed · {{project}}/{{branch}}',
     create: 'Create · {{project}}/{{name}}',

@@ -44,7 +44,7 @@
 - 项目和 worktree 都用 `@dnd-kit` 支持拖拽排序。
 - 项目组默认展开;用户收起后,重新打开面板或刷新前端仍保持收起。
 - 每次打开面板(window focus)会刷新所有展开项目的 git 状态,展开某个项目会刷新该项目,确保在 Grove 之外切换的分支及时显示;刷新静默进行,不显示 toast/spinner。
-- Header 的 `Add project…` 会打开系统文件夹选择器;选择 git repo 根目录后,Grove 注册该项目并从 repo/config 推断默认设置,失败时展示后端返回的 UI-safe 错误。
+- Header 的 `Add project…` 会打开系统文件夹选择器;选择 git repo 根目录后,Grove 注册该项目并从 repo/config 推断默认设置,成功 toast 会带项目名和 root path 方便排查 picker 实际选中路径;取消选择会显示轻提示,失败时展示后端返回的 UI-safe 错误。
 - Header 左上角品牌图标使用 `src/shared/assets/Grove.svg`,该资产与 Tauri desktop app icon 保持同步。
 - 空项目列表显示 `Import from Conductor or Add Project` 和 `How it works`;import 调用 Conductor 导入,add 调用同一个系统文件夹选择动作。
 - Header 的齿轮按钮打开全局设置 bottom sheet;主 project/workspace 列表保持在底层可见。

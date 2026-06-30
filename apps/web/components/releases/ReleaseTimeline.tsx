@@ -4,7 +4,16 @@ type Release = { ver: string; date: string; head: string; badge?: 'latest' | 'be
 
 const RELEASES: Release[] = [
   {
-    ver: '0.2.5', date: 'Jun 26, 2026', head: 'Worktrees start from the right branch.', badge: 'latest',
+    ver: '0.2.6', date: 'Jun 30, 2026', head: 'Project imports survive broken worktrees.', badge: 'latest',
+    groups: [
+      { kind: 'fix', items: [
+        { lead: 'Missing Conductor projects.', text: 'Import now recovers the project repo root when a stale workspace still points back to it, instead of skipping the whole project.' },
+        { lead: 'Clear Add Project feedback.', text: 'Adding a project now confirms the selected project name and root path, and distinguishes cancellation from backend failure.' },
+      ] },
+    ],
+  },
+  {
+    ver: '0.2.5', date: 'Jun 26, 2026', head: 'Worktrees start from the right branch.',
     groups: [
       { kind: 'imp', items: [
         { lead: 'Remote base branches.', text: 'New worktree creation now includes remote-tracking branches such as origin/main, and prefers the remote default branch when it is available.' },

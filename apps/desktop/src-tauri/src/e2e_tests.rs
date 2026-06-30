@@ -267,6 +267,102 @@ fn manual_add_project_registers_selected_git_repo() {
 }
 
 #[test]
+fn manual_add_project_accepts_conductor_settings_schema_key() {
+    tauri::async_runtime::block_on(async {
+        let fixture = Fixture::new("grove manual add conductor schema key");
+        let db = migrated_db().await;
+        let repo_path = fixture
+            .path("conductor repos")
+            .join("consultant")
+            .join("consultant");
+        create_repo(&repo_path);
+        fs::write(
+            repo_path.join(".conductor/settings.local.toml"),
+            "\"$schema\" = \"https://conductor.build/schemas/settings.repo.schema.json\"\n\n[scripts]\narchive = \"rm -rf node_modules\"\nrun = \"pnpm dev\"\nrun_mode = \"concurrent\"\nsetup = \"pnpm install\"\n",
+        )
+        .expect("settings.local.toml should be written");
+
+        let project = create_project::run(
+            &db,
+            CreateProjectInput {
+                root_path: repo_path.to_string_lossy().to_string(),
+            },
+        )
+        .await
+        .expect("manual project registration should accept Conductor schema metadata");
+
+        assert_eq!(project.name, "consultant");
+        let listed = list_worktree_projects::run(&db)
+            .await
+            .expect("registered project should list");
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].project.name, "consultant");
+        assert_eq!(listed[0].commands.setup, "pnpm install");
+        assert_eq!(listed[0].commands.archive, "rm -rf node_modules");
+    });
+}
+
+#[test]
+fn conductor_import_registers_repo_when_workspace_gitdir_is_stale() {
+    tauri::async_runtime::block_on(async {
+        let fixture = Fixture::new("grove conductor stale workspace import");
+        let db = migrated_db().await;
+        let conductor_root = fixture.path("conductor workspaces");
+        let repo_path = fixture
+            .path("conductor repos")
+            .join("consultant")
+            .join("consultant");
+        let repo_workspace_root = conductor_root.join("consultant");
+        let stale_workspace = repo_workspace_root.join("seattle");
+
+        create_repo(&repo_path);
+        let canonical_repo_path = repo_path
+            .canonicalize()
+            .expect("repo path should canonicalize");
+        fs::create_dir_all(&stale_workspace).expect("stale workspace dir should be created");
+        fs::write(
+            stale_workspace.join(".git"),
+            format!(
+                "gitdir: {}/.git/worktrees/seattle\n",
+                repo_path.to_string_lossy()
+            ),
+        )
+        .expect("stale gitdir file should be written");
+
+        let imported = import_conductor_projects::run(
+            &db,
+            ImportConductorProjectsInput {
+                workspace_root: Some(conductor_root.to_string_lossy().to_string()),
+            },
+        )
+        .await
+        .expect("import should recover valid repo root from stale workspace gitdir");
+
+        assert_eq!(imported.len(), 1);
+        assert_eq!(imported[0].repo_name, "consultant");
+        assert_eq!(
+            imported[0].root_path,
+            canonical_repo_path.to_string_lossy().to_string()
+        );
+        assert_eq!(imported[0].workspaces.len(), 1);
+        assert_eq!(
+            imported[0].workspaces[0].path,
+            canonical_repo_path.to_string_lossy().to_string()
+        );
+
+        let listed = list_worktree_projects::run(&db)
+            .await
+            .expect("imported project should list");
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].project.name, "consultant");
+        assert_eq!(
+            listed[0].project.root_path,
+            canonical_repo_path.to_string_lossy().to_string()
+        );
+    });
+}
+
+#[test]
 fn archive_missing_workspace_hides_record_without_path_error() {
     tauri::async_runtime::block_on(async {
         let fixture = Fixture::new("grove archive missing workspace");

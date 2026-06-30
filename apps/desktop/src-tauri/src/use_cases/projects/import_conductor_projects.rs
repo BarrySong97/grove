@@ -1,7 +1,7 @@
 // @purpose Imports existing Conductor-style git worktree projects into Grove state.
 // @role    Project use case for read-only Conductor workspace discovery and persistence.
 // @deps    Conductor path rules/config reader, git worktree repository, SQLite repositories, DTOs
-// @gotcha  Import must not move, modify, setup, archive, or delete existing workspaces.
+// @gotcha  Import must not move, modify, setup, archive, or delete existing workspaces; broken workspace gitdir files can still reveal a valid repo root.
 use std::collections::{hash_map::DefaultHasher, HashSet};
 use std::fs;
 use std::hash::{Hash, Hasher};
@@ -48,7 +48,10 @@ pub(crate) async fn run(
 
             let worktrees = match worktree_repository::list_worktrees(&workspace_path) {
                 Ok(worktrees) => worktrees,
-                Err(_) => continue,
+                Err(_) => match list_worktrees_from_workspace_gitdir(&workspace_path) {
+                    Ok(Some(worktrees)) => worktrees,
+                    _ => continue,
+                },
             };
             let root_path = infer_project_root(&worktrees, &repo_workspace_root);
             let root_key = root_path.to_string_lossy().to_string();
@@ -103,6 +106,44 @@ fn resolve_workspace_root(input: Option<String>) -> AppResult<PathBuf> {
             message: "Unable to resolve the Conductor workspace root.".into(),
         })?;
     Ok(root.canonicalize().unwrap_or(root))
+}
+
+fn list_worktrees_from_workspace_gitdir(
+    workspace_path: &Path,
+) -> AppResult<Option<Vec<GitWorktreeEntry>>> {
+    let git_file = workspace_path.join(".git");
+    let Ok(content) = fs::read_to_string(git_file) else {
+        return Ok(None);
+    };
+    let Some(gitdir) = content.trim().strip_prefix("gitdir:") else {
+        return Ok(None);
+    };
+
+    let gitdir = PathBuf::from(gitdir.trim());
+    let gitdir = if gitdir.is_absolute() {
+        gitdir
+    } else {
+        workspace_path.join(gitdir)
+    };
+    let Some(repo_root) = repo_root_from_worktree_gitdir(&gitdir) else {
+        return Ok(None);
+    };
+
+    worktree_repository::list_worktrees(&repo_root).map(Some)
+}
+
+fn repo_root_from_worktree_gitdir(gitdir: &Path) -> Option<PathBuf> {
+    let worktrees_dir = gitdir.parent()?;
+    if worktrees_dir.file_name()? != "worktrees" {
+        return None;
+    }
+
+    let dot_git = worktrees_dir.parent()?;
+    if dot_git.file_name()? != ".git" {
+        return None;
+    }
+
+    dot_git.parent().map(Path::to_path_buf)
 }
 
 fn infer_project_root(worktrees: &[GitWorktreeEntry], repo_workspace_root: &Path) -> PathBuf {

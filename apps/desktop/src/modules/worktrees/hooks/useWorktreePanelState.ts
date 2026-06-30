@@ -417,10 +417,17 @@ export function useWorktreePanelState(initialProjects: Project[] = []) {
     void addProjectMutation
       .mutateAsync()
       .then((project) => {
-        if (!project) return
-        const progressToastId = showToast(t('toast.addingProject'), 'progress')
+        if (!project) {
+          showToast(t('toast.addProjectCanceled'))
+          return
+        }
+        const progressToastId = showToast(
+          t('toast.addingProject', { project: project.name, path: project.rootPath }),
+          'progress'
+        )
         return reloadProjects().then(() => {
           clearToast(progressToastId)
+          showToast(t('toast.addedProject', { project: project.name, path: project.rootPath }))
         })
       })
       .catch((error: unknown) =>

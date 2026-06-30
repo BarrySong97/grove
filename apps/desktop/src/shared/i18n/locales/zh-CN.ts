@@ -111,8 +111,10 @@ export const zhCN = {
     }
   },
   toast: {
+    addedProject: '已添加项目 · {{project}} · {{path}}',
+    addProjectCanceled: '没有选择项目文件夹',
     addProjectFailed: '添加项目失败',
-    addingProject: '正在添加项目',
+    addingProject: '正在添加项目 · {{project}} · {{path}}',
     archive: '正在归档 · {{project}}/{{branch}}',
     archiveFailed: '归档失败 · {{project}}/{{branch}}',
     create: '正在创建 · {{project}}/{{name}}',
