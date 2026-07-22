@@ -1,7 +1,7 @@
-/* Faithful footer port — language shortcut + quit. */
-import { Quit, Divider } from '@grove/ui'
+/* Faithful footer port — language shortcut + settings (opens sheet) + quit. */
+import { Gear, Quit, Divider } from '@grove/ui'
 
-export function PanelFooter() {
+export function PanelFooter({ onOpenSettings }: { onOpenSettings?: () => void }) {
   return (
     <>
       <Divider />
@@ -10,6 +10,15 @@ export function PanelFooter() {
           EN
         </span>
         <span className="flex-1" />
+        <button
+          type="button"
+          aria-label="Settings"
+          title="Settings"
+          onClick={onOpenSettings}
+          className="grove-icon-scale flex h-auto cursor-pointer items-center gap-[7px] rounded-lg px-2.5 py-[7px] text-black/50 transition-colors hover:bg-black/[0.038] hover:text-black/90"
+        >
+          <Gear />
+        </button>
         <button
           type="button"
           aria-label="Quit"

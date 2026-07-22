@@ -14,6 +14,7 @@ import {
 import { PanelHeader } from './app-preview/PanelHeader'
 import { ProjectSection } from './app-preview/ProjectSection'
 import { PanelFooter } from './app-preview/PanelFooter'
+import { ProjectOverview } from './app-preview/ProjectOverview'
 import { GlobalSettings } from './app-preview/settings/GlobalSettings'
 
 /**
@@ -85,6 +86,7 @@ export function AppPreview({
   const [projectRevealStep, setProjectRevealStep] = useState<AppPreviewDemoStep | null>(null)
   const [worktreeRevealStep, setWorktreeRevealStep] = useState<AppPreviewDemoStep | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [overviewOpen, setOverviewOpen] = useState(false)
   const isDemo = demoMode !== 'interactive' && !!demoStep
   const isScrollDemo = demoMode === 'scroll' && !!demoStep
   const scriptedProjectVisible =
@@ -102,7 +104,6 @@ export function AppPreview({
       : isScrollDemo
         ? projectsForScriptedStep(demoStep, scriptedProjectVisible, scriptedWorktreeVisible)
         : PROJECTS
-  const total = projects.reduce((n, p) => n + p.worktrees.length, 0)
 
   useEffect(() => {
     if (!isScrollDemo || demoStep !== 'add-project') return
@@ -154,12 +155,11 @@ export function AppPreview({
       <div className="glass-surface animate-panel-in relative flex h-[600px] max-h-[600px] flex-col overflow-hidden rounded-[var(--window-radius)] border-[0.5px] p-1.5 font-sans text-[13.5px] text-[#1c1c1e] antialiased shadow-[var(--shadow-panel)]">
         <div className="shrink-0">
           <PanelHeader
-            total={total}
             projectCount={projects.length}
             demoPhase={demoPhase}
             demoStep={demoStep}
             onAddProject={isDemo ? undefined : addProject}
-            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenOverview={isDemo ? undefined : () => setOverviewOpen(true)}
           />
         </div>
         <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto">
@@ -188,7 +188,7 @@ export function AppPreview({
           ))}
         </div>
         <div className="shrink-0">
-          <PanelFooter />
+          <PanelFooter onOpenSettings={isDemo ? undefined : () => setSettingsOpen(true)} />
         </div>
 
         <BottomSheet
@@ -200,6 +200,17 @@ export function AppPreview({
           className="bottom-sheet-surface rounded-[var(--window-radius)] border-[0.5px] p-1.5 text-[13.5px] text-[#1c1c1e] shadow-[var(--shadow-panel)]"
         >
           <GlobalSettings onClose={() => setSettingsOpen(false)} />
+        </BottomSheet>
+
+        <BottomSheet
+          ariaLabel="Project overview"
+          containment="absolute"
+          isOpen={overviewOpen}
+          onClose={() => setOverviewOpen(false)}
+          maxHeightClassName="max-h-[92%]"
+          className="bottom-sheet-surface rounded-[var(--window-radius)] border-[0.5px] p-2 text-[13.5px] text-[#1c1c1e] shadow-[var(--shadow-panel)]"
+        >
+          <ProjectOverview projects={projects} onSelect={() => setOverviewOpen(false)} />
         </BottomSheet>
       </div>
     </div>

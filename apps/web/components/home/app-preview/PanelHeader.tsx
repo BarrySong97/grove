@@ -1,7 +1,7 @@
-/* Faithful header port — logo + counts + settings (opens sheet) + Add Project. */
+/* Faithful header port — logo + project overview entry + Add Project. */
 import Image from 'next/image'
 import { motion } from 'motion/react'
-import { Gear, Import, IconButton, Divider } from '@grove/ui'
+import { Grid, Import, IconButton, Divider } from '@grove/ui'
 import type { AppPreviewDemoPhase, AppPreviewDemoStep } from './data'
 
 const pressTransition = { duration: 0.3, delay: 1.02, ease: [0.22, 1, 0.36, 1] as const }
@@ -14,16 +14,14 @@ const demoButtonAnimation = (active: boolean, phase: AppPreviewDemoPhase) => {
 }
 
 export function PanelHeader({
-  total,
   projectCount,
-  onOpenSettings,
+  onOpenOverview,
   onAddProject,
   demoPhase = 'idle',
   demoStep,
 }: {
-  total: number
   projectCount: number
-  onOpenSettings: () => void
+  onOpenOverview?: () => void
   onAddProject?: () => void
   demoPhase?: AppPreviewDemoPhase
   demoStep?: AppPreviewDemoStep
@@ -44,12 +42,11 @@ export function PanelHeader({
           className="block shrink-0 rounded-md"
         />
         <span className="flex-1 text-[14px] font-semibold tracking-[-0.2px]">Grove</span>
-        <span className="text-[11.5px] tabular-nums text-black/[0.34]">
-          {total} worktrees · {projectCount} projects
-        </span>
-        <IconButton title="Settings" size="project" onClick={onOpenSettings}>
-          <Gear />
-        </IconButton>
+        {projectCount >= 2 && (
+          <IconButton title="Project overview" size="project" onClick={onOpenOverview}>
+            <Grid />
+          </IconButton>
+        )}
       </div>
       <div className="px-1 pb-1">
         <motion.button

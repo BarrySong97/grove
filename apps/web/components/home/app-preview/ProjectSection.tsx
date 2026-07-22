@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { ChevronRight, ChevronUp, ChevronDown, Gear, Plus, ToTop, Dot, Divider, IconButton } from '@grove/ui'
+import { ChevronRight, ChevronUp, ChevronDown, Gear, Plus, ToTop, Dot, IconButton } from '@grove/ui'
 import {
   SCRIPTED_PROJECT_ID,
   SCRIPTED_WORKTREE_ID,
@@ -83,7 +83,7 @@ export function ProjectSection({
 
   return (
     <motion.div
-      className="group/proj relative"
+      className={'relative' + (isFirst ? '' : ' pt-2')}
       initial={revealDelay === undefined ? false : { height: 0, opacity: 0, y: -8 }}
       animate={{ height: 'auto', opacity: 1, y: 0 }}
       transition={{
@@ -92,6 +92,7 @@ export function ProjectSection({
         ease: [0.22, 1, 0.36, 1],
       }}
     >
+      <div className="group/proj rounded-[10px] transition-colors hover:bg-black/[0.038]">
       <div className="px-2.5 py-2">
         <div className="flex items-center gap-2">
           <button
@@ -140,10 +141,6 @@ export function ProjectSection({
               <Plus />
             </IconButton>
           </div>
-        </div>
-
-        <div className="truncate pt-[5px] font-mono text-[10.5px] leading-none text-black/55">
-          {project.path}
         </div>
       </div>
 
@@ -208,8 +205,7 @@ export function ProjectSection({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {!isLast && <Divider />}
+      </div>
     </motion.div>
   )
 }
