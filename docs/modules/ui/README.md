@@ -7,7 +7,7 @@
 - `IconButton.tsx`:基于 Hero UI `Button`/`Tooltip` 的固定尺寸 icon-only button,支持 project/row 尺寸和 ghost/accent/danger tone。
 - `BottomSheet.tsx`:基于 `motion/react` 的共享底部 sheet shell,负责 overlay、Escape 关闭和 slide-up 动效;`elevated` 让确认 sheet 浮到其它 sheet 之上,`maxHeightClassName` 可调 sheet 最大高度(内容多的 sheet 如 Global Settings 用更高的 cap 完整显示所有选项)。
 - `MenuItem.tsx`:context menu item 和 separator。
-- `ScrollArea.tsx`:隐藏原生滚动条的滚动容器。
+- `ScrollArea.tsx`:隐藏原生滚动条的滚动容器;通过 `forwardRef` 暴露内部滚动元素,供 WorktreePanel 的 `jumpToProject` 平滑滚动到目标项目。
 - `Divider.tsx`:细分隔线。
 - `Dot.tsx`:彩色状态点。
 - `Toast.tsx`:浮层短反馈,支持 notice/progress/error tone、close icon 和 panel 内换行;progress 可带 spinner,error 占用 panel 内部宽度并允许长文案换行。

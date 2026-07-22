@@ -91,6 +91,27 @@
       transform: scale(0.98) translateY(-5px);
     }
   }
+
+  @keyframes grove-jump-flash {
+    from {
+      background-color: var(--accent-soft);
+    }
+    to {
+      background-color: transparent;
+    }
+  }
+}
+
+/* Brief accent wash when the panel scrolls to a project via the scrollbar
+   bubble or the project overview; toggled imperatively on the section root. */
+.grove-jump-flash {
+  animation: grove-jump-flash 1.1s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grove-jump-flash {
+    animation: none;
+  }
 }
 
 html,

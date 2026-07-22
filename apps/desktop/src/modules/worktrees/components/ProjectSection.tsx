@@ -1,6 +1,6 @@
 /**
  * @purpose Renders one project group with collapsible worktree rows and project controls.
- * @role    Sortable project section inside WorktreePanel; renders persisted collapse state and local show-all state.
+ * @role    Sortable project section inside WorktreePanel; renders persisted collapse state and local show-all state, and exposes its root element via sectionRef for filter/overview jumps.
  * @deps    Hero UI Button, React state, react-i18next, motion, @dnd-kit, shared icons/ui, WorktreeRow, NewWorktreeEditor
  * @gotcha  Collapsed state is owned by the panel hook; VISIBLE_LIMIT only controls show-all preview; docs/modules/worktrees/README.md
  */
@@ -33,7 +33,6 @@ import {
 import type { OpenWorkspaceTargetDto } from '../../../shared/bindings/commands'
 import type { Density, Project, Worktree } from '../../../shared/contracts/worktrees'
 import { ChevronDown, ChevronRight, ChevronUp, Gear, Plus, ToTop } from '../../../shared/icons'
-import { Divider } from '../../../shared/ui/Divider'
 import { Dot } from '../../../shared/ui/Dot'
 import { IconButton } from '../../../shared/ui/IconButton'
 import { NewWorktreeEditor } from './NewWorktreeEditor'
@@ -43,6 +42,7 @@ const VISIBLE_LIMIT = 3
 const collapseTransition = { duration: 0.22, ease: [0.4, 0, 0.2, 1] as const }
 
 interface ProjectSectionProps {
+  sectionRef?: (el: HTMLDivElement | null) => void
   project: Project
   density: Density
   hoverQuickOpenTargets: OpenWorkspaceTargetDto[]
@@ -65,6 +65,7 @@ interface ProjectSectionProps {
 }
 
 export function ProjectSection({
+  sectionRef,
   project,
   density,
   hoverQuickOpenTargets,
@@ -135,161 +136,162 @@ export function ProjectSection({
 
   return (
     <div
-      ref={setNodeRef}
+      ref={(el) => {
+        setNodeRef(el)
+        sectionRef?.(el)
+      }}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={'group/proj relative' + (isDragging ? ' z-10 opacity-80' : '')}
+      className={'relative' + (isFirst ? '' : ' pt-2') + (isDragging ? ' z-10 opacity-80' : '')}
     >
-      <div className="px-2.5 py-2">
-        <div className="flex items-center gap-2">
-          <Button
-            ref={setActivatorNodeRef}
-            type="button"
-            onClick={() => onCollapsedChange(!collapsed)}
-            size="sm"
-            variant="ghost"
-            className="grove-icon-scale h-auto min-w-0 flex-1 justify-start gap-2 rounded-md p-0 text-left hover:bg-transparent active:cursor-grabbing"
-            {...attributes}
-            {...listeners}
-          >
-            <motion.span
-              className="flex w-3 shrink-0 items-center justify-center text-black/30"
-              animate={{ rotate: collapsed ? 0 : 90 }}
-              transition={collapseTransition}
+      <div className="group/proj rounded-[10px] transition-colors hover:bg-black/[0.038]">
+        <div className="px-2.5 py-2">
+          <div className="flex items-center gap-2">
+            <Button
+              ref={setActivatorNodeRef}
+              type="button"
+              onClick={() => onCollapsedChange(!collapsed)}
+              size="sm"
+              variant="ghost"
+              className="grove-icon-scale h-auto min-w-0 flex-1 justify-start gap-2 rounded-md p-0 text-left hover:bg-transparent active:cursor-grabbing"
+              {...attributes}
+              {...listeners}
             >
-              <ChevronRight />
-            </motion.span>
-            <Dot color={project.accent} />
-            <span className="min-w-0 flex-1 truncate whitespace-nowrap text-[12px] font-semibold tracking-[0.2px]">
-              {project.name}
-            </span>
-          </Button>
+              <motion.span
+                className="flex w-3 shrink-0 items-center justify-center text-black/30"
+                animate={{ rotate: collapsed ? 0 : 90 }}
+                transition={collapseTransition}
+              >
+                <ChevronRight />
+              </motion.span>
+              <Dot color={project.accent} />
+              <span className="min-w-0 flex-1 truncate whitespace-nowrap text-[12px] font-semibold tracking-[0.2px]">
+                {project.name}
+              </span>
+            </Button>
 
-          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover/proj:opacity-100">
-            {!isFirst && (
+            <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover/proj:opacity-100">
+              {!isFirst && (
+                <IconButton
+                  title={t('actions.moveToTop')}
+                  size="project"
+                  onClick={() => onMove('top')}
+                >
+                  <ToTop />
+                </IconButton>
+              )}
+              {!isFirst && (
+                <IconButton title={t('actions.moveUp')} size="project" onClick={() => onMove('up')}>
+                  <ChevronUp />
+                </IconButton>
+              )}
+              {!isLast && (
+                <IconButton
+                  title={t('actions.moveDown')}
+                  size="project"
+                  onClick={() => onMove('down')}
+                >
+                  <ChevronDown />
+                </IconButton>
+              )}
               <IconButton
-                title={t('actions.moveToTop')}
+                title={t('actions.projectSettings')}
                 size="project"
-                onClick={() => onMove('top')}
+                onClick={() => onEditSettings(project.id)}
               >
-                <ToTop />
+                <Gear />
               </IconButton>
-            )}
-            {!isFirst && (
-              <IconButton title={t('actions.moveUp')} size="project" onClick={() => onMove('up')}>
-                <ChevronUp />
-              </IconButton>
-            )}
-            {!isLast && (
               <IconButton
-                title={t('actions.moveDown')}
+                title={t('actions.newWorktree')}
                 size="project"
-                onClick={() => onMove('down')}
+                tone="accent"
+                onClick={() => {
+                  onCollapsedChange(false)
+                  onAddWorktree(project.id)
+                }}
               >
-                <ChevronDown />
+                <Plus />
               </IconButton>
-            )}
-            <IconButton
-              title={t('actions.projectSettings')}
-              size="project"
-              onClick={() => onEditSettings(project.id)}
-            >
-              <Gear />
-            </IconButton>
-            <IconButton
-              title={t('actions.newWorktree')}
-              size="project"
-              tone="accent"
-              onClick={() => {
-                onCollapsedChange(false)
-                onAddWorktree(project.id)
-              }}
-            >
-              <Plus />
-            </IconButton>
+            </div>
           </div>
         </div>
 
-        <div className="truncate pt-[5px] font-mono text-[10.5px] leading-none text-black/55">
-          {project.path}
-        </div>
-      </div>
-
-      <AnimatePresence initial={false}>
-        {!collapsed && (
-          <motion.div
-            key="body"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={collapseTransition}
-            className="overflow-hidden"
-          >
-            <DndContext
-              sensors={worktreeSensors}
-              collisionDetection={closestCenter}
-              measuring={sortableMeasuring}
-              modifiers={[restrictToVerticalAxis, restrictToParentElement]}
-              onDragEnd={handleWorktreeDragEnd}
+        <AnimatePresence initial={false}>
+          {!collapsed && (
+            <motion.div
+              key="body"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={collapseTransition}
+              className="overflow-hidden"
             >
-              <SortableContext
-                items={rendered.map((worktree) => worktree.id)}
-                strategy={verticalListSortingStrategy}
+              <DndContext
+                sensors={worktreeSensors}
+                collisionDetection={closestCenter}
+                measuring={sortableMeasuring}
+                modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+                onDragEnd={handleWorktreeDragEnd}
               >
-                {head.map((worktree, index) => renderRow(worktree, index))}
+                <SortableContext
+                  items={rendered.map((worktree) => worktree.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {head.map((worktree, index) => renderRow(worktree, index))}
 
-                <AnimatePresence initial={false}>
-                  {showAll && rest.length > 0 && (
-                    <motion.div
-                      key="rest"
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={collapseTransition}
-                      className="overflow-hidden"
-                    >
-                      {rest.map((worktree, index) => renderRow(worktree, index + VISIBLE_LIMIT))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </SortableContext>
-            </DndContext>
+                  <AnimatePresence initial={false}>
+                    {showAll && rest.length > 0 && (
+                      <motion.div
+                        key="rest"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={collapseTransition}
+                        className="overflow-hidden"
+                      >
+                        {rest.map((worktree, index) => renderRow(worktree, index + VISIBLE_LIMIT))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </SortableContext>
+              </DndContext>
 
-            {hasOverflow && (
-              <div
-                onClick={() => setShowAll((value) => !value)}
-                className="mt-px flex items-center gap-[11px] rounded-[9px] px-2.5 py-2 text-[12.5px] font-medium text-black/50 transition-colors hover:bg-black/[0.038]"
-              >
-                <span className="flex w-4 shrink-0 items-center justify-center" />
-                <span className="flex-1">
-                  {showAll ? t('worktree.showLess') : t('worktree.showAll', { count: rest.length })}
-                </span>
-              </div>
-            )}
+              {hasOverflow && (
+                <div
+                  onClick={() => setShowAll((value) => !value)}
+                  className="mt-px flex items-center gap-[11px] rounded-[9px] px-2.5 py-2 text-[12.5px] font-medium text-black/50 transition-colors hover:bg-black/[0.038]"
+                >
+                  <span className="flex w-4 shrink-0 items-center justify-center" />
+                  <span className="flex-1">
+                    {showAll
+                      ? t('worktree.showLess')
+                      : t('worktree.showAll', { count: rest.length })}
+                  </span>
+                </div>
+              )}
 
-            {isAdding ? (
-              <NewWorktreeEditor
-                project={project}
-                onCreate={onCreateWorktree}
-                onCancel={onCancelAdd}
-              />
-            ) : (
-              <div
-                onClick={() => onAddWorktree(project.id)}
-                className="mt-px flex items-center gap-[11px] rounded-[9px] px-2.5 py-2 text-black/50 transition-colors hover:bg-black/[0.038]"
-              >
-                <span className="flex w-4 shrink-0 items-center justify-center text-accent">
-                  <Plus />
-                </span>
-                <span className="flex-1 text-[12.5px] font-medium text-[#1c1c1e]">
-                  {t('actions.newWorktree')}
-                </span>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {!isLast && <Divider />}
+              {isAdding ? (
+                <NewWorktreeEditor
+                  project={project}
+                  onCreate={onCreateWorktree}
+                  onCancel={onCancelAdd}
+                />
+              ) : (
+                <div
+                  onClick={() => onAddWorktree(project.id)}
+                  className="mt-px flex items-center gap-[11px] rounded-[9px] px-2.5 py-2 text-black/50 transition-colors hover:bg-black/[0.038]"
+                >
+                  <span className="flex w-4 shrink-0 items-center justify-center text-accent">
+                    <Plus />
+                  </span>
+                  <span className="flex-1 text-[12.5px] font-medium text-[#1c1c1e]">
+                    {t('actions.newWorktree')}
+                  </span>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }

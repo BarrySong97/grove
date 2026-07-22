@@ -1,6 +1,6 @@
 /**
- * @purpose Renders the panel footer, language shortcut, and quit action.
- * @role    Footer slot for PanelShell; delegates settings updates and quit to parent state/app shell.
+ * @purpose Renders the panel footer: language shortcut, version, settings entry, and quit action.
+ * @role    Footer slot for PanelShell; the settings gear lives here (not the header) to keep the top counts unsqueezed; delegates settings/quit to parent state/app shell.
  * @deps    Hero UI Button/Tooltip, @tauri-apps/api/app getVersion, react-i18next, shared i18n/icons/ui
  * @gotcha  Quit action is provided by Tauri command callback; docs/modules/app/README.md
  */
@@ -11,13 +11,14 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AppLanguageDto } from '../../../shared/bindings/commands'
 import { LANGUAGE_OPTIONS } from '../../../shared/i18n/language'
-import { Quit } from '../../../shared/icons'
+import { Gear, Quit } from '../../../shared/icons'
 import { Divider } from '../../../shared/ui/Divider'
 
 interface PanelFooterProps {
   language: AppLanguageDto
   saving?: boolean
   onLanguageChange: (language: AppLanguageDto) => void
+  onOpenSettings: () => void
   onQuit?: () => void
 }
 
@@ -25,6 +26,7 @@ export function PanelFooter({
   language,
   saving = false,
   onLanguageChange,
+  onOpenSettings,
   onQuit
 }: PanelFooterProps) {
   const { t } = useTranslation()
@@ -38,8 +40,10 @@ export function PanelFooter({
     } catch {}
   }, [])
   const quitLabel = t('footer.quit')
+  const settingsLabel = t('header.settings')
   const languageLabel = t('footer.language')
   const quitTitleProps = { title: quitLabel }
+  const settingsTitleProps = { title: settingsLabel }
 
   return (
     <>
@@ -64,6 +68,26 @@ export function PanelFooter({
           </span>
         )}
         <span className="flex-1" />
+        <Tooltip delay={450}>
+          <Tooltip.Trigger>
+            <Button
+              {...settingsTitleProps}
+              aria-label={settingsLabel}
+              onClick={onOpenSettings}
+              size="sm"
+              variant="ghost"
+              className="grove-icon-scale h-auto gap-[7px] rounded-lg px-2.5 py-[7px] text-black/50 transition-colors hover:bg-black/[0.038] hover:text-black/90"
+            >
+              <Gear />
+            </Button>
+          </Tooltip.Trigger>
+          <Tooltip.Content
+            offset={5}
+            className="rounded-md border border-black/[0.06] bg-[#1c1c1e] px-2 py-1 text-[10.5px] font-medium leading-none text-white shadow-[0_8px_22px_rgba(0,0,0,0.24)]"
+          >
+            {settingsLabel}
+          </Tooltip.Content>
+        </Tooltip>
         <Tooltip delay={450}>
           <Tooltip.Trigger>
             <Button

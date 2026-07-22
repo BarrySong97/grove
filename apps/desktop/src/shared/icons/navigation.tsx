@@ -10,6 +10,8 @@ import {
   ChevronLeft as LucideChevronLeft,
   ChevronRight as LucideChevronRight,
   ChevronUp as LucideChevronUp,
+  LayoutGrid as LucideLayoutGrid,
+  Search as LucideSearch,
   type LucideProps
 } from 'lucide-react'
 
@@ -31,4 +33,12 @@ export const ChevronDown = (props: LucideProps) => (
 
 export const ToTop = (props: LucideProps) => (
   <ArrowUpToLine size={13} strokeWidth={2.2} {...props} />
+)
+
+export const Search = (props: LucideProps) => (
+  <LucideSearch size={13} strokeWidth={2.2} {...props} />
+)
+
+export const Grid = (props: LucideProps) => (
+  <LucideLayoutGrid size={13} strokeWidth={2.2} {...props} />
 )

@@ -1,18 +1,23 @@
 /**
  * @purpose Defines a flex scroll container with hidden native scrollbars.
  * @role    Reusable layout primitive for panel body and settings view.
- * @deps    ReactNode
- * @gotcha  Parent must provide bounded height/flex context; docs/modules/ui/README.md
+ * @deps    React forwardRef/ReactNode
+ * @gotcha  Parent must provide bounded height/flex context; forwards a ref to the scroll element for custom scrollbars; docs/modules/ui/README.md
  */
-import type { ReactNode } from 'react'
+import { forwardRef, type ReactNode } from 'react'
 
 interface ScrollAreaProps {
   children: ReactNode
   className?: string
 }
 
-export function ScrollArea({ children, className = '' }: ScrollAreaProps) {
+export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(function ScrollArea(
+  { children, className = '' },
+  ref
+) {
   return (
-    <div className={`no-scrollbar min-h-0 flex-1 overflow-y-auto ${className}`}>{children}</div>
+    <div ref={ref} className={`no-scrollbar min-h-0 flex-1 overflow-y-auto ${className}`}>
+      {children}
+    </div>
   )
-}
+})

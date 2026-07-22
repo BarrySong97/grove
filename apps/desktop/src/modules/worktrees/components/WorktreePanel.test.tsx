@@ -1,11 +1,11 @@
 /**
- * @purpose Tests WorktreePanel empty-state and action-sheet workflow wiring.
+ * @purpose Tests WorktreePanel empty-state, type-ahead/overview jump aids, and action-sheet workflow wiring.
  * @role    Frontend unit tests for user-facing worktree panel behavior.
  * @deps    vitest, Testing Library, WorktreePanel
  * @gotcha  Tauri command wrappers are mocked; Rust workflows are covered separately.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppSettingsDto } from '../../../shared/bindings/commands'
@@ -119,6 +119,78 @@ describe('WorktreePanel', () => {
     expect(screen.getByText('No Conductor workspaces found')).toBeTruthy()
     act(() => vi.advanceTimersByTime(1))
     expect(screen.queryByText('No Conductor workspaces found')).toBeNull()
+  })
+
+  it('type-ahead jumps to the matching project without filtering the list', async () => {
+    // Skip the first-launch onboarding sheet so it does not swallow keystrokes.
+    window.localStorage.setItem('grove.onboardingCompleted', 'true')
+    const scrollTo = vi.fn()
+    Element.prototype.scrollTo = scrollTo
+    api.loadWorktreePanelProjects.mockResolvedValue([
+      { ...makeProject(), id: 'p-apollo', name: 'apollo' },
+      { ...makeProject(), id: 'p-borealis', name: 'borealis' },
+      { ...makeProject(), id: 'p-stratum', name: 'stratum' }
+    ])
+
+    renderWithQueryClient(<WorktreePanel />)
+    await screen.findByText('borealis')
+
+    // Type-ahead does not filter: every project stays rendered.
+    fireEvent.keyDown(document.body, { key: 's' })
+    fireEvent.keyDown(document.body, { key: 't' })
+    expect(screen.getByText('apollo')).toBeTruthy()
+    expect(screen.getByText('borealis')).toBeTruthy()
+
+    // The matched project scrolls into view and flashes; the typed buffer echoes.
+    await waitFor(() => expect(scrollTo).toHaveBeenCalled())
+    const flashed = document.querySelector('.grove-jump-flash')
+    expect(flashed?.textContent).toContain('stratum')
+    expect(screen.getByText('st')).toBeTruthy()
+  })
+
+  it('cycles through multiple type-ahead matches with arrow keys', async () => {
+    window.localStorage.setItem('grove.onboardingCompleted', 'true')
+    Element.prototype.scrollTo = vi.fn()
+    api.loadWorktreePanelProjects.mockResolvedValue([
+      { ...makeProject(), id: 'p-gd', name: 'grove-desktop' },
+      { ...makeProject(), id: 'p-gw', name: 'grove-web' },
+      { ...makeProject(), id: 'p-st', name: 'stratum' }
+    ])
+
+    renderWithQueryClient(<WorktreePanel />)
+    await screen.findByText('grove-web')
+
+    fireEvent.keyDown(document.body, { key: 'g' })
+    fireEvent.keyDown(document.body, { key: 'r' })
+    expect(document.querySelector('.grove-jump-flash')?.textContent).toContain('grove-desktop')
+    expect(screen.getByText('1/2')).toBeTruthy()
+
+    fireEvent.keyDown(document.body, { key: 'ArrowDown' })
+    expect(document.querySelector('.grove-jump-flash')?.textContent).toContain('grove-web')
+    expect(screen.getByText('2/2')).toBeTruthy()
+
+    // Wraps back to the first match.
+    fireEvent.keyDown(document.body, { key: 'ArrowDown' })
+    expect(document.querySelector('.grove-jump-flash')?.textContent).toContain('grove-desktop')
+    expect(screen.getByText('1/2')).toBeTruthy()
+  })
+
+  it('opens the project overview and jumps to a selected project', async () => {
+    const scrollTo = vi.fn()
+    Element.prototype.scrollTo = scrollTo
+    api.loadWorktreePanelProjects.mockResolvedValue([
+      { ...makeProject(), id: 'p-a', name: 'apollo' },
+      { ...makeProject(), id: 'p-b', name: 'borealis' },
+      { ...makeProject(), id: 'p-c', name: 'cirrus' }
+    ])
+
+    renderWithQueryClient(<WorktreePanel />)
+
+    fireEvent.click(await screen.findByLabelText('Project overview'))
+    const sheet = await screen.findByRole('dialog', { name: 'Projects · 3' })
+
+    fireEvent.click(within(sheet).getByText('borealis'))
+    await waitFor(() => expect(scrollTo).toHaveBeenCalled())
   })
 
   it('keeps long-running progress alerts until the operation settles or the user closes them', async () => {

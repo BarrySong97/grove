@@ -8,7 +8,7 @@ workspace open target 的软件识别图标是产品 UI 资产,放在 `src/share
 
 ## 文件
 - `actions.tsx`:操作类图标,如 archive、close、copy、log、retry、trash、terminal、gear;通用图标来自 `lucide-react`。
-- `navigation.tsx`:方向和导航类图标;通用图标来自 `lucide-react`。
+- `navigation.tsx`:方向和导航类图标(collapse/back/up/down/to-top,以及项目定位用的 `Search`、总览用的 `Grid`);通用图标来自 `lucide-react`。
 - `status.tsx`:spinner 等状态图标;通用图标来自 `lucide-react`。
 - `brand.tsx`:Grove 品牌图标;`GroveIcon` 作为产品标识保留本地 SVG,branch 等通用图标使用 `lucide-react`。
 - `index.ts`:统一导出。

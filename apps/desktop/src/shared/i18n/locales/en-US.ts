@@ -26,8 +26,11 @@ export const enUS = {
   },
   header: {
     addProject: 'Add project…',
-    counts: '{{worktrees}} worktrees · {{projects}} projects',
     settings: 'Settings'
+  },
+  overview: {
+    open: 'Project overview',
+    title: 'Projects · {{count}}'
   },
   actions: {
     archiveWorktree: 'Archive Worktree…',

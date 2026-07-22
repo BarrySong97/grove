@@ -26,8 +26,11 @@ export const zhCN = {
   },
   header: {
     addProject: '添加项目…',
-    counts: '{{worktrees}} 个 worktree · {{projects}} 个项目',
     settings: '设置'
+  },
+  overview: {
+    open: '项目总览',
+    title: '项目 · {{count}}'
   },
   actions: {
     archiveWorktree: '归档 Worktree…',

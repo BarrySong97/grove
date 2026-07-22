@@ -4,7 +4,20 @@ type Release = { ver: string; date: string; head: string; badge?: 'latest' | 'be
 
 const RELEASES: Release[] = [
   {
-    ver: '0.2.6', date: 'Jun 30, 2026', head: 'Project imports survive broken worktrees.', badge: 'latest',
+    ver: '0.2.7', date: 'Jul 22, 2026', head: 'Jump to any project by typing.', badge: 'latest',
+    groups: [
+      { kind: 'new', items: [
+        { lead: 'Type-ahead project jump.', text: 'With the panel focused, just start typing a project name — Grove scrolls straight to the match and flashes it, no search box or filtering. When several projects match, cycle through them with the arrow keys or the scroll wheel.' },
+        { lead: 'Project overview.', text: 'A new grid button in the header opens every project as a chip grid; click one to jump straight to it.' },
+      ] },
+      { kind: 'imp', items: [
+        { lead: 'Calmer, easier-to-scan project list.', text: 'Project rows drop the always-on repository path and the divider lines, with a little more space between projects and a soft highlight over the one you are pointing at.' },
+        { lead: 'Settings moved to the footer.', text: 'The settings gear now sits next to Quit in the bottom-right, keeping the header uncluttered.' },
+      ] },
+    ],
+  },
+  {
+    ver: '0.2.6', date: 'Jun 30, 2026', head: 'Project imports survive broken worktrees.',
     groups: [
       { kind: 'fix', items: [
         { lead: 'Missing Conductor projects.', text: 'Import now recovers the project repo root when a stale workspace still points back to it, instead of skipping the whole project.' },

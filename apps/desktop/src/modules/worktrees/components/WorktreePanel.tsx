@@ -1,10 +1,11 @@
 /**
  * @purpose Composes the full Grove worktree panel UI.
- * @role    Feature root component; wires state hook, project sorting, settings sheets, toast, and context menu.
+ * @role    Feature root component; wires state hook, project sorting, type-ahead/overview jump aids, settings sheets, toast, and context menu.
  * @deps    @dnd-kit/core/sortable, Hero UI Button, Worktrees contracts/state/API, shared UI/lib/icons
- * @gotcha  Settings and action overlays use BottomSheet so the panel context stays visible; docs/modules/worktrees/README.md
+ * @gotcha  Settings and action overlays use BottomSheet so the panel context stays visible; type-ahead and overview jump via the shared sectionEls/scrollRef; docs/modules/worktrees/README.md
  */
 import { Button } from '@heroui/react/button'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   DndContext,
@@ -26,7 +27,7 @@ import { useWorktreePanelState } from '../hooks/useWorktreePanelState'
 import { sortableMeasuring } from '../../../shared/lib/sortable'
 import { hexA } from '../../../shared/lib/color'
 import type { CSSVars } from '../../../shared/lib/styles'
-import { Spinner } from '../../../shared/icons'
+import { Search, Spinner } from '../../../shared/icons'
 import { BottomSheet } from '../../../shared/ui/BottomSheet'
 import { Toast } from '../../../shared/ui/Toast'
 import { ContextMenu } from './ContextMenu'
@@ -34,11 +35,18 @@ import { GlobalSettings } from './GlobalSettings'
 import { PanelFooter } from './PanelFooter'
 import { PanelHeader } from './PanelHeader'
 import { PanelShell } from './PanelShell'
+import { ProjectOverview } from './ProjectOverview'
 import { ProjectSection } from './ProjectSection'
 import { ProjectSettings } from './ProjectSettings'
 import { ArchiveChoice } from './settings/ArchiveChoice'
 import { LogViewer } from './settings/LogViewer'
 import { RemoveProjectChoice } from './settings/RemoveProjectChoice'
+
+const prefersReducedMotion = () =>
+  typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+
+// How long the type-ahead buffer survives between keystrokes before resetting.
+const TYPEAHEAD_RESET_MS = 1100
 
 export interface WorktreePanelProps {
   accent?: string
@@ -59,6 +67,183 @@ export function WorktreePanel({
   const { t } = useTranslation()
   const panelStyle: CSSVars = { '--accent': accent, '--accent-soft': hexA(accent, 0.1) }
 
+  const [overviewOpen, setOverviewOpen] = useState(false)
+  // Transient echo of the current type-ahead buffer; null hides the hint chip.
+  const [typeahead, setTypeahead] = useState<{
+    text: string
+    index: number
+    total: number
+  } | null>(null)
+
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const sectionEls = useRef(new Map<string, HTMLDivElement>())
+  const lastFlashed = useRef<HTMLElement | null>(null)
+  const registerSection = (projectId: string) => (el: HTMLDivElement | null) => {
+    if (el) sectionEls.current.set(projectId, el)
+    else sectionEls.current.delete(projectId)
+  }
+
+  const jumpToProject = useCallback((projectId: string) => {
+    const el = sectionEls.current.get(projectId)
+    const container = scrollRef.current
+    if (!el || !container) return
+    const top =
+      el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop
+    container.scrollTo({
+      top: Math.max(0, top - 4),
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth'
+    })
+    // Only one project flashes at a time — clear the previous target first.
+    if (lastFlashed.current && lastFlashed.current !== el) {
+      lastFlashed.current.classList.remove('grove-jump-flash')
+    }
+    el.classList.remove('grove-jump-flash')
+    void el.offsetWidth
+    el.classList.add('grove-jump-flash')
+    lastFlashed.current = el
+  }, [])
+
+  // Type-ahead find: latest project list read via ref so the keydown handler
+  // stays stable; the buffer accumulates keystrokes and clears after a pause.
+  // When several projects match, Up/Down and the wheel cycle through them.
+  const projectsRef = useRef(state.projects)
+  projectsRef.current = state.projects
+  const typeaheadBuffer = useRef('')
+  const typeaheadTimer = useRef<number | null>(null)
+  const matchesRef = useRef<string[]>([])
+  const matchIndexRef = useRef(0)
+
+  const resetTypeahead = useCallback(() => {
+    typeaheadBuffer.current = ''
+    matchesRef.current = []
+    matchIndexRef.current = 0
+    if (typeaheadTimer.current) window.clearTimeout(typeaheadTimer.current)
+    setTypeahead(null)
+  }, [])
+
+  const armReset = useCallback(() => {
+    if (typeaheadTimer.current) window.clearTimeout(typeaheadTimer.current)
+    typeaheadTimer.current = window.setTimeout(resetTypeahead, TYPEAHEAD_RESET_MS)
+  }, [resetTypeahead])
+
+  const runTypeahead = useCallback(
+    (buffer: string) => {
+      typeaheadBuffer.current = buffer
+      if (!buffer) {
+        resetTypeahead()
+        return
+      }
+      const q = buffer.toLowerCase()
+      const projects = projectsRef.current
+      // Prefix matches first (most intuitive), then remaining substring matches;
+      // display order is preserved within each group.
+      const contains = projects.filter((p) => p.name.toLowerCase().includes(q))
+      const matches = [
+        ...contains.filter((p) => p.name.toLowerCase().startsWith(q)),
+        ...contains.filter((p) => !p.name.toLowerCase().startsWith(q))
+      ].map((p) => p.id)
+      matchesRef.current = matches
+      matchIndexRef.current = 0
+      setTypeahead({ text: buffer, index: 0, total: matches.length })
+      if (matches.length > 0) jumpToProject(matches[0])
+      armReset()
+    },
+    [jumpToProject, resetTypeahead, armReset]
+  )
+
+  const cycleMatch = useCallback(
+    (delta: number) => {
+      const matches = matchesRef.current
+      if (!typeaheadBuffer.current || matches.length === 0) return
+      const next = (matchIndexRef.current + delta + matches.length) % matches.length
+      matchIndexRef.current = next
+      setTypeahead((prev) => (prev ? { ...prev, index: next } : prev))
+      jumpToProject(matches[next])
+      armReset()
+    },
+    [jumpToProject, armReset]
+  )
+
+  const openOverview = () => {
+    resetTypeahead()
+    setOverviewOpen(true)
+  }
+
+  useEffect(() => resetTypeahead, [resetTypeahead])
+
+  // Type a few letters anywhere in an active panel to jump to the matching
+  // project — no filtering, just scroll + flash. Yields when a sheet, editor,
+  // or other input already owns the keyboard.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (overviewOpen || state.globalSettingsOpen || state.settingsProject) return
+      if (state.ctx || state.archivePrompt || state.removeProjectPrompt || state.logViewer) return
+      if (state.addingTo || state.projects.length === 0) return
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      const target = event.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      )
+        return
+      if (event.key === 'Escape') {
+        if (typeaheadBuffer.current) {
+          event.stopPropagation()
+          resetTypeahead()
+        }
+        return
+      }
+      if (event.key === 'Backspace') {
+        if (typeaheadBuffer.current) {
+          event.preventDefault()
+          runTypeahead(typeaheadBuffer.current.slice(0, -1))
+        }
+        return
+      }
+      // While a buffer is live, Up/Down cycle through the matching projects.
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        if (typeaheadBuffer.current && matchesRef.current.length > 1) {
+          event.preventDefault()
+          cycleMatch(event.key === 'ArrowDown' ? 1 : -1)
+        }
+        return
+      }
+      if (event.key.length === 1 && event.key.trim()) {
+        runTypeahead(typeaheadBuffer.current + event.key)
+      }
+    }
+    // While a buffer is live, the wheel cycles matches instead of scrolling.
+    let wheelAccum = 0
+    const onWheel = (event: WheelEvent) => {
+      if (!typeaheadBuffer.current || matchesRef.current.length < 2) return
+      event.preventDefault()
+      wheelAccum += event.deltaY
+      if (Math.abs(wheelAccum) < 24) return
+      cycleMatch(wheelAccum > 0 ? 1 : -1)
+      wheelAccum = 0
+    }
+    const container = scrollRef.current
+    document.addEventListener('keydown', onKeyDown)
+    container?.addEventListener('wheel', onWheel, { passive: false })
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      container?.removeEventListener('wheel', onWheel)
+    }
+  }, [
+    overviewOpen,
+    state.globalSettingsOpen,
+    state.settingsProject,
+    state.ctx,
+    state.archivePrompt,
+    state.removeProjectPrompt,
+    state.logViewer,
+    state.addingTo,
+    state.projects.length,
+    runTypeahead,
+    resetTypeahead,
+    cycleMatch
+  ])
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -72,12 +257,12 @@ export function WorktreePanel({
   return (
     <PanelShell
       style={panelStyle}
+      scrollRef={scrollRef}
       header={
         <PanelHeader
-          total={state.total}
           projectCount={state.projects.length}
           onAddProject={state.addProject}
-          onOpenSettings={() => state.setGlobalSettingsOpen(true)}
+          onOpenOverview={openOverview}
         />
       }
       footer={
@@ -85,6 +270,7 @@ export function WorktreePanel({
           language={state.appSettings.language}
           saving={state.appSettingsSaving}
           onLanguageChange={state.setLanguage}
+          onOpenSettings={() => state.setGlobalSettingsOpen(true)}
           onQuit={onQuit}
         />
       }
@@ -114,6 +300,7 @@ export function WorktreePanel({
             {state.projects.map((project, index) => (
               <ProjectSection
                 key={project.id}
+                sectionRef={registerSection(project.id)}
                 project={project}
                 density={density}
                 hoverQuickOpenTargets={state.appSettings.hoverQuickOpenTargets}
@@ -144,6 +331,40 @@ export function WorktreePanel({
           </SortableContext>
         </DndContext>
       )}
+
+      {typeahead && (
+        <div className="pointer-events-none absolute left-1/2 top-9 z-40 flex -translate-x-1/2 animate-panel-in items-center gap-1.5 rounded-lg border-[0.5px] border-white/10 bg-[rgba(28,28,32,0.9)] px-2.5 py-1.5 shadow-ctx backdrop-blur-xl">
+          <Search className={typeahead.total > 0 ? 'text-[#7fb4ff]' : 'text-white/40'} />
+          <span
+            className={
+              'font-mono text-[12px] font-semibold ' +
+              (typeahead.total > 0 ? 'text-white' : 'text-white/45 line-through')
+            }
+          >
+            {typeahead.text}
+          </span>
+          {typeahead.total > 1 && (
+            <span className="font-mono text-[11px] tabular-nums text-white/50">
+              {typeahead.index + 1}/{typeahead.total}
+            </span>
+          )}
+        </div>
+      )}
+
+      <BottomSheet
+        ariaLabel={t('overview.title', { count: state.projects.length })}
+        className="bottom-sheet-surface rounded-[var(--window-radius)] border-[0.5px] p-2 font-sans text-[13.5px] text-[#1c1c1e] antialiased shadow-panel"
+        isOpen={overviewOpen}
+        onClose={() => setOverviewOpen(false)}
+      >
+        <ProjectOverview
+          projects={state.projects}
+          onSelect={(projectId) => {
+            setOverviewOpen(false)
+            jumpToProject(projectId)
+          }}
+        />
+      </BottomSheet>
 
       {state.toast && (
         <Toast
